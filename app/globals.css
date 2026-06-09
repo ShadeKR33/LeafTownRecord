@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+:root {
+  --bg:           #f3f3f3;
+  --panel:        #ffffff;
+  --panel-alt:    #f8f8f8;
+  --hover:        #f0f7f0;
+  --border:       #e0e0e0;
+  --border-green: #c4dfc4;
+
+  --accent:       #2A5C1E;
+  --accent-light: #4A8C38;
+  --accent-dark:  #1A3C10;
+  --accent-gold:  #e67e00;
+  --orange:       #e65100;
+
+  --text:         #1A1208;
+  --text-muted:   #5C4A28;
+  --text-dim:     #9A8060;
+  --text-bright:  #2A5C1E;
+
+  --win:          #2e7d32;
+  --loss:         #AC2436;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 30%, rgba(74, 140, 56, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(200, 151, 26, 0.05) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cg transform='translate(90,90)' fill='%232A5C1E' opacity='0.13'%3E%3Cpolygon points='0,-22 6,-6 22,0 6,6 0,22 -6,6 -22,0 -6,-6'/%3E%3Cpolygon points='0,-22 6,-6 22,0 6,6 0,22 -6,6 -22,0 -6,-6' transform='rotate(45)' opacity='0.6'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, auto, 180px 180px;
+  color: var(--text);
+  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Segoe UI', sans-serif;
+  font-weight: 500;
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #EAE0C8; }
+::-webkit-scrollbar-thumb { background: #4A8C38; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2A5C1E; }
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+@keyframes leafFloat {
+  0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.4; }
+  50%       { transform: translateY(-6px) rotate(4deg); opacity: 0.7; }
+}
+.leaf-float { animation: leafFloat 3s ease-in-out infinite; }
+
+/* ── 비 마을 모드 ──────────────────────────────────────────────────
+   그레이 + 연보라 테마. 다크모드가 아닌 "그레이 모드".
+   눈이 편한 중간 밝기의 회색에 연보라 포인트.
+──────────────────────────────────────────────────────────────── */
+html.ame-mode {
+  --bg:           #3a3c44;
+  --panel:        #43454f;
+  --panel-alt:    #4a4d58;
+  --hover:        #52556200;
+  --border:       #5c5f70;
+  --border-green: #8b80c4;
+  --accent:       #9d92d4;
+  --accent-light: #b3aade;
+  --accent-dark:  #7a70b8;
+  --accent-gold:  #c4bcec;
+  --orange:       #9d92d4;
+  --text:         #e8e9ef;
+  --text-muted:   #abadb8;
+  --text-dim:     #7c7f8e;
+  --text-bright:  #d4cfee;
+  --win:          #4ade80;
+  --loss:         #f87171;
+}
+
+/* 배경 — 나뭇잎 패턴 없애고 순수 그레이+연보라 그라디언트 */
+html.ame-mode body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(157,146,212,0.12) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 80%, rgba(139,128,196,0.09) 0%, transparent 55%);
+  background-size: auto;
+}
+
+/* 나뭇잎 숨기기 */
+html.ame-mode .leaf-float { display: none; }
+
+/* 빗줄기 오버레이 */
+.ame-rain-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.ame-rain-drop {
+  position: absolute;
+  width: 1.5px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(200, 195, 230, 0.45), transparent);
+  animation: ameFall linear infinite;
+}
+@keyframes ameFall {
+  from { transform: translateY(-150px) rotate(12deg); opacity: 0; }
+  8%   { opacity: 1; }
+  92%  { opacity: 1; }
+  to   { transform: translateY(115vh) rotate(12deg); opacity: 0; }
+}
+
+/* 스크롤바 */
+html.ame-mode ::-webkit-scrollbar-track { background: #3a3c44; }
+html.ame-mode ::-webkit-scrollbar-thumb { background: #7a70b8; }
+html.ame-mode ::-webkit-scrollbar-thumb:hover { background: #9d92d4; }
+
+/* ── 아카츠키 모드 ──────────────────────────────────────────────
+   검정 + 진홍색. 붉은 달, 붉은 구름. 어둠과 긴장감.
+──────────────────────────────────────────────────────────────── */
+html.aka-mode {
+  --bg:           #0c0c0e; /* 아카츠키 망토의 깊고 어두운 검정 (Solid Matte Black) */
+  --panel:        #121216; /* 세련된 어두운 패널 */
+  --panel-alt:    #191921; /* 보조 패널 */
+  --hover:        #251515; /* 마우스 오버 시 미세하게 붉은색이 도는 어두운 색상 */
+  --border:       #321a1a; /* 붉은 기가 감도는 뚜렷한 경계선 */
+  --border-green: #b91c1c; /* 강조용 진홍색 테두리 (아카츠키 레드) */
+  --accent:       #e11d48; /* 아카츠키의 상징 붉은색 (Vibrant Crimson) */
+  --accent-light: #fb7185; /* 하이라이트 밝은 적색 */
+  --accent-dark:  #9f1239; /* 어두운 적색 */
+  --accent-gold:  #fda4af;
+  --orange:       #e11d48;
+  --text:         #f8fafc; /* 눈이 편안한 밝은 슬레이트 텍스트 */
+  --text-muted:   #94a3b8; /* 소프트 그레이 */
+  --text-dim:     #64748b; /* 다크 그레이 */
+  --text-bright:  #ffffff;
+  --win:          #4ade80; /* 눈이 편안한 승리 연두색 */
+  --loss:         #f87171; /* 눈이 편안한 패배 연적색 */
+  background-color: #0c0c0e;
+
+  /* 아카츠키 공식 문양: 흰색 테두리(--cloud-stroke)가 있는 붉은 구름(--cloud-fill) */
+  --cloud-fill:   rgba(185, 28, 28, 0.45);  /* 선명하고 매혹적인 아카츠키의 붉은빛 */
+  --cloud-stroke: rgba(255, 255, 255, 0.7); /* 흰색 외곽선 테두리 */
+  --cloud-shadow: rgba(0, 0, 0, 0.5);
+}
+
+/* body 기본 배경을 덮어쓰기 — !important 없이 충분히 구체적으로 */
+html.aka-mode body,
+html.aka-mode body:not(.placeholder) {
+  background-color: #0c0c0e !important;
+  background-image:
+    /* 무한 츠쿠요미의 붉은 달이 비치는 은은한 광원 효과 */
+    radial-gradient(circle at 85% 15%, rgba(225, 29, 72, 0.12) 0%, rgba(225, 29, 72, 0.03) 35%, transparent 70%),
+    radial-gradient(ellipse at 50% 0%, rgba(225, 29, 72, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 90%, rgba(225, 29, 72, 0.02) 0%, transparent 50%) !important;
+  background-size: auto !important;
+}
+
+html.aka-mode .leaf-float { display: none; }
+
+/* 붉은 구름 */
+.aka-cloud-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.aka-cloud {
+  position: absolute;
+  animation: akaCloudFloat ease-in-out infinite alternate;
+}
+@keyframes akaCloudFloat {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(12px, -8px); }
+}
+
+html.aka-mode ::-webkit-scrollbar-track { background: #0c0c0e; }
+html.aka-mode ::-webkit-scrollbar-thumb { background: #3c1313; }
+html.aka-mode ::-webkit-scrollbar-thumb:hover { background: #6b1d1d; }
+
+/* 두루마리 장식선 */
+.scroll-border {
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-image: linear-gradient(to right, transparent 5%, #C8971A 30%, #2A5C1E 50%, #C8971A 70%, transparent 95%) 1;
+  opacity: 0.5;
+}
