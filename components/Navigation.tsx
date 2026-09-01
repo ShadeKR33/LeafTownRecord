@@ -126,15 +126,19 @@ const MYOBOKU_SPARKS = Array.from({ length: 25 }, (_, i) => ({
   shadow: i % 2 === 0 ? "0 0 8px #a3e635" : "0 0 8px #facc15",
 }));
 
-// 암부 그림자 분신 흔적 — 화면 가장자리에 순간 나타났다 사라지는 닌자 실루엣
-const ANBU_SHADOWS = [
-  { left: "2%",  top: "58%", delay: "0s",    duration: "10s",  flip: false },
-  { left: "86%", top: "52%", delay: "4.2s",  duration: "9s",   flip: true  },
-  { left: "7%",  top: "72%", delay: "7.8s",  duration: "11s",  flip: false },
-  { left: "77%", top: "68%", delay: "2.1s",  duration: "8.5s", flip: true  },
-  { left: "44%", top: "76%", delay: "13s",   duration: "9.5s", flip: false },
-  { left: "93%", top: "60%", delay: "5.8s",  duration: "10.5s",flip: true  },
-];
+// 암부 쿠나이 — 화면을 빠르게 가로질러 날아가는 쿠나이 (6s 주기 × 10개, 0.6s 간격)
+const ANBU_KUNAI = [
+  { top: "12%", delay: "0s",   dir: "lr" },
+  { top: "38%", delay: "0.6s", dir: "rl" },
+  { top: "62%", delay: "1.2s", dir: "lr" },
+  { top: "85%", delay: "1.8s", dir: "rl" },
+  { top: "25%", delay: "2.4s", dir: "lr" },
+  { top: "50%", delay: "3.0s", dir: "rl" },
+  { top: "75%", delay: "3.6s", dir: "lr" },
+  { top: "8%",  delay: "4.2s", dir: "rl" },
+  { top: "45%", delay: "4.8s", dir: "lr" },
+  { top: "92%", delay: "5.4s", dir: "rl" },
+] as const;
 
 // 독성 가스 기포: 동그란 물방울 대신 위로 피어오르는 독연기 와이프 형태로 표현
 const OROCHI_BUBBLES = Array.from({ length: 20 }, (_, i) => ({
@@ -1590,54 +1594,58 @@ export default function Navigation() {
               `}</style>
               <div className="anbu-mist" style={{ top: '-50%', left: '-50%' }} />
             </div>
-            {/* 그림자 분신 흔적 — 가장자리에 닌자 실루엣이 순간 출현했다 사라짐 */}
+            {/* 쿠나이 — 화면을 빠르게 가로질러 날아감 */}
             <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
               <style>{`
-                @keyframes shadowCloneAppear {
-                  0%   { opacity: 0;    transform: translateY(14px) scale(0.86); filter: blur(5px); }
-                  12%  { opacity: 0.72; transform: translateY(0px)  scale(1);    filter: blur(0px); }
-                  60%  { opacity: 0.60; transform: translateY(0px)  scale(1);    filter: blur(0px); }
-                  82%  { opacity: 0.18; transform: translateY(-9px) scale(1.05); filter: blur(3px); }
-                  100% { opacity: 0;    transform: translateY(-18px) scale(0.9); filter: blur(6px); }
+                @keyframes kunaiLR {
+                  0%, 17%, 100% { transform: translateX(-80px) rotate(12deg); opacity: 0; }
+                  2%  { transform: translateX(-80px) rotate(12deg); opacity: 1; }
+                  15% { transform: translateX(calc(100vw + 80px)) translateY(16px) rotate(12deg); opacity: 1; }
+                  16% { transform: translateX(calc(100vw + 80px)) translateY(16px) rotate(12deg); opacity: 0; }
                 }
-                .shadow-clone-figure {
-                  filter: drop-shadow(0 0 6px rgba(6,182,212,0.9)) drop-shadow(0 0 18px rgba(6,182,212,0.35));
-                  animation: shadowCloneAppear ease-in-out infinite;
+                @keyframes kunaiRL {
+                  0%, 17%, 100% { transform: translateX(0px) rotate(168deg); opacity: 0; }
+                  2%  { transform: translateX(0px) rotate(168deg); opacity: 1; }
+                  15% { transform: translateX(calc(-100vw - 80px)) translateY(16px) rotate(168deg); opacity: 1; }
+                  16% { transform: translateX(calc(-100vw - 80px)) translateY(16px) rotate(168deg); opacity: 0; }
+                }
+                .kunai-svg {
+                  filter: drop-shadow(0 0 4px rgba(34,211,238,0.95)) drop-shadow(0 0 14px rgba(34,211,238,0.5));
+                  animation-timing-function: linear;
+                  animation-iteration-count: infinite;
+                  animation-duration: 6s;
                 }
               `}</style>
-              {ANBU_SHADOWS.map((s, i) => (
-                <div
-                  key={`shadow-${i}`}
+              {ANBU_KUNAI.map((k, i) => (
+                <svg
+                  key={`kunai-${i}`}
+                  className="kunai-svg"
+                  width="56"
+                  height="14"
+                  viewBox="0 0 56 14"
                   style={{
                     position: "absolute",
-                    left: s.left,
-                    top: s.top,
-                    transform: s.flip ? "scaleX(-1)" : undefined,
+                    left: k.dir === "lr" ? 0 : "100%",
+                    top: k.top,
+                    animationName: k.dir === "lr" ? "kunaiLR" : "kunaiRL",
+                    animationDelay: k.delay,
                   }}
                 >
-                  <svg
-                    className="shadow-clone-figure"
-                    width="46"
-                    height="78"
-                    viewBox="0 0 46 78"
-                    style={{ animationDelay: s.delay, animationDuration: s.duration }}
-                  >
-                    {/* 머리 */}
-                    <ellipse cx="23" cy="9" rx="8" ry="9" fill="#06b6d4" opacity="0.85" />
-                    {/* 어깨/목 */}
-                    <path d="M19 17 L27 17 L30 22 L16 22 Z" fill="#06b6d4" opacity="0.85" />
-                    {/* 상체 (살짝 앞으로 기운 자세) */}
-                    <path d="M15 22 C13 32 11 41 10 50 L36 50 C35 41 33 32 31 22 Z" fill="#06b6d4" opacity="0.85" />
-                    {/* 왼팔 (앞으로 뻗음) */}
-                    <path d="M16 27 L1 38 L3 42 L18 31 Z" fill="#06b6d4" opacity="0.85" />
-                    {/* 오른팔 (뒤로 당김) */}
-                    <path d="M30 27 L44 20 L43 24 L29 31 Z" fill="#06b6d4" opacity="0.85" />
-                    {/* 왼다리 (앞으로 뻗음, 크라우치) */}
-                    <path d="M15 50 L10 65 L17 67 L22 52 Z" fill="#06b6d4" opacity="0.85" />
-                    {/* 오른다리 (뒤로 구부림) */}
-                    <path d="M29 50 L34 65 L41 62 L37 50 Z" fill="#06b6d4" opacity="0.85" />
-                  </svg>
-                </div>
+                  {/* 날카로운 칼날 끝 */}
+                  <polygon points="56,7 38,1 38,13" fill="#22d3ee" />
+                  {/* 날 어깨 */}
+                  <rect x="33" y="3" width="6" height="8" rx="0.5" fill="#0891b2" />
+                  {/* 손잡이 */}
+                  <rect x="12" y="4.5" width="22" height="5" rx="1" fill="#0891b2" />
+                  {/* 그립 텍스처 */}
+                  <line x1="17" y1="4.5" x2="17" y2="9.5" stroke="#22d3ee" strokeWidth="0.8" opacity="0.7" />
+                  <line x1="21" y1="4.5" x2="21" y2="9.5" stroke="#22d3ee" strokeWidth="0.8" opacity="0.7" />
+                  <line x1="25" y1="4.5" x2="25" y2="9.5" stroke="#22d3ee" strokeWidth="0.8" opacity="0.7" />
+                  <line x1="29" y1="4.5" x2="29" y2="9.5" stroke="#22d3ee" strokeWidth="0.8" opacity="0.7" />
+                  {/* 끝 고리 */}
+                  <circle cx="6" cy="7" r="5" fill="none" stroke="#22d3ee" strokeWidth="2.2" />
+                  <circle cx="6" cy="7" r="1.8" fill="#0891b2" />
+                </svg>
               ))}
             </div>
           </div>
