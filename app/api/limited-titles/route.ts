@@ -5,6 +5,7 @@ import type { LimitedTitle, GameRecord, NicknameEntry } from "@/lib/types";
 import { LIMITED_TITLE_DEFS } from "@/lib/limitedTitles";
 import { normalizeId } from "@/lib/stats";
 import { computeGameAwards } from "@/lib/awards";
+import { POSITIONS, computeScore, computeRelativeWR, assignRelativeTiers } from "@/lib/championTiers";
 
 const kv = Redis.fromEnv();
 
@@ -58,9 +59,16 @@ function findFirstAchievers(
     return champSets.get(rn)!;
   };
 
-  // 챔피언별 전체 플레이어 (1인픽 판별용) + 플레이어별 챔피언 상세 기록
-  const champAllPlayers = new Map<string, Set<string>>();
+  // pioneer_champ_master: 플레이어별 챔피언 게임 수 (포지션 무관)
   const playerChampStats = new Map<string, Map<string, { games: number; wins: number }>>();
+
+  // pioneer_meta: 포지션별 챔피언 티어 계산용 (챔피언 분석 페이지와 동일한 로직)
+  const posChampPlayerStats = new Map<string, { wins: number; losses: number }>(); // key: `${player}|||${pos}|||${champ}`
+  const playerOverallStats  = new Map<string, { wins: number; losses: number }>(); // key: `${player}`
+  const posChampTotalStats  = new Map<string, { wins: number; losses: number; picks: number }>(); // key: `${pos}|||${champ}`
+  const posChampAllPlayers  = new Map<string, Set<string>>(); // key: `${pos}|||${champ}` → players
+  const banCounts = new Map<string, number>();
+  let totalIndivGames = 0;
 
   const result = new Map<string, { holder: string; date: string }>();
 
@@ -73,6 +81,15 @@ function findFirstAchievers(
     // 경기별 KDA + MVP/ACE + 챔피언 기록
     for (const r of sRecords) {
       const team1Won = r.winTeam === 1;
+      totalIndivGames++;
+
+      // 밴 집계
+      if (r.bans) {
+        for (const c of [...(r.bans.team1 || []), ...(r.bans.team2 || [])]) {
+          if (c) banCounts.set(c, (banCounts.get(c) || 0) + 1);
+        }
+      }
+
       // KDA (팀 구분 불필요)
       for (const p of [...r.team1, ...r.team2]) {
         const rn = resolve(p.nickname);
@@ -82,24 +99,47 @@ function findFirstAchievers(
         }
         if (p.champion && p.champion !== "?") getChampSet(rn).add(p.champion);
       }
+
       // 챔피언 승패 기록 (팀 구분 필요)
       const champTeams: Array<[typeof r.team1, boolean]> = [
         [r.team1, team1Won],
         [r.team2, !team1Won],
       ];
       for (const [teamPlayers, teamWon] of champTeams) {
-        for (const p of teamPlayers) {
-          if (!p.champion || p.champion === "?" || !p.nickname) continue;
+        teamPlayers.forEach((p, idx) => {
+          if (!p.champion || p.champion === "?" || !p.nickname) return;
           const rn = resolve(p.nickname);
-          if (!champAllPlayers.has(p.champion)) champAllPlayers.set(p.champion, new Set());
-          champAllPlayers.get(p.champion)!.add(rn);
+          const pos = POSITIONS[idx];
+
+          // pioneer_champ_master: 챔피언별 게임 수 (포지션 무관)
           if (!playerChampStats.has(rn)) playerChampStats.set(rn, new Map());
           const cm = playerChampStats.get(rn)!;
           if (!cm.has(p.champion)) cm.set(p.champion, { games: 0, wins: 0 });
           const cst = cm.get(p.champion)!;
           cst.games++;
           if (teamWon) cst.wins++;
-        }
+
+          if (!pos) return;
+
+          // pioneer_meta: 포지션별 티어 계산용
+          const pcpKey = `${rn}|||${pos}|||${p.champion}`;
+          if (!posChampPlayerStats.has(pcpKey)) posChampPlayerStats.set(pcpKey, { wins: 0, losses: 0 });
+          const pcpSt = posChampPlayerStats.get(pcpKey)!;
+          if (teamWon) pcpSt.wins++; else pcpSt.losses++;
+
+          if (!playerOverallStats.has(rn)) playerOverallStats.set(rn, { wins: 0, losses: 0 });
+          const ovSt = playerOverallStats.get(rn)!;
+          if (teamWon) ovSt.wins++; else ovSt.losses++;
+
+          const pctKey = `${pos}|||${p.champion}`;
+          if (!posChampTotalStats.has(pctKey)) posChampTotalStats.set(pctKey, { wins: 0, losses: 0, picks: 0 });
+          const pctSt = posChampTotalStats.get(pctKey)!;
+          pctSt.picks++;
+          if (teamWon) pctSt.wins++; else pctSt.losses++;
+
+          if (!posChampAllPlayers.has(pctKey)) posChampAllPlayers.set(pctKey, new Set());
+          posChampAllPlayers.get(pctKey)!.add(rn);
+        });
       }
       const awards = computeGameAwards(r.team1, r.team2, r.winTeam);
       if (awards) {
@@ -163,22 +203,49 @@ function findFirstAchievers(
         }
       }
 
-      if (!result.has("pioneer_meta")) {
-        const cm = playerChampStats.get(rn);
-        if (cm) {
-          let metaCount = 0;
-          for (const [champ, cst] of cm) {
-            if (cst.games >= 3 && cst.wins / cst.games >= 0.6) {
-              const allP = champAllPlayers.get(champ);
-              if (allP && allP.size === 1) metaCount++;
-            }
-          }
-          if (metaCount >= 3) result.set("pioneer_meta", { holder: rn, date });
-        }
-      }
+      // pioneer_meta는 플레이어 개별 체크가 아닌 전체 포지션 티어를 계산해야 하므로 아래 블록에서 일괄 처리
 
       if (result.size === LIMITED_TITLE_DEFS.length) break;
     }
+
+    // pioneer_meta: 챔피언 분석 페이지와 동일한 기준으로 포지션별 1티어 판정
+    if (!result.has("pioneer_meta") && totalIndivGames > 0) {
+      // 포지션별 그룹화 → 티어 계산
+      const byPos = new Map<string, Array<{ posChampKey: string; score: number; forcedUp: boolean; penalized: boolean }>>();
+      for (const [pctKey, stats] of posChampTotalStats) {
+        const sep = pctKey.indexOf("|||");
+        const pos = pctKey.slice(0, sep);
+        const champ = pctKey.slice(sep + 3);
+        const wr = stats.picks > 0 ? stats.wins / stats.picks : 0;
+        const pr = stats.picks / totalIndivGames;
+        const br = (banCounts.get(champ) || 0) / totalIndivGames;
+        const { adjWR } = computeRelativeWR(posChampPlayerStats, playerOverallStats, pos, champ, wr);
+        const score = computeScore(adjWR, pr, br);
+        const forcedUp = br > 0.25 && adjWR > 0.50;
+        const penalized = pr < 0.10 && adjWR > 0.60;
+        if (!byPos.has(pos)) byPos.set(pos, []);
+        byPos.get(pos)!.push({ posChampKey: pctKey, score, forcedUp, penalized });
+      }
+
+      const tier1Keys = new Set<string>();
+      for (const [pos, items] of byPos) {
+        const tiers = assignRelativeTiers(items, pos);
+        items.forEach((item, i) => { if (tiers[i] === 1) tier1Keys.add(item.posChampKey); });
+      }
+
+      // 플레이어별 1인픽 + 1티어 챔피언 카운트
+      for (const [rn] of pState) {
+        if (result.has("pioneer_meta")) break;
+        let metaCount = 0;
+        for (const [posChampKey, players] of posChampAllPlayers) {
+          if (players.size === 1 && players.has(rn) && tier1Keys.has(posChampKey)) {
+            metaCount++;
+          }
+        }
+        if (metaCount >= 3) result.set("pioneer_meta", { holder: rn, date });
+      }
+    }
+
     if (result.size === LIMITED_TITLE_DEFS.length) break;
   }
 

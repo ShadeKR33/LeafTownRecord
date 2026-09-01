@@ -4,8 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { loadGameRecords, loadNicknames } from "@/lib/stats";
 import type { GameRecord } from "@/lib/types";
-import { POSITIONS, computeScore, assignRelativeTiers, computeRelativeWR } from "../page";
-import type { Position, Tier } from "../page";
+import { POSITIONS, computeScore, assignRelativeTiers, computeRelativeWR, type Position, type Tier } from "@/lib/championTiers";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
 import { normalizeChampionName } from "@/lib/champions";
 

@@ -7,10 +7,7 @@ import type { GameRecord } from "@/lib/types";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
 import GuideBanner from "@/components/GuideBanner";
 import { normalizeChampionName } from "@/lib/champions";
-
-export const POSITIONS = ["탑", "정글", "미드", "원딜", "서포터"] as const;
-export type Position = (typeof POSITIONS)[number];
-export type Tier = 1 | 2 | 3 | 4 | 5;
+import { POSITIONS, type Position, type Tier, computeScore, computeRelativeWR, assignRelativeTiers } from "@/lib/championTiers";
 
 const ROLE_COLORS: Record<Position, string> = {
   탑: "#e06060", 정글: "#50a050", 미드: "#5090d0", 원딜: "#c0a030", 서포터: "#9060c0",
@@ -41,100 +38,6 @@ export interface ChampTierStat {
   penalized: boolean;
   isHoney: boolean;
   distinctPlayers: number;
-}
-
-export function computeScore(wr: number, pr: number, br: number): number {
-  let s = 0;
-  if (wr >= 0.70) s += 50; else if (wr >= 0.60) s += 40; else if (wr >= 0.55) s += 32;
-  else if (wr >= 0.50) s += 24; else if (wr >= 0.45) s += 16; else s += 8;
-  if (br >= 0.40) s += 35; else if (br >= 0.25) s += 28; else if (br >= 0.15) s += 20; else if (br >= 0.05) s += 12;
-  if (pr >= 0.40) s += 15; else if (pr >= 0.20) s += 12; else if (pr >= 0.10) s += 8; else if (pr >= 0.05) s += 4;
-  return s;
-}
-
-// ── 챔피언별 "평균 대비 상승폭" 계산 ──────────────────────────────
-// 잘하는 사람이 픽해서 챔피언이 강해 보이는 왜곡을 보정한 승률
-// delta = (그 챔피언으로의 승률) - (그 사람의 평소 전체 승률), 픽수로 가중 평균
-// confidence = 서로 다른 사람이 많이 픽했을수록 신뢰도↑ (1명=0.34, 2명=0.67, 3명 이상=1.0)
-// playerMap: `${nickname}|||${pos}|||${champion}` → 전적 / playerOverallMap: `${nickname}` → 전체 전적
-export function computeRelativeWR(
-  playerMap: Map<string, { wins: number; losses: number }>,
-  playerOverallMap: Map<string, { wins: number; losses: number }>,
-  pos: Position,
-  champion: string,
-  fallbackWR: number
-): { adjWR: number; distinctPlayers: number } {
-  const suffix = `|||${pos}|||${champion}`;
-  let weightedDeltaSum = 0;
-  let totalPicks = 0;
-  let distinctPlayers = 0;
-  playerMap.forEach((s, k) => {
-    if (!k.endsWith(suffix)) return;
-    const nickname = k.slice(0, k.length - suffix.length);
-    const picks = s.wins + s.losses;
-    if (picks < 1) return;
-    const overall = playerOverallMap.get(nickname);
-    const overallGames = overall ? overall.wins + overall.losses : 0;
-    if (!overall || overallGames < 1) return;
-    const champWR = s.wins / picks;
-    const baselineWR = overall.wins / overallGames;
-    weightedDeltaSum += picks * (champWR - baselineWR);
-    totalPicks += picks;
-    distinctPlayers++;
-  });
-  if (totalPicks === 0) return { adjWR: fallbackWR, distinctPlayers: 0 };
-  const avgDelta = weightedDeltaSum / totalPicks;
-  const confidence = Math.min(1, distinctPlayers / 3);
-  const adjWR = Math.min(1, Math.max(0, 0.5 + avgDelta * confidence));
-  return { adjWR, distinctPlayers };
-}
-
-// ── 포지션 내 상대적 티어 배분 ──────────────────────────────────
-// 같은 포지션 챔피언들의 점수를 백분위로 나눠 1~5티어 배분
-// forcedUp(밴율 강제)은 항상 1티어 유지
-export function assignRelativeTiers(
-  items: Array<{ score: number; forcedUp: boolean; penalized: boolean }>,
-  position?: Position
-): Tier[] {
-  if (items.length === 0) return [];
-
-  // 패널티 반영한 유효 점수
-  const effScores = items.map(c => c.forcedUp ? 9999 : c.penalized ? c.score - 15 : c.score);
-
-  // 고유 점수 내림차순 (동점자는 같은 티어)
-  const unique = [...new Set(effScores)].sort((a, b) => b - a);
-  const m = unique.length;
-
-  return effScores.map(eff => {
-    if (eff === 9999) return 1 as Tier;   // forcedUp
-    if (m === 1) return 1 as Tier;        // 챔피언이 1개
-    const rank = unique.indexOf(eff);     // 0 = 최상위
-    const pct = rank / (m - 1);          // 0.0~1.0
-
-    if (position === "탑") {
-      // 탑 라인은 여전히 일반 기준보다는 엄격하지만, 기존보다 살짝 관대하게 (1티어: 상위 15%, 2티어: 상위 32%, 3티어: 상위 52%, 4티어: 상위 75%)
-      if (pct <= 0.15) return 1 as Tier;
-      if (pct <= 0.32) return 2 as Tier;
-      if (pct <= 0.52) return 3 as Tier;
-      if (pct <= 0.75) return 4 as Tier;
-      return 5 as Tier;
-    }
-
-    if (position === "서포터") {
-      // 서포터는 일반 기준보다 살짝 깐깐하게 (1티어: 상위 16%, 2티어: 상위 36%, 3티어: 상위 56%, 4티어: 상위 76%)
-      if (pct <= 0.16) return 1 as Tier;
-      if (pct <= 0.36) return 2 as Tier;
-      if (pct <= 0.56) return 3 as Tier;
-      if (pct <= 0.76) return 4 as Tier;
-      return 5 as Tier;
-    }
-
-    if (pct <= 0.20) return 1 as Tier;
-    if (pct <= 0.40) return 2 as Tier;
-    if (pct <= 0.60) return 3 as Tier;
-    if (pct <= 0.80) return 4 as Tier;
-    return 5 as Tier;
-  });
 }
 
 export default function ChampionPage() {
