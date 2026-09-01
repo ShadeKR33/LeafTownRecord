@@ -409,7 +409,7 @@ export default function PersonDetailPage() {
     return (
       <div>
         <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>상대방이 적팀에 있을 때 내 전적 (높을수록 상대방에 강함)</p>
-        <div className="rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
+        <div className="rounded-lg overflow-x-auto border" style={{ borderColor: "var(--border)" }}>
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "var(--panel)", borderBottom: "1px solid var(--border)" }}>
@@ -456,7 +456,7 @@ export default function PersonDetailPage() {
     return (
       <div>
         <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>같은 팀일 때 전적 (높을수록 찰떡 시너지)</p>
-        <div className="rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
+        <div className="rounded-lg overflow-x-auto border" style={{ borderColor: "var(--border)" }}>
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "var(--panel)", borderBottom: "1px solid var(--border)" }}>

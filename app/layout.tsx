@@ -23,6 +23,12 @@ export default function RootLayout({
               var t = localStorage.getItem('theme');
               if (t === 'rain') document.documentElement.classList.add('ame-mode');
               if (t === 'aka')  document.documentElement.classList.add('aka-mode');
+              if (t === 'sand') document.documentElement.classList.add('sand-mode');
+              if (t === 'cloud') document.documentElement.classList.add('cloud-mode');
+              if (t === 'hideout') document.documentElement.classList.add('hideout-mode');
+              if (t === 'myoboku') document.documentElement.classList.add('myoboku-mode');
+              if (t === 'anbu') document.documentElement.classList.add('anbu-mode');
+              if (t === 'orochimaru') document.documentElement.classList.add('orochimaru-mode');
             } catch(e) {}
           })();
         `}} />
@@ -30,16 +36,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col relative" style={{ background: "var(--bg)", color: "var(--text)" }}>
         {/* 상단 얇은 초록 글로우 라인 */}
         <div className="fixed top-0 left-0 right-0 h-1 z-50 shadow-[0_0_12px_rgba(76,175,80,0.8)]" style={{ background: "var(--accent-light)" }}></div>
-
-        {/* 잎사귀 배경 장식 (미묘하게 떠다니는 애니메이션) */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-          <div className="absolute top-20 left-[10%] text-3xl leaf-float opacity-30 select-none" style={{ animationDelay: '0s' }}>🍃</div>
-          <div className="absolute top-40 right-[15%] text-4xl leaf-float opacity-20 select-none" style={{ animationDelay: '1s' }}>🍃</div>
-          <div className="absolute top-3/4 left-[20%] text-2xl leaf-float opacity-30 select-none" style={{ animationDelay: '2s' }}>🍃</div>
-          <div className="absolute top-1/2 right-[5%] text-5xl leaf-float opacity-10 select-none" style={{ animationDelay: '0.5s' }}>🍃</div>
-          <div className="absolute bottom-20 right-[25%] text-3xl leaf-float opacity-20 select-none" style={{ animationDelay: '1.5s' }}>🍃</div>
-          <div className="absolute bottom-16 left-[8%] text-2xl leaf-float opacity-25 select-none" style={{ animationDelay: '2.5s' }}>🍃</div>
-        </div>
 
 
         <SessionProvider>

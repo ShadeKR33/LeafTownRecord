@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   computePlayerStats,
   computeAggregatedStats,
@@ -12,8 +13,11 @@ import {
   normalizeId,
   formatWinRate,
 } from "@/lib/stats";
-import type { PlayerStats, NicknameEntry, BadgeGrade } from "@/lib/types";
+import type { PlayerStats, NicknameEntry, BadgeGrade, GameRecord, SeasonDef, Badge, LimitedTitle } from "@/lib/types";
 import GuideBanner from "@/components/GuideBanner";
+import { TrophyList } from "@/components/TrophyBadge";
+import { LimitedTitleBadge } from "@/components/LimitedTitleBadge";
+import { LIMITED_TITLE_DEFS, getLimitedTitleDef } from "@/lib/limitedTitles";
 
 type RankedPerson = PlayerStats & {
   displayName: string;
@@ -60,14 +64,22 @@ const ALL_BADGE_DEFS: { id: string; icon: string; name: string; hint: string; co
   { id: "destroyer",     icon: "👹", name: "파괴신",            hint: "최고 연승 10회 이상 달성",                    color: "#c62828", grade: "전설" },
   { id: "eternalPartner",icon: "✨", name: "영원한 동반자",     hint: "특정 파트너와 25경기 이상 함께 출전",          color: "#4a148c", grade: "전설" },
   { id: "eternalRival",  icon: "🔮", name: "영원한 숙적",       hint: "특정 상대와 15번 이상 맞대결",                color: "#1a237e", grade: "전설" },
-  { id: "guardian",      icon: "🌿", name: "나뭇잎의 수호자",  hint: "시리즈 40경기 이상 참여",                      color: "#00e5ff", grade: "신화" },
-  { id: "bladeWhisper",  icon: "🗡️", name: "칼날의 속삭임",   hint: "KDA 5판 이상 기록 · 평균 KDA 5.0 이상",         color: "#e91e63", grade: "희귀" },
+  { id: "guardian",        icon: "🌿", name: "나뭇잎의 수호자",  hint: "시리즈 40경기 이상 참여",            color: "#00e5ff", grade: "신화" },
+  { id: "champOmniscient", icon: "🎓", name: "챔피언 전집",      hint: "45종류 이상의 챔피언 플레이",          color: "#a855f7", grade: "신화" },
+  { id: "mvpGod",          icon: "🔱", name: "MVP의 신",          hint: "MVP 20회 이상 달성",                   color: "#f59e0b", grade: "신화" },
+  { id: "mvpMachine",      icon: "🏅", name: "MVP 머신",          hint: "MVP 10회 이상 달성",                   color: "#f59e0b", grade: "전설" },
+  { id: "aceLegend",       icon: "💜", name: "ACE의 저주",        hint: "ACE 10회 이상 달성",                   color: "#7c3aed", grade: "전설" },
+  { id: "mvpHabit",        icon: "🌠", name: "MVP 상습범",        hint: "MVP 5회 이상 달성",                    color: "#f59e0b", grade: "영웅" },
+  { id: "aceSpirit",       icon: "💥", name: "불굴의 용사",       hint: "ACE 5회 이상 달성",                    color: "#7c3aed", grade: "영웅" },
+  { id: "mvpFirst",        icon: "🥇", name: "첫 MVP",            hint: "MVP 1회 이상 달성",                    color: "#f59e0b", grade: "희귀" },
+  { id: "aceFirst",        icon: "🕯️", name: "패배 속의 빛",     hint: "ACE 1회 이상 달성 (패배팀 최고 기여)", color: "#7c3aed", grade: "희귀" },
+  { id: "bladeWhisper",  icon: "🔪", name: "칼날의 속삭임",   hint: "KDA 5판 이상 기록 · 평균 KDA 5.0 이상",         color: "#e91e63", grade: "희귀" },
   { id: "immortal",      icon: "🛡️", name: "죽지 않는 닌자",  hint: "KDA 5판 이상 기록 · 평균 데스 1.5 이하",        color: "#7c4dff", grade: "희귀" },
   { id: "honeyFinder",   icon: "🍯", name: "꿀챔 발굴자",     hint: "꿀챔 판정 챔피언으로 5판 이상 + 승률 50%+",     color: "#f59e0b", grade: "희귀" },
   { id: "publicEnemy",   icon: "⚠️", name: "공공의 적",        hint: "내 모스트 챔피언이 내전에서 3회 이상 밴당함",    color: "#f97316", grade: "희귀" },
   { id: "slayer",        icon: "💀", name: "학살자",            hint: "KDA 5판 이상 기록 · 평균 KDA 10.0 이상",        color: "#c62828", grade: "영웅" },
   { id: "battleDominator", icon: "💫", name: "전장의 지배자",   hint: "KDA 5판 이상 기록 · 평균 KDA 7.0 이상",         color: "#ba68c8", grade: "영웅" },
-  { id: "honeyProphet",  icon: "🌿", name: "꿀챔 전도사",      hint: "꿀챔 판정 챔피언으로 10판 이상 플레이",          color: "#22c55e", grade: "영웅" },
+  { id: "honeyProphet",  icon: "🌾", name: "꿀챔 전도사",      hint: "꿀챔 판정 챔피언으로 10판 이상 플레이",          color: "#22c55e", grade: "영웅" },
   { id: "champCollector",icon: "🎪", name: "챔피언 수집가",    hint: "30종류 이상의 챔피언 플레이",                    color: "#ff6f00", grade: "전설" },
 ];
 
@@ -143,7 +155,15 @@ function getBadgeProgress(id: string, p: RankedPerson): ProgressInfo | null {
     case "longPartner":   return { current: bestWithTotal, target: 15, label: `파트너 최다 ${bestWithTotal}경기` };
     case "eternalPartner":return { current: bestWithTotal, target: 25, label: `파트너 최다 ${bestWithTotal}경기` };
     case "ruthless":      return { current: dominatedCount, target: 3, label: `${dominatedCount}명에게 5승+` };
-    case "champCollector": return { current: uniqueChamps, target: 30, label: `${uniqueChamps}/30종류` };
+    case "champCollector":    return { current: uniqueChamps, target: 30, label: `${uniqueChamps}/30종류` };
+    case "champOmniscient":   return { current: uniqueChamps, target: 45, label: `${uniqueChamps}/45종류` };
+    case "mvpFirst":   return { current: Math.min(p.mvpCount ?? 0, 1),  target: 1,  label: `MVP ${p.mvpCount ?? 0}회` };
+    case "mvpHabit":   return { current: Math.min(p.mvpCount ?? 0, 5),  target: 5,  label: `MVP ${p.mvpCount ?? 0}회` };
+    case "mvpMachine": return { current: Math.min(p.mvpCount ?? 0, 10), target: 10, label: `MVP ${p.mvpCount ?? 0}회` };
+    case "mvpGod":     return { current: Math.min(p.mvpCount ?? 0, 20), target: 20, label: `MVP ${p.mvpCount ?? 0}회` };
+    case "aceFirst":   return { current: Math.min(p.aceCount ?? 0, 1),  target: 1,  label: `ACE ${p.aceCount ?? 0}회` };
+    case "aceSpirit":  return { current: Math.min(p.aceCount ?? 0, 5),  target: 5,  label: `ACE ${p.aceCount ?? 0}회` };
+    case "aceLegend":  return { current: Math.min(p.aceCount ?? 0, 10), target: 10, label: `ACE ${p.aceCount ?? 0}회` };
     case "bladeWhisper": {
       if (!p.kdaTotal || p.kdaTotal.games < 5) return { current: p.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${p.kdaTotal?.games ?? 0}판` };
       const kda = p.kdaTotal.deaths > 0 ? (p.kdaTotal.kills + p.kdaTotal.assists) / p.kdaTotal.deaths : 999;
@@ -190,20 +210,71 @@ function getBadgeProgress(id: string, p: RankedPerson): ProgressInfo | null {
   }
 }
 
+// ─── 리미티드 업적 달성률 계산 ───────────────────────────────────────────────
+function getLimitedTitleProgress(id: string, p: RankedPerson): ProgressInfo | null {
+  switch (id) {
+    case "pioneer_streak":
+      return { current: p.maxWinStreak, target: 5, label: `최고 연승 ${p.maxWinStreak}회` };
+    case "pioneer_score":
+      return { current: Math.max(0, p.score), target: 40, label: `현재 ${p.score}점` };
+    case "pioneer_kda": {
+      if (!p.kdaTotal || p.kdaTotal.games < 10)
+        return { current: p.kdaTotal?.games ?? 0, target: 10, label: `KDA 기록 ${p.kdaTotal?.games ?? 0}판` };
+      const kda = p.kdaTotal.deaths > 0
+        ? (p.kdaTotal.kills + p.kdaTotal.assists) / p.kdaTotal.deaths
+        : 999;
+      return { current: Math.min(kda, 5), target: 5, label: `평균 KDA ${kda >= 999 ? "Perfect" : kda.toFixed(2)}` };
+    }
+    case "pioneer_mvp":
+      return { current: p.mvpCount ?? 0, target: 15, label: `MVP ${p.mvpCount ?? 0}회` };
+    case "pioneer_ace":
+      return { current: p.aceCount ?? 0, target: 10, label: `ACE ${p.aceCount ?? 0}회` };
+    case "pioneer_champ": {
+      const uniqueChamps = Object.keys(p.championStats || {}).filter(n => n !== "?").length;
+      return { current: uniqueChamps, target: 45, label: `${uniqueChamps}종류 플레이` };
+    }
+    case "pioneer_champ_master": {
+      const cs = p.championStats || {};
+      const entries = Object.entries(cs).filter(([n]) => n !== "?");
+      const best = entries.sort((a, b) => b[1].games - a[1].games)[0];
+      const maxGames = best ? best[1].games : 0;
+      return { current: Math.min(maxGames, 10), target: 10, label: best ? `${best[0]} ${maxGames}경기` : "0경기" };
+    }
+    case "pioneer_meta": {
+      const cs = p.championStats || {};
+      const highWrCount = Object.entries(cs)
+        .filter(([n]) => n !== "?")
+        .filter(([, v]) => v.games >= 3 && v.wins / v.games >= 0.6)
+        .length;
+      return { current: Math.min(highWrCount, 3), target: 3, label: `고승률 1인픽 후보 ${highWrCount}개` };
+    }
+    default:
+      return null;
+  }
+}
+
 // ─── 대표업적 모달 ────────────────────────────────────────────────────────────
 function BadgeModal({
   person,
   repBadgeId,
   onSet,
   onClose,
+  allLimitedTitles,
+  equippedTitleId,
+  onEquip,
 }: {
   person: RankedPerson;
   repBadgeId: string | undefined;
   onSet: (badgeId: string) => void;
   onClose: () => void;
+  allLimitedTitles: LimitedTitle[];
+  equippedTitleId: string | undefined;
+  onEquip: (titleId: string) => void;
 }) {
+  const [tab, setTab] = useState<"badges" | "limited">("badges");
   const earnedMap = new Map(person.badges.map(b => [b.id, b]));
   const earnedCount = person.badges.length;
+  const myLimitedIds = new Set(allLimitedTitles.filter(t => t.holder === person.mainNickname).map(t => t.id));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center"
@@ -221,144 +292,281 @@ function BadgeModal({
               {person.displayName}의 업적
             </div>
             <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              달성 {earnedCount} / 전체 {ALL_BADGE_DEFS.length} · 대표업적을 선택하세요
+              달성 {earnedCount} / 전체 {ALL_BADGE_DEFS.length} · 일반 업적 또는 리미티드 업적 중 하나만 장착 가능
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full text-lg"
             style={{ background: "var(--hover)", color: "var(--text-muted)" }}>✕</button>
         </div>
 
-        {/* 대표업적 미리보기 */}
-        {repBadgeId && earnedMap.has(repBadgeId) && (() => {
-          const b = earnedMap.get(repBadgeId)!;
-          const gs = GRADE_STYLE[b.grade];
-          return (
-            <div className="mx-5 mt-4 px-4 py-3 rounded-xl flex items-center gap-3 flex-shrink-0"
-              style={{ background: b.color + "18", border: `1px solid ${b.color}55` }}>
-              <span style={{ fontSize: 28 }}>{b.icon}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm" style={{ color: b.color }}>{b.name}</span>
-                  <span className="text-xs px-1.5 py-0.5 rounded font-bold"
-                    style={{ background: gs.bg, color: gs.color }}>대표</span>
-                </div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{b.description}</div>
-              </div>
-              <button onClick={() => onSet(repBadgeId)} className="text-xs px-2 py-1 rounded"
-                style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)", flexShrink: 0 }}>
-                해제
-              </button>
-            </div>
-          );
-        })()}
+        {/* 탭 */}
+        <div className="flex border-b flex-shrink-0" style={{ borderColor: "var(--border)" }}>
+          {([["badges", "🏅 업적"], ["limited", "🏆 리미티드 업적"]] as const).map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id)}
+              className="flex-1 py-2.5 text-sm font-semibold transition-colors"
+              style={{
+                color: tab === id ? "var(--accent)" : "var(--text-muted)",
+                borderBottom: tab === id ? "2px solid var(--accent)" : "2px solid transparent",
+                background: "none",
+              }}>
+              {label}
+            </button>
+          ))}
+        </div>
 
-        {/* 업적 목록 */}
-        <div className="overflow-y-auto flex-1 px-5 py-4">
-          {(() => {
-            const earnedDefs = ALL_BADGE_DEFS
-              .filter(d => earnedMap.has(d.id))
-              .sort((a, b) => GRADE_ORDER.indexOf(a.grade) - GRADE_ORDER.indexOf(b.grade));
-            const unearnedDefs = ALL_BADGE_DEFS
-              .filter(d => !earnedMap.has(d.id))
-              .sort((a, b) => GRADE_ORDER.indexOf(a.grade) - GRADE_ORDER.indexOf(b.grade));
-
-            const renderBadge = (def: typeof ALL_BADGE_DEFS[0], earned: boolean) => {
-              const badge = earnedMap.get(def.id);
-              const isRep = def.id === repBadgeId;
-              const gs = GRADE_STYLE[def.grade];
+        {/* ── 업적 탭 ── */}
+        {tab === "badges" && (
+          <>
+            {/* 대표업적 미리보기 */}
+            {repBadgeId && earnedMap.has(repBadgeId) && (() => {
+              const b = earnedMap.get(repBadgeId)!;
+              const gs = GRADE_STYLE[b.grade];
               return (
-                <div key={def.id}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                  style={{
-                    background: earned ? "var(--panel-alt)" : "var(--hover)",
-                    border: isRep ? `1px solid ${def.color}88` : "1px solid var(--border)",
-                    opacity: earned ? 1 : 0.4,
-                    boxShadow: isRep ? `0 0 8px ${def.color}33` : "none",
-                  }}>
-                  <div className="w-10 h-10 flex items-center justify-center rounded-full flex-shrink-0"
-                    style={{ background: earned ? def.color + "22" : "var(--border)", filter: earned ? "none" : "grayscale(1)", fontSize: 22 }}>
-                    {def.icon}
-                  </div>
+                <div className="mx-5 mt-4 px-4 py-3 rounded-xl flex items-center gap-3 flex-shrink-0"
+                  style={{ background: b.color + "18", border: `1px solid ${b.color}55` }}>
+                  <span style={{ fontSize: 28 }}>{b.icon}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-semibold text-sm" style={{ color: earned ? def.color : "var(--text-muted)" }}>
-                        {def.name}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm" style={{ color: b.color }}>{b.name}</span>
                       <span className="text-xs px-1.5 py-0.5 rounded font-bold"
-                        style={{ background: gs.bg, color: gs.color, border: `1px solid ${gs.color}44` }}>
-                        {gs.label}
-                      </span>
-                      {isRep && (
-                        <span className="text-xs px-1.5 py-0.5 rounded font-bold"
-                          style={{ background: def.color + "22", color: def.color }}>★ 대표</span>
-                      )}
+                        style={{ background: gs.bg, color: gs.color }}>대표</span>
                     </div>
-                    <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      {earned ? badge!.description : `🔒 ${def.hint}`}
-                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{b.description}</div>
                   </div>
-                  {earned ? (
-                    <button
-                      onClick={() => onSet(def.id)}
-                      className="text-xs px-2.5 py-1.5 rounded-lg font-semibold flex-shrink-0"
-                      style={{
-                        background: isRep ? def.color : "var(--hover)",
-                        color: isRep ? "#fff" : "var(--text-muted)",
-                        border: isRep ? "none" : "1px solid var(--border)",
-                      }}>
-                      {isRep ? "대표 ✓" : "대표로"}
-                    </button>
-                  ) : (() => {
-                    const prog = getBadgeProgress(def.id, person);
-                    if (!prog) return null;
-                    const pct = Math.min(100, Math.round((prog.current / prog.target) * 100));
-                    return (
-                      <div className="flex-shrink-0 text-right" style={{ width: 64 }}>
-                        <div className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>
-                          {prog.current} <span style={{ color: "var(--text-dim)" }}>/ {prog.target}</span>
-                        </div>
-                        <div style={{ height: 5, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>
-                          <div style={{
-                            height: "100%", borderRadius: 3,
-                            width: `${pct}%`,
-                            background: pct >= 80 ? def.color : pct >= 50 ? def.color + "bb" : def.color + "77",
-                            transition: "width 0.3s",
-                          }} />
-                        </div>
-                        <div className="text-xs mt-0.5" style={{ color: "var(--text-dim)", fontSize: 9 }}>{prog.label}</div>
-                      </div>
-                    );
-                  })()}
+                  <button onClick={() => onSet(repBadgeId)} className="text-xs px-2 py-1 rounded"
+                    style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)", flexShrink: 0 }}>
+                    해제
+                  </button>
                 </div>
               );
-            };
+            })()}
 
-            return (
-              <>
-                {earnedDefs.length > 0 && (
+            {/* 업적 목록 */}
+            <div className="overflow-y-auto flex-1 px-5 py-4">
+              {(() => {
+                const earnedDefs = ALL_BADGE_DEFS
+                  .filter(d => earnedMap.has(d.id))
+                  .sort((a, b) => GRADE_ORDER.indexOf(a.grade) - GRADE_ORDER.indexOf(b.grade));
+                const unearnedDefs = ALL_BADGE_DEFS
+                  .filter(d => !earnedMap.has(d.id))
+                  .sort((a, b) => GRADE_ORDER.indexOf(a.grade) - GRADE_ORDER.indexOf(b.grade));
+
+                const renderBadge = (def: typeof ALL_BADGE_DEFS[0], earned: boolean) => {
+                  const badge = earnedMap.get(def.id);
+                  const isRep = def.id === repBadgeId;
+                  const gs = GRADE_STYLE[def.grade];
+                  return (
+                    <div key={def.id}
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl"
+                      style={{
+                        background: earned ? "var(--panel-alt)" : "var(--hover)",
+                        border: isRep ? `1px solid ${def.color}88` : "1px solid var(--border)",
+                        opacity: earned ? 1 : 0.4,
+                        boxShadow: isRep ? `0 0 8px ${def.color}33` : "none",
+                      }}>
+                      <div className="w-10 h-10 flex items-center justify-center rounded-full flex-shrink-0"
+                        style={{ background: earned ? def.color + "22" : "var(--border)", filter: earned ? "none" : "grayscale(1)", fontSize: 22 }}>
+                        {def.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-semibold text-sm" style={{ color: earned ? def.color : "var(--text-muted)" }}>
+                            {def.name}
+                          </span>
+                          <span className="text-xs px-1.5 py-0.5 rounded font-bold"
+                            style={{ background: gs.bg, color: gs.color, border: `1px solid ${gs.color}44` }}>
+                            {gs.label}
+                          </span>
+                          {isRep && (
+                            <span className="text-xs px-1.5 py-0.5 rounded font-bold"
+                              style={{ background: def.color + "22", color: def.color }}>★ 대표</span>
+                          )}
+                        </div>
+                        <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                          {earned ? badge!.description : `🔒 ${def.hint}`}
+                        </div>
+                      </div>
+                      {earned ? (
+                        <button
+                          onClick={() => onSet(def.id)}
+                          className="text-xs px-2.5 py-1.5 rounded-lg font-semibold flex-shrink-0"
+                          style={{
+                            background: isRep ? def.color : "var(--hover)",
+                            color: isRep ? "#fff" : "var(--text-muted)",
+                            border: isRep ? "none" : "1px solid var(--border)",
+                          }}>
+                          {isRep ? "대표 ✓" : "대표로"}
+                        </button>
+                      ) : (() => {
+                        const prog = getBadgeProgress(def.id, person);
+                        if (!prog) return null;
+                        const pct = Math.min(100, Math.round((prog.current / prog.target) * 100));
+                        return (
+                          <div className="flex-shrink-0 text-right" style={{ width: 64 }}>
+                            <div className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>
+                              {prog.current} <span style={{ color: "var(--text-dim)" }}>/ {prog.target}</span>
+                            </div>
+                            <div style={{ height: 5, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>
+                              <div style={{
+                                height: "100%", borderRadius: 3,
+                                width: `${pct}%`,
+                                background: pct >= 80 ? def.color : pct >= 50 ? def.color + "bb" : def.color + "77",
+                                transition: "width 0.3s",
+                              }} />
+                            </div>
+                            <div className="text-xs mt-0.5" style={{ color: "var(--text-dim)", fontSize: 9 }}>{prog.label}</div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                };
+
+                return (
                   <>
-                    <div className="text-xs font-bold mb-2 mt-1" style={{ color: "var(--accent)" }}>
-                      보유 업적 ({earnedDefs.length}개)
-                    </div>
-                    <div className="space-y-2 mb-5">
-                      {earnedDefs.map(d => renderBadge(d, true))}
-                    </div>
+                    {earnedDefs.length > 0 && (
+                      <>
+                        <div className="text-xs font-bold mb-2 mt-1" style={{ color: "var(--accent)" }}>
+                          보유 업적 ({earnedDefs.length}개)
+                        </div>
+                        <div className="space-y-2 mb-5">
+                          {earnedDefs.map(d => renderBadge(d, true))}
+                        </div>
+                      </>
+                    )}
+                    {unearnedDefs.length > 0 && (
+                      <>
+                        <div className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>
+                          미달성 업적 ({unearnedDefs.length}개)
+                        </div>
+                        <div className="space-y-2">
+                          {unearnedDefs.map(d => renderBadge(d, false))}
+                        </div>
+                      </>
+                    )}
                   </>
-                )}
-                {unearnedDefs.length > 0 && (
-                  <>
-                    <div className="text-xs font-bold mb-2" style={{ color: "var(--text-muted)" }}>
-                      미달성 업적 ({unearnedDefs.length}개)
+                );
+              })()}
+            </div>
+          </>
+        )}
+
+        {/* ── 리미티드 업적 탭 ── */}
+        {tab === "limited" && (
+          <div className="overflow-y-auto flex-1 px-5 py-4">
+            <div className="text-xs mb-3 px-1" style={{ color: "var(--text-muted)" }}>
+              각 리미티드 업적은 그룹 내 최초 달성자 1인이 영구 소유합니다. 장착 시 일반 업적 대표 설정은 해제됩니다.
+            </div>
+            <div className="space-y-2">
+              {LIMITED_TITLE_DEFS.map(def => {
+                const titleRecord = allLimitedTitles.find(t => t.id === def.id);
+                const isMine = myLimitedIds.has(def.id);
+                const isClaimed = !!titleRecord;
+                const isEquipped = isMine && equippedTitleId === def.id;
+
+                return (
+                  <div key={def.id}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl"
+                    style={{
+                      background: isMine ? "var(--panel-alt)" : "var(--hover)",
+                      border: isEquipped
+                        ? `1.5px solid ${def.color}`
+                        : isMine ? `1px solid ${def.color}88` : "1px solid var(--border)",
+                      opacity: isClaimed && !isMine ? 0.55 : 1,
+                      boxShadow: isEquipped ? `0 0 12px ${def.color}33` : isMine ? `0 0 10px ${def.color}22` : "none",
+                    }}>
+                    {/* 아이콘 */}
+                    <div className="w-10 h-10 flex items-center justify-center rounded-full flex-shrink-0"
+                      style={{
+                        background: isMine
+                          ? `linear-gradient(var(--panel-alt), var(--panel-alt)) padding-box, linear-gradient(135deg, ${def.color}, ${def.accentColor}) border-box`
+                          : "var(--border)",
+                        border: isMine ? "1.5px solid transparent" : "none",
+                        fontSize: 22,
+                        filter: !isClaimed ? "grayscale(0.3)" : isMine ? "none" : "grayscale(0.6)",
+                      }}>
+                      {def.icon}
                     </div>
-                    <div className="space-y-2">
-                      {unearnedDefs.map(d => renderBadge(d, false))}
+
+                    {/* 이름 + 조건 */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span className="font-semibold text-sm" style={{ color: isMine ? def.color : "var(--text)" }}>
+                          {def.name}
+                        </span>
+                        {isEquipped && (
+                          <span className="text-xs px-1.5 py-0.5 rounded font-bold"
+                            style={{ background: def.color + "33", color: def.color, border: `1px solid ${def.color}66` }}>✦ 장착중</span>
+                        )}
+                        {isMine && !isEquipped && (
+                          <span className="text-xs px-1.5 py-0.5 rounded font-bold"
+                            style={{ background: def.color + "22", color: def.color }}>내 칭호</span>
+                        )}
+                        <span className="text-xs px-1.5 py-0.5 rounded font-bold ml-auto"
+                          style={{
+                            background: isClaimed ? (isMine ? def.color + "22" : "#33333322") : "transparent",
+                            color: isClaimed ? (isMine ? def.color : "var(--text-dim)") : "var(--text-dim)",
+                            border: "1px solid var(--border)",
+                          }}>
+                          {isClaimed ? (isMine ? "소유중" : "달성 완료") : "미달성"}
+                        </span>
+                      </div>
+                      <div className="text-xs" style={{ color: "var(--text-muted)" }}>
+                        {isClaimed
+                          ? `${titleRecord.holder}  · ${titleRecord.date} 달성`
+                          : `🔒 ${def.condition}`}
+                      </div>
                     </div>
-                  </>
-                )}
-              </>
-            );
-          })()}
-        </div>
+
+                    {/* 달성률 (미소유자) */}
+                    {!isMine && (() => {
+                      const prog = getLimitedTitleProgress(def.id, person);
+                      if (!prog) return null;
+                      const pct = Math.min(100, Math.round((Math.min(prog.current, prog.target) / prog.target) * 100));
+                      const display = Number.isFinite(prog.current) && prog.current % 1 !== 0
+                        ? (prog.current as number).toFixed(1)
+                        : prog.current;
+                      return (
+                        <div className="flex-shrink-0 text-right" style={{ width: 64 }}>
+                          <div className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>
+                            {display} <span style={{ color: "var(--text-dim)" }}>/ {prog.target}</span>
+                          </div>
+                          <div style={{ height: 5, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>
+                            <div style={{
+                              height: "100%", borderRadius: 3,
+                              width: `${pct}%`,
+                              background: isClaimed
+                                ? `${def.color}55`
+                                : pct >= 80 ? def.color : pct >= 50 ? def.color + "bb" : def.color + "77",
+                              transition: "width 0.3s",
+                            }} />
+                          </div>
+                          <div className="text-xs mt-0.5" style={{ color: "var(--text-dim)", fontSize: 9 }}>
+                            {isClaimed ? "⚑ 이미 달성됨" : prog.label}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* 장착 버튼 */}
+                    {isMine && (
+                      <button
+                        onClick={e => { e.stopPropagation(); onEquip(def.id); }}
+                        className="text-xs px-2.5 py-1.5 rounded-lg font-semibold flex-shrink-0"
+                        style={{
+                          background: isEquipped ? def.color : "var(--hover)",
+                          color: isEquipped ? "#fff" : "var(--text-muted)",
+                          border: isEquipped ? "none" : "1px solid var(--border)",
+                        }}>
+                        {isEquipped ? "장착 ✓" : "장착"}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -367,19 +575,61 @@ function BadgeModal({
 // ─── 메인 랭킹 페이지 ──────────────────────────────────────────────────────────
 export default function RankingPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [persons, setPersons] = useState<RankedPerson[]>([]);
   const [nicknameEntries, setNicknameEntries] = useState<NicknameEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [allRecords, setAllRecords] = useState<GameRecord[]>([]);
+  const [seasons, setSeasons] = useState<SeasonDef[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("all");
   const [badgeModal, setBadgeModal] = useState<RankedPerson | null>(null);
+  const [badgeTooltip, setBadgeTooltip] = useState<{ x: number; y: number; badge: Badge } | null>(null);
+  const [limitedTooltip, setLimitedTooltip] = useState<{ x: number; y: number; titleId: string } | null>(null);
+  const [limitedTitles, setLimitedTitles] = useState<LimitedTitle[]>([]);
+  const [newsModalOpen, setNewsModalOpen] = useState(false);
 
-  const [activeTheme, setActiveTheme] = useState<"leaf" | "rain" | "aka">("leaf");
-  const [newsItems, setNewsItems] = useState<string[]>([]);
+  const [activeTheme, setActiveTheme] = useState<"leaf" | "rain" | "aka" | "sand" | "cloud" | "hideout" | "myoboku" | "anbu" | "orochimaru">("leaf");
+  const [baseNewsItems, setBaseNewsItems] = useState<string[]>([]);
+  const newsItems = useMemo(() => {
+    const items = [...baseNewsItems];
+    items.push("🗝️ [秘서] 사용자 가이드 아래로 가면 알려지지 않은 비밀의 서가 있다던데?");
+    return items;
+  }, [baseNewsItems]);
   const [currentNewsIdx, setCurrentNewsIdx] = useState(0);
+  const [anbuUnlocked, setAnbuUnlocked] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const suffix = session?.user?.id ? `_${session.user.id}` : "_guest";
+      setAnbuUnlocked(localStorage.getItem(`theme_unlocked_anbu${suffix}`) === "true");
+    }
+  }, [session?.user?.id]);
+
+  const handleAnbuUnlock = () => {
+    if (typeof window !== "undefined") {
+      const suffix = session?.user?.id ? `_${session.user.id}` : "_guest";
+      localStorage.setItem(`theme_unlocked_anbu${suffix}`, "true");
+      localStorage.setItem("theme", "anbu");
+      setAnbuUnlocked(true);
+      window.dispatchEvent(new CustomEvent("theme_unlocked"));
+      window.dispatchEvent(new CustomEvent("themechange", { detail: "anbu" }));
+      window.dispatchEvent(new CustomEvent("show_unlock_modal", {
+        detail: {
+          id: "anbu",
+          name: "암살전술 특수부대",
+          icon: "🦊",
+          color: "#0891b2",
+          desc: "밤하늘의 어둠 속에서 조용히 활약하는 그림자 칼날",
+          flavor: "랭킹 페이지 최하단의 숨겨진 그림자를 통해 암살전술 특수부대의 통신을 연동했습니다.\n신분을 감추기 위한 하얀 여우 가면과 청록색 연기, 그리고 고요한 회색조의 사령부 배경이 고독하고도 차가운 밤의 분위기를 자아냅니다."
+        }
+      }));
+    }
+  };
 
   // Observer for HTML theme class changes
   useEffect(() => {
     const saved = localStorage.getItem("theme");
-    if (saved === "rain" || saved === "aka" || saved === "leaf") {
+    if (saved && ["rain", "aka", "leaf", "sand", "cloud", "hideout", "myoboku", "anbu", "orochimaru"].includes(saved)) {
       setActiveTheme(saved as any);
     }
 
@@ -389,6 +639,18 @@ export default function RankingPage() {
         setActiveTheme("aka");
       } else if (html.classList.contains("ame-mode")) {
         setActiveTheme("rain");
+      } else if (html.classList.contains("sand-mode")) {
+        setActiveTheme("sand");
+      } else if (html.classList.contains("cloud-mode")) {
+        setActiveTheme("cloud");
+      } else if (html.classList.contains("hideout-mode")) {
+        setActiveTheme("hideout");
+      } else if (html.classList.contains("myoboku-mode")) {
+        setActiveTheme("myoboku");
+      } else if (html.classList.contains("anbu-mode")) {
+        setActiveTheme("anbu");
+      } else if (html.classList.contains("orochimaru-mode")) {
+        setActiveTheme("orochimaru");
       } else {
         setActiveTheme("leaf");
       }
@@ -408,10 +670,24 @@ export default function RankingPage() {
   }, [newsItems]);
 
   useEffect(() => {
-    Promise.all([loadGameRecords(), loadNicknames()]).then(([records, rawEntries]) => {
+    Promise.all([
+      loadGameRecords(),
+      loadNicknames(),
+      fetch("/api/seasons").then(r => r.json()).catch(() => [] as SeasonDef[]),
+      fetch("/api/limited-titles").then(r => r.json()).catch(() => [] as LimitedTitle[]),
+    ]).then(([records, rawEntries, seasonData, titlesData]: [GameRecord[], NicknameEntry[], SeasonDef[], LimitedTitle[]]) => {
+      setAllRecords(records);
       setNicknameEntries(rawEntries);
+      setSeasons(seasonData);
+      setLimitedTitles(Array.isArray(titlesData) ? titlesData : []);
+
+      // 진행중인 시즌이 있으면 그걸 기본값으로
+      const today = new Date().toISOString().slice(0, 10);
+      const active = seasonData.find(s => !s.closed && s.startDate <= today && (!s.endDate || s.endDate >= today));
+      setSelectedSeasonId(active?.id ?? "all");
+
       if (records.length === 0) {
-        setNewsItems(["📢 [안내] 아직 등록된 경기 기록이 없습니다. 먼저 경기를 등록해 주세요!"]);
+        setBaseNewsItems(["📢 [안내] 아직 등록된 경기 기록이 없습니다. 먼저 경기를 등록해 주세요!"]);
         setLoading(false);
         return;
       }
@@ -620,22 +896,150 @@ export default function RankingPage() {
         items.push("⚡ 오늘의 기상 예보: 전장에 구름이 걷히며 평온한 대치 상태가 지속되고 있습니다.");
       }
 
-      setNewsItems(items);
+      // 8. 리미티드 칭호 보유자
+      if (titlesData.length > 0) {
+        const holderDescs = titlesData.map(t => {
+          const def = LIMITED_TITLE_DEFS.find(d => d.id === t.id);
+          const entry = rawEntries.find((e: NicknameEntry) => e.nickname === t.holder);
+          const displayName = entry ? (entry.realName?.trim() || t.holder) : t.holder;
+          return def ? `${displayName}(${def.name})` : null;
+        }).filter(Boolean) as string[];
+        items.push(`✦ [리미티드 칭호] 특별 칭호 보유 닌자 — ${holderDescs.join(", ")}`);
+      } else {
+        items.push("✦ [리미티드 칭호] 아직 리미티드 칭호를 달성한 닌자가 없습니다. 최초 달성자가 되어 보세요!");
+      }
+
+      // 9. 챔피언 픽률 트렌드 (최근 10경기)
+      const recentTen = [...records].sort((a, b) => b.date.localeCompare(a.date) || b.gameNumber - a.gameNumber).slice(0, 10);
+      const recentPickCounts: Record<string, number> = {};
+      recentTen.forEach(r => {
+        [...r.team1, ...r.team2].forEach((pl: any) => {
+          if (!pl.champion || pl.champion === "?") return;
+          recentPickCounts[pl.champion] = (recentPickCounts[pl.champion] || 0) + 1;
+        });
+      });
+      const topPick = Object.entries(recentPickCounts).sort((a, b) => b[1] - a[1])[0];
+      if (topPick) {
+        items.push(`📈 [픽률 트렌드] 최근 ${recentTen.length}경기에서 가장 많이 선택된 챔피언은 [${topPick[0]}] (${topPick[1]}회 픽)! 현재 내전 메타를 장악 중.`);
+      } else {
+        items.push("📈 [픽률 트렌드] 아직 충분한 챔피언 픽 데이터가 없습니다. 경기를 등록해 메타를 분석해 보세요.");
+      }
+
+      // 10. 점수 TOP3 하이라이트
+      if (result.length >= 3) {
+        const [t1, t2, t3] = result;
+        items.push(`🏅 [TOP3 하이라이트] 🥇${t1.displayName}(${t1.score}점) 🥈${t2.displayName}(${t2.score}점) 🥉${t3.displayName}(${t3.score}점) — 치열한 상위권 경쟁이 계속됩니다!`);
+      } else if (result.length === 2) {
+        items.push(`🏅 [TOP3 하이라이트] 🥇${result[0].displayName}(${result[0].score}점) 🥈${result[1].displayName}(${result[1].score}점) — 단 2인의 대결!`);
+      } else if (result.length === 1) {
+        items.push(`🏅 [TOP3 하이라이트] 현재 1인 독주 체제 — [${result[0].displayName}] 닌자(${result[0].score}점)`);
+      }
+
+      // 11. 연패 탈출 소식
+      const escapedPlayers = [...result].filter(p => p.maxLoseStreak >= 3 && p.currentStreak > 0)
+        .sort((a, b) => b.maxLoseStreak - a.maxLoseStreak);
+      if (escapedPlayers.length > 0) {
+        const ep = escapedPlayers[0];
+        items.push(`💪 [연패 탈출] [${ep.displayName}] 닌자, 최대 ${ep.maxLoseStreak}연패의 어둠을 딛고 현재 ${ep.currentStreak}연승 재기 성공! 칠전팔기의 표상.`);
+      } else {
+        const deepLose = [...result].filter(p => p.maxLoseStreak >= 3).sort((a, b) => b.maxLoseStreak - a.maxLoseStreak);
+        if (deepLose.length > 0) {
+          items.push(`💪 [연패 탈출] [${deepLose[0].displayName}] 닌자, 최대 ${deepLose[0].maxLoseStreak}연패 경험 — 칠전팔기 역전의 날을 기다리고 있습니다.`);
+        } else {
+          items.push("💪 [연패 탈출] 현재 3연패 이상 경험자 없음 — 모든 닌자가 굳건한 정신력을 보이고 있습니다.");
+        }
+      }
+
+      setBaseNewsItems(items);
       setPersons(result);
       setLoading(false);
     });
   }, []);
 
+  // 시즌 선택이 바뀌면 해당 기간 기록으로 persons 재계산
+  useEffect(() => {
+    if (allRecords.length === 0 || nicknameEntries.length === 0) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    let filtered = allRecords;
+    if (selectedSeasonId !== "all") {
+      const season = seasons.find(s => s.id === selectedSeasonId);
+      if (season) {
+        const endDate = season.endDate ?? today;
+        filtered = allRecords.filter(r => r.date >= season.startDate && r.date <= endDate);
+      }
+    }
+
+    const nicknameToEntry = new Map<string, NicknameEntry>();
+    nicknameEntries.forEach(e => {
+      nicknameToEntry.set(normalizeId(e.nickname), e);
+      (e.altNicknames || []).forEach(alt => { if (alt.trim()) nicknameToEntry.set(normalizeId(alt.trim()), e); });
+    });
+
+    const entryGroups = new Map<string, { entry: NicknameEntry; nicks: string[] }>();
+    const standaloneNicknames: string[] = [];
+    getAllNicknames(filtered).forEach(nick => {
+      const entry = nicknameToEntry.get(normalizeId(nick));
+      if (entry) {
+        if (!entryGroups.has(entry.id)) entryGroups.set(entry.id, { entry, nicks: [] });
+        entryGroups.get(entry.id)!.nicks.push(nick);
+      } else {
+        standaloneNicknames.push(nick);
+      }
+    });
+
+    const result: RankedPerson[] = [];
+    entryGroups.forEach(({ entry, nicks }) => {
+      const displayName = entry.realName?.trim() || entry.nickname;
+      const hasAlts = (entry.altNicknames || []).filter(Boolean).length > 0;
+      const stats = nicks.length > 1
+        ? computeAggregatedStats(displayName, nicks, filtered, nicknameEntries)
+        : { ...computePlayerStats(nicks[0], filtered, nicknameEntries), nickname: displayName };
+      result.push({ ...stats, displayName, nicknames: nicks, mainNickname: entry.nickname, hasAlts });
+    });
+    standaloneNicknames.forEach(nick => {
+      const stats = computePlayerStats(nick, filtered, nicknameEntries);
+      result.push({ ...stats, displayName: nick, nicknames: [nick], mainNickname: nick, hasAlts: false });
+    });
+
+    result.sort((a, b) => b.score !== a.score ? b.score - a.score : b.winRate !== a.winRate ? b.winRate - a.winRate : b.wins - a.wins);
+    setPersons(result);
+  }, [selectedSeasonId, allRecords, nicknameEntries, seasons]);
+
   // 대표업적 ID 조회
   const getRepBadgeId = (mainNickname: string) =>
     nicknameEntries.find(e => e.nickname === mainNickname)?.representativeBadge;
+
+  const getTrophies = (mainNickname: string) =>
+    nicknameEntries.find(e => e.nickname === mainNickname)?.trophies ?? [];
+
+  const getLimitedTitlesFor = (mainNickname: string) =>
+    limitedTitles.filter(t => t.holder === mainNickname);
 
   // 대표업적 설정/해제 (토글)
   const handleSetRepBadge = async (mainNickname: string, badgeId: string) => {
     const current = getRepBadgeId(mainNickname);
     const next = current === badgeId ? undefined : badgeId;
     const updated = nicknameEntries.map(e =>
-      e.nickname === mainNickname ? { ...e, representativeBadge: next } : e
+      e.nickname === mainNickname
+        ? { ...e, representativeBadge: next, equippedLimitedTitle: next ? undefined : e.equippedLimitedTitle }
+        : e
+    );
+    setNicknameEntries(updated);
+    await saveNicknames(updated);
+  };
+
+  // 리미티드 업적 장착/해제 (토글) — 장착 시 일반 대표업적 해제
+  const getEquippedLimitedTitle = (mainNickname: string) =>
+    nicknameEntries.find(e => e.nickname === mainNickname)?.equippedLimitedTitle;
+
+  const handleEquipLimitedTitle = async (mainNickname: string, titleId: string) => {
+    const current = getEquippedLimitedTitle(mainNickname);
+    const next = current === titleId ? undefined : titleId;
+    const updated = nicknameEntries.map(e =>
+      e.nickname === mainNickname
+        ? { ...e, equippedLimitedTitle: next, representativeBadge: next ? undefined : e.representativeBadge }
+        : e
     );
     setNicknameEntries(updated);
     await saveNicknames(updated);
@@ -682,6 +1086,12 @@ export default function RankingPage() {
     leaf: { name: "나뭇잎 일보", icon: "🍃" },
     rain: { name: "우중 예보", icon: "🌧️" },
     aka:  { name: "달의 눈 첩보", icon: "🌕" },
+    sand: { name: "모래바람 통신", icon: "⏳" },
+    cloud: { name: "뇌운 전보", icon: "⚡" },
+    hideout: { name: "지하아지트 첩보", icon: "👁️" },
+    myoboku: { name: "묘목산 선보", icon: "🐸" },
+    anbu: { name: "암살전술 특수부대 기밀", icon: "🎭" },
+    orochimaru: { name: "비밀실험실 통신", icon: "🧪" },
   };
 
   return (
@@ -698,7 +1108,7 @@ export default function RankingPage() {
           "기록이 없으면 랭킹이 표시되지 않아요. 먼저 캡쳐 분석 페이지에서 게임을 등록하세요.",
         ]}
       />
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-xl font-bold" style={{ color: "var(--accent)" }}>🏆 랭킹</h2>
           <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>캡쳐 분석으로 등록된 게임 기록 기반으로 자동 계산됩니다</p>
@@ -710,6 +1120,30 @@ export default function RankingPage() {
           </span>
         )}
       </div>
+
+      {/* 시즌 선택 필터 */}
+      {seasons.length > 0 && (
+        <div className="mb-5 flex flex-wrap gap-2">
+          {[{ id: "all", label: "전체 기간" }, ...seasons].map(s => {
+            const isActive = s.id !== "all" && !("closed" in s ? s.closed : false)
+              && ("startDate" in s ? s.startDate <= new Date().toISOString().slice(0, 10) : false)
+              && (!("endDate" in s) || !(s as SeasonDef).endDate || (s as SeasonDef).endDate! >= new Date().toISOString().slice(0, 10));
+            const selected = selectedSeasonId === s.id;
+            return (
+              <button key={s.id} onClick={() => setSelectedSeasonId(s.id)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+                style={{
+                  background: selected ? "var(--accent)" : "var(--panel)",
+                  color:      selected ? "#fff"          : "var(--text-muted)",
+                  border:     selected ? "1px solid var(--accent)" : "1px solid var(--border)",
+                }}>
+                {isActive && <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"/>}
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* 📰 테마 반응형 한줄 뉴스 속보 배너 */}
       {newsItems.length > 0 && (
@@ -723,11 +1157,35 @@ export default function RankingPage() {
                 ? "rgba(197, 61, 61, 0.15)"
                 : activeTheme === "rain"
                 ? "rgba(139, 92, 246, 0.15)"
+                : activeTheme === "sand"
+                ? "rgba(210, 157, 72, 0.15)"
+                : activeTheme === "cloud"
+                ? "rgba(59, 130, 246, 0.15)"
+                : activeTheme === "hideout"
+                ? "rgba(239, 68, 68, 0.15)"
+                : activeTheme === "myoboku"
+                ? "rgba(245, 158, 11, 0.15)"
+                : activeTheme === "anbu"
+                ? "rgba(107, 114, 128, 0.15)"
+                : activeTheme === "orochimaru"
+                ? "rgba(16, 185, 129, 0.15)"
                 : "rgba(34, 197, 94, 0.15)",
               color: activeTheme === "aka"
                 ? "#ef4444"
                 : activeTheme === "rain"
                 ? "#9d92d4"
+                : activeTheme === "sand"
+                ? "#c27a38"
+                : activeTheme === "cloud"
+                ? "#2563eb"
+                : activeTheme === "hideout"
+                ? "#f43f5e"
+                : activeTheme === "myoboku"
+                ? "#d97706"
+                : activeTheme === "anbu"
+                ? "#6b7280"
+                : activeTheme === "orochimaru"
+                ? "#059669"
                 : "#22c55e",
             }}>
             <span>{newsTitles[activeTheme].icon}</span>
@@ -750,11 +1208,54 @@ export default function RankingPage() {
               </div>
             ))}
           </div>
+          {/* 전체보기 버튼 */}
+          <button
+            onClick={() => setNewsModalOpen(true)}
+            className="h-full px-3 shrink-0 text-xs font-bold border-l transition-opacity hover:opacity-80"
+            style={{ borderColor: "var(--border)", color: "var(--text-muted)", background: "none" }}
+            title="뉴스 전체보기">
+            전체
+          </button>
         </div>
       )}
 
-      <div className="rounded-lg border" style={{ borderColor: "var(--border)" }}>
-        <table className="w-full text-sm">
+      {/* 뉴스 전체보기 모달 */}
+      {newsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.7)" }}
+          onClick={() => setNewsModalOpen(false)}>
+          <div className="w-full mx-4 rounded-2xl overflow-hidden flex flex-col"
+            style={{ maxWidth: 540, maxHeight: "80vh", background: "var(--panel)", border: "1px solid var(--border)" }}
+            onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b flex items-center justify-between flex-shrink-0"
+              style={{ borderColor: "var(--border)" }}>
+              <div className="font-black text-base flex items-center gap-2" style={{ color: "var(--accent)" }}>
+                <span>{newsTitles[activeTheme].icon}</span>
+                <span>{newsTitles[activeTheme].name}</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20">전체 속보</span>
+              </div>
+              <button onClick={() => setNewsModalOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-lg"
+                style={{ background: "var(--hover)", color: "var(--text-muted)" }}>✕</button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-3">
+              {newsItems.map((item, idx) => (
+                <div key={idx}
+                  className="flex items-start gap-3 px-4 py-3 rounded-xl"
+                  style={{ background: "var(--panel-alt)", border: "1px solid var(--border)" }}>
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0 mt-0.5 bg-red-500/10 text-red-500 border border-red-500/20">
+                    속보
+                  </span>
+                  <span className="text-sm leading-relaxed" style={{ color: "var(--text)" }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-lg border overflow-x-auto" style={{ borderColor: "var(--border)" }}>
+        <table className="w-full text-sm" style={{ minWidth: "640px" }}>
           <thead>
             <tr style={{ background: "var(--panel)", borderBottom: "1px solid var(--border)" }}>
               <th className="px-4 py-3 text-left" style={{ color: "var(--text-muted)" }}>순위</th>
@@ -818,6 +1319,14 @@ export default function RankingPage() {
                             })}
                           </div>
                         )}
+                        <TrophyList trophies={getTrophies(p.mainNickname)} />
+                        {(() => {
+                          const equippedId = getEquippedLimitedTitle(p.mainNickname);
+                          const equipped = equippedId
+                            ? limitedTitles.find(t => t.id === equippedId && t.holder === p.mainNickname)
+                            : null;
+                          return equipped ? <LimitedTitleBadge key={equipped.id} title={equipped} /> : null;
+                        })()}
                         {p.hasAlts && (
                           <span className="text-xs px-1.5 py-0.5 rounded"
                             style={{ background: "var(--hover)", color: "#0f766e", border: "1px solid #5eead4", fontSize: "10px" }}>
@@ -842,26 +1351,69 @@ export default function RankingPage() {
                     {/* 업적 셀 - 클릭 시 모달 */}
                     <td className="px-4 py-3 text-center"
                       onClick={e => { e.stopPropagation(); setBadgeModal(p); }}>
-                      {displayBadge ? (
-                        <div className="relative group inline-flex flex-col items-center gap-0.5 cursor-pointer">
-                          <span style={{ fontSize: 20, lineHeight: 1, filter: "drop-shadow(0 0 3px rgba(0,0,0,0.3))" }}>
-                            {displayBadge.icon}
-                          </span>
-                          {/* 툴팁 */}
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block pointer-events-none"
-                            style={{ minWidth: 180, zIndex: 9999 }}>
-                            <div className="px-3 py-2.5 rounded-lg text-xs shadow-2xl"
-                              style={{ background: "var(--panel)", border: `1px solid ${displayBadge.color}99`, color: "var(--text)", whiteSpace: "nowrap", boxShadow: `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${displayBadge.color}44` }}>
-                              <div className="font-bold mb-1" style={{ color: displayBadge.color }}>{displayBadge.icon} {displayBadge.name}</div>
-                              <div className="mb-1" style={{ color: "var(--text-muted)" }}>{displayBadge.description}</div>
-                              <div className="pt-1 border-t text-center" style={{ borderColor: "var(--border)", color: "var(--text-dim)", fontSize: 10 }}>클릭하여 대표업적 설정</div>
+                      {(() => {
+                        const equippedId = getEquippedLimitedTitle(p.mainNickname);
+                        const equippedRecord = equippedId
+                          ? limitedTitles.find(t => t.id === equippedId && t.holder === p.mainNickname)
+                          : null;
+                        const equippedDef = equippedRecord ? getLimitedTitleDef(equippedRecord.id) : null;
+
+                        if (equippedDef && equippedRecord) {
+                          return (
+                            <div
+                              className="inline-flex flex-col items-center gap-0.5 cursor-pointer"
+                              onMouseEnter={(e) => {
+                                const r = e.currentTarget.getBoundingClientRect();
+                                setLimitedTooltip({ x: r.left + r.width / 2, y: r.top, titleId: equippedRecord.id });
+                              }}
+                              onMouseLeave={() => setLimitedTooltip(null)}
+                            >
+                              <div
+                                className="limited-badge-circle"
+                                style={{
+                                  width: 20,
+                                  height: 20,
+                                  flexShrink: 0,
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  transform: "scale(1.45)",
+                                  background: `linear-gradient(var(--panel), var(--panel)) padding-box, linear-gradient(135deg, ${equippedDef.color}, ${equippedDef.accentColor}) border-box`,
+                                  border: "1.5px solid transparent",
+                                  borderRadius: "50%",
+                                  ["--lp-c1" as any]: `${equippedDef.color}66`,
+                                  ["--lp-c2" as any]: `${equippedDef.accentColor}33`,
+                                }}>
+                                <span style={{ fontSize: 13, lineHeight: 1 }}>
+                                  {equippedDef.icon}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="cursor-pointer text-xs" style={{ color: "var(--text-dim)" }}
-                          title="클릭하여 업적 보기">-</span>
-                      )}
+                          );
+                        }
+
+                        if (displayBadge) {
+                          return (
+                            <div
+                              className="inline-flex flex-col items-center gap-0.5 cursor-pointer"
+                              onMouseEnter={(e) => {
+                                const r = e.currentTarget.getBoundingClientRect();
+                                setBadgeTooltip({ x: r.left + r.width / 2, y: r.top, badge: displayBadge });
+                              }}
+                              onMouseLeave={() => setBadgeTooltip(null)}
+                            >
+                              <span style={{ fontSize: 20, lineHeight: 1, filter: "drop-shadow(0 0 3px rgba(0,0,0,0.3))" }}>
+                                {displayBadge.icon}
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <span className="cursor-pointer text-xs" style={{ color: "var(--text-dim)" }}
+                            title="클릭하여 업적 보기">-</span>
+                        );
+                      })()}
                     </td>
                   </tr>
                 );
@@ -871,6 +1423,125 @@ export default function RankingPage() {
         </table>
       </div>
 
+      {/* 🎭 암살전술 특수부대 테마 해금용 숨겨진 그림자 음영 (나뭇잎 테마에서만 노출) */}
+      {activeTheme === "leaf" && (
+        <div className="flex justify-center mt-12 mb-8" style={{ pointerEvents: "auto" }}>
+          <div
+            onClick={handleAnbuUnlock}
+            title="그림자 기운"
+            className="transition-all duration-300 hover:opacity-95 hover:scale-[1.03] cursor-pointer"
+            style={{
+              opacity: anbuUnlocked ? 0.85 : 0.48,
+              color: "var(--text)",
+              filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.18))",
+            }}
+          >
+            <svg width="280" height="32" viewBox="0 0 280 32" fill="currentColor">
+              <defs>
+                <filter id="shadow-blur">
+                  <feGaussianBlur stdDeviation="3.5" />
+                </filter>
+              </defs>
+              {/* A realistic horizontally stretched shadow projection */}
+              <path
+                d="M 10,16 C 40,8 80,4 120,8 C 150,4 180,2 210,6 C 240,12 260,10 270,16 C 260,22 230,24 190,26 C 150,28 100,28 60,26 C 30,24 15,20 10,16 Z"
+                filter="url(#shadow-blur)"
+              />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* 업적 hover 툴팁 (fixed — overflow 클리핑 우회) */}
+      {badgeTooltip && (
+        <div
+          className="fixed pointer-events-none z-[9999]"
+          style={{
+            left: badgeTooltip.x,
+            top: badgeTooltip.y - 8,
+            transform: "translate(-50%, -100%)",
+            minWidth: 180,
+          }}
+        >
+          <div
+            className="px-3 py-2.5 rounded-lg text-xs shadow-2xl"
+            style={{
+              background: "var(--panel)",
+              border: `1px solid ${badgeTooltip.badge.color}99`,
+              color: "var(--text)",
+              whiteSpace: "nowrap",
+              boxShadow: `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${badgeTooltip.badge.color}44`,
+            }}
+          >
+            <div className="font-bold mb-1" style={{ color: badgeTooltip.badge.color }}>
+              {badgeTooltip.badge.icon} {badgeTooltip.badge.name}
+            </div>
+            <div className="mb-1" style={{ color: "var(--text-muted)" }}>{badgeTooltip.badge.description}</div>
+            <div className="pt-1 border-t text-center" style={{ borderColor: "var(--border)", color: "var(--text-dim)", fontSize: 10 }}>
+              클릭하여 대표업적 설정
+            </div>
+          </div>
+          <div
+            className="absolute left-1/2 -translate-x-1/2 top-full"
+            style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `5px solid ${badgeTooltip.badge.color}99` }}
+          />
+        </div>
+      )}
+
+      {/* 리미티드 업적 hover 툴팁 */}
+      {limitedTooltip && (() => {
+        const def = getLimitedTitleDef(limitedTooltip.titleId);
+        const record = limitedTitles.find(t => t.id === limitedTooltip.titleId);
+        if (!def) return null;
+        return (
+          <div
+            className="fixed pointer-events-none z-[9999]"
+            style={{
+              left: limitedTooltip.x,
+              top: limitedTooltip.y - 8,
+              transform: "translate(-50%, -100%)",
+              minWidth: 220,
+            }}
+          >
+            <div
+              className="px-3 py-3 rounded-xl text-xs shadow-2xl"
+              style={{
+                background: "var(--panel)",
+                border: `1px solid ${def.color}88`,
+                color: "var(--text)",
+                whiteSpace: "nowrap",
+                boxShadow: `0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px ${def.color}33`,
+              }}
+            >
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span style={{ fontSize: 18 }}>{def.icon}</span>
+                <span className="font-black text-sm" style={{ color: def.color }}>{def.name}</span>
+                <span className="ml-auto px-1.5 py-0.5 rounded font-bold"
+                  style={{ background: `${def.color}22`, color: def.color, fontSize: 10, border: `1px solid ${def.color}44` }}>
+                  리미티드
+                </span>
+              </div>
+              <div className="mb-1.5 leading-relaxed" style={{ color: "var(--text-muted)", fontSize: 11 }}>{def.description}</div>
+              <div className="flex items-center gap-1 mb-1.5 pt-1.5 border-t" style={{ borderColor: "var(--border)", fontSize: 10 }}>
+                <span style={{ color: "var(--text-dim)" }}>달성 조건</span>
+                <span style={{ color: def.color, fontWeight: 700 }}>{def.condition}</span>
+              </div>
+              {record && (
+                <div className="flex items-center gap-1 pt-1 border-t" style={{ borderColor: "var(--border)", fontSize: 10 }}>
+                  <span style={{ color: "var(--text-dim)" }}>달성일</span>
+                  <span style={{ color: def.color, fontWeight: 700 }}>{record.date}</span>
+                  <span className="ml-auto" style={{ color: "var(--text-dim)" }}>정원 1인 · 영구 소유</span>
+                </div>
+              )}
+            </div>
+            <div
+              className="absolute left-1/2 -translate-x-1/2 top-full"
+              style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: `5px solid ${def.color}88` }}
+            />
+          </div>
+        );
+      })()}
+
       {/* 대표업적 모달 */}
       {badgeModal && (
         <BadgeModal
@@ -878,6 +1549,9 @@ export default function RankingPage() {
           repBadgeId={getRepBadgeId(badgeModal.mainNickname)}
           onSet={(badgeId) => handleSetRepBadge(badgeModal.mainNickname, badgeId)}
           onClose={() => setBadgeModal(null)}
+          allLimitedTitles={limitedTitles}
+          equippedTitleId={getEquippedLimitedTitle(badgeModal.mainNickname)}
+          onEquip={(titleId) => handleEquipLimitedTitle(badgeModal.mainNickname, titleId)}
         />
       )}
     </div>

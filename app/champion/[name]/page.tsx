@@ -7,6 +7,7 @@ import type { GameRecord } from "@/lib/types";
 import { POSITIONS, computeScore, assignRelativeTiers, computeRelativeWR } from "../page";
 import type { Position, Tier } from "../page";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
+import { normalizeChampionName } from "@/lib/champions";
 
 const ROLE_COLORS: Record<Position, string> = {
   탑: "#e06060", 정글: "#50a050", 미드: "#5090d0", 원딜: "#c0a030", 서포터: "#9060c0",
@@ -48,7 +49,7 @@ export default function ChampionDetailPage({
 }) {
   const resolvedParams = use(params);
   const resolvedSearchParams = use(searchParams);
-  const champion = decodeURIComponent(resolvedParams.name);
+  const champion = normalizeChampionName(decodeURIComponent(resolvedParams.name));
   const initialPos = resolvedSearchParams.pos as Position | null;
   const router = useRouter();
 
@@ -106,13 +107,14 @@ export default function ChampionDetailPage({
           team.forEach((p, myIdx) => {
             if (!p.champion || p.champion === "?") return;
             const myPos = POSITIONS[myIdx]; if (!myPos) return;
-            const gk = `${myPos}|||${p.champion}`;
+            const myChamp = normalizeChampionName(p.champion);
+            const gk = `${myPos}|||${myChamp}`;
             if (!allPosMap.has(gk)) allPosMap.set(gk, { wins: 0, losses: 0, picks: 0 });
             const gs = allPosMap.get(gk)!;
             gs.picks++; if (won) gs.wins++; else gs.losses++;
 
             // 상대 승률 보정용 (모든 챔피언 대상)
-            const pck = `${p.nickname}|||${myPos}|||${p.champion}`;
+            const pck = `${p.nickname}|||${myPos}|||${myChamp}`;
             if (!playerChampMap.has(pck)) playerChampMap.set(pck, { wins: 0, losses: 0 });
             const pcs = playerChampMap.get(pck)!;
             if (won) pcs.wins++; else pcs.losses++;
@@ -121,7 +123,7 @@ export default function ChampionDetailPage({
             if (won) pos2.wins++; else pos2.losses++;
 
             // 플레이어별 (이 챔피언만)
-            if (p.champion === champion) {
+            if (myChamp === champion) {
               const pk = `${p.nickname}|||${myPos}`;
               if (!playerMap.has(pk)) playerMap.set(pk, { wins: 0, losses: 0 });
               const ps = playerMap.get(pk)!;
@@ -132,7 +134,7 @@ export default function ChampionDetailPage({
                 const partnerIdx = POS_IDX[partnerPos];
                 const partner = team[partnerIdx];
                 if (!partner?.champion || partner.champion === "?") return;
-                const dk = `${myPos}|||${partnerPos}|||${partner.champion}`;
+                const dk = `${myPos}|||${partnerPos}|||${normalizeChampionName(partner.champion)}`;
                 if (!duoMap.has(dk)) duoMap.set(dk, { wins: 0, losses: 0 });
                 const ds = duoMap.get(dk)!;
                 if (won) ds.wins++; else ds.losses++;
@@ -142,7 +144,7 @@ export default function ChampionDetailPage({
               const enemyTeam = team === r.team1 ? r.team2 : r.team1;
               const enemy = enemyTeam[myIdx];
               if (enemy?.champion && enemy.champion !== "?") {
-                const ck = `${myPos}|||enemy|||${enemy.champion}`;
+                const ck = `${myPos}|||enemy|||${normalizeChampionName(enemy.champion)}`;
                 if (!duoMap.has(ck)) duoMap.set(ck, { wins: 0, losses: 0 });
                 const cs = duoMap.get(ck)!;
                 if (won) cs.wins++; else cs.losses++;
@@ -157,7 +159,7 @@ export default function ChampionDetailPage({
       // 밴 수
       const banCount = records.reduce((cnt, r) => {
         if (!r.bans) return cnt;
-        return cnt + [...(r.bans.team1 || []), ...(r.bans.team2 || [])].filter(c => c === champion).length;
+        return cnt + [...(r.bans.team1 || []), ...(r.bans.team2 || [])].filter(c => normalizeChampionName(c) === champion).length;
       }, 0);
       const br = banCount / total;
 
@@ -197,7 +199,7 @@ export default function ChampionDetailPage({
           const pr2 = s.picks / total;
           const bans2 = records.reduce((cnt, r) => {
             if (!r.bans) return cnt;
-            return cnt + [...(r.bans.team1 || []), ...(r.bans.team2 || [])].filter(c => c === chmp).length;
+            return cnt + [...(r.bans.team1 || []), ...(r.bans.team2 || [])].filter(c => normalizeChampionName(c) === chmp).length;
           }, 0);
           const br2 = bans2 / total;
           // 챔피언 분석 페이지와 동일한 기준(개인별 평소 승률 대비 보정)으로 티어를 계산해야 일관됨
@@ -296,7 +298,7 @@ export default function ChampionDetailPage({
 
     records.forEach(r => {
       const checkPlayer = (p: any, won: boolean) => {
-        if (!p.champion || p.champion !== champName) return;
+        if (!p.champion || normalizeChampionName(p.champion) !== champName) return;
 
         const mainNickname = resolveMainNickname(p.nickname);
         const key = mainNickname;
@@ -369,8 +371,8 @@ export default function ChampionDetailPage({
         const partnerPlayer = team[partnerPosIdx];
 
         if (
-          myPlayer && myPlayer.champion === champion &&
-          partnerPlayer && partnerPlayer.champion === partnerChamp
+          myPlayer && myPlayer.champion && normalizeChampionName(myPlayer.champion) === champion &&
+          partnerPlayer && partnerPlayer.champion && normalizeChampionName(partnerPlayer.champion) === partnerChamp
         ) {
           const myName = resolveMainNickname(myPlayer.nickname);
           const partnerName = resolveMainNickname(partnerPlayer.nickname);
@@ -431,7 +433,9 @@ export default function ChampionDetailPage({
       const p2 = r.team2[posIdx];
 
       if (p1 && p2 && p1.champion && p2.champion) {
-        if (p1.champion === champion && p2.champion === enemyChamp) {
+        const c1 = normalizeChampionName(p1.champion);
+        const c2 = normalizeChampionName(p2.champion);
+        if (c1 === champion && c2 === enemyChamp) {
           const myName = resolveMainNickname(p1.nickname);
           const enemyName = resolveMainNickname(p2.nickname);
           const key = `${myName}|||${enemyName}`;
@@ -439,7 +443,7 @@ export default function ChampionDetailPage({
           const s = pairsMap.get(key)!;
           if (r.winTeam === 1) s.wins++; else s.losses++;
         }
-        else if (p2.champion === champion && p1.champion === enemyChamp) {
+        else if (c2 === champion && c1 === enemyChamp) {
           const myName = resolveMainNickname(p2.nickname);
           const enemyName = resolveMainNickname(p1.nickname);
           const key = `${myName}|||${enemyName}`;

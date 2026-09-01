@@ -10,7 +10,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       if (user) {
         // 최초 로그인 — token.sub는 Google OAuth sub ID (항상 존재)
         const userId = token.sub!;
@@ -20,14 +20,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           image: user.image,
         });
-        token.uid = userId;
+        token.uid = userData.id;
         token.groupId = userData.groupId;
         token.role = userData.role;
-      } else if (trigger === "update" && token.uid) {
-        // 그룹 생성/참여 후 세션 갱신 요청
+      } else if (token.uid) {
+        // 매 요청마다 최신 groupId/role을 DB에서 다시 확인.
+        // JWT는 한 번 발급되면 만료 전까지 갱신되지 않으므로, 그룹 생성/참여/탈퇴 등으로
+        // DB의 groupId가 바뀌어도 세션이 옛 값에 영구히 고정되는 것을 방지한다.
         const userData = await getUser(token.uid as string);
-        token.groupId = userData?.groupId;
-        token.role = userData?.role;
+        if (userData) {
+          token.groupId = userData.groupId;
+          token.role = userData.role;
+        }
       }
       return token;
     },

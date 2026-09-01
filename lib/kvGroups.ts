@@ -44,11 +44,66 @@ export interface MemberRecord {
 }
 
 // ─── 유저 ───────────────────────────────────────────────────
+async function loadAndTouchUser(
+  id: string, info: { name?: string | null; image?: string | null }
+): Promise<UserRecord | null> {
+  const existingUser = await kv.get<UserRecord>(K.user(id));
+  if (!existingUser) return null;
+  const updated = {
+    ...existingUser,
+    name: info.name ?? existingUser.name,
+    image: info.image ?? existingUser.image,
+  };
+  await kv.set(K.user(id), updated);
+  return updated;
+}
+
 export async function getOrCreateUser(info: {
   id: string; email: string; name?: string | null; image?: string | null;
 }): Promise<UserRecord> {
-  const existing = await kv.get<UserRecord>(K.user(info.id));
-  if (existing) return existing;
+  const emailLower = info.email.toLowerCase();
+  const emailKey = `lf:email_to_uid:${emailLower}`;
+  let existingId = await kv.get<string>(emailKey);
+
+  if (!existingId) {
+    // 1회성 마이그레이션: 기존 가입 유저 중 이메일이 일치하는 유저가 있는지 검색
+    const keys = await kv.keys("lf:user:*");
+    for (const key of keys) {
+      const user = await kv.get<UserRecord>(key);
+      if (user && user.email.toLowerCase() === emailLower) {
+        // 이미 생성된 유저가 여러 개일 경우, groupId가 있고 role이 admin인 계정을 우선 선택
+        if (!existingId || (user.groupId && user.role === "admin")) {
+          existingId = user.id;
+        }
+      }
+    }
+    if (existingId) {
+      // 동시에 같은 이메일로 여러 로그인이 들어와도 emailKey는 단 한 번만 선점되도록 원자적으로 기록.
+      // 이미 다른 요청이 먼저 선점했다면 그 값을 그대로 신뢰해 중복 유저/그룹 생성을 막는다.
+      const claimed = await kv.set(emailKey, existingId, { nx: true });
+      if (!claimed) {
+        const winnerId = await kv.get<string>(emailKey);
+        if (winnerId) existingId = winnerId;
+      }
+    }
+  }
+
+  if (existingId) {
+    const found = await loadAndTouchUser(existingId, info);
+    if (found) return found;
+  }
+
+  // 새 유저 생성도 동일하게 원자적 선점 — 동시 최초 로그인 시 두 개의 유저/그룹이
+  // 따로 생성되는 레이스 컨디션을 방지한다.
+  const claimed = await kv.set(emailKey, info.id, { nx: true });
+  if (!claimed) {
+    const winnerId = await kv.get<string>(emailKey);
+    if (winnerId) {
+      const found = await loadAndTouchUser(winnerId, info);
+      if (found) return found;
+    }
+  }
+
   const user: UserRecord = { ...info };
   await kv.set(K.user(info.id), user);
   return user;
@@ -178,8 +233,12 @@ export async function disbandGroup(groupId: string): Promise<void> {
 }
 
 // ─── 데이터 키 (API route용 export) ─────────────────────────
-export const recordsKey   = (groupId: string) => K.records(groupId);
-export const nicknamesKey = (groupId: string) => K.nicknames(groupId);
+export const recordsKey      = (groupId: string) => K.records(groupId);
+export const nicknamesKey    = (groupId: string) => K.nicknames(groupId);
+export const seasonsKey      = (groupId: string) => `leaftown-seasons:${groupId}`;
+export const limitedTitlesKey = (groupId: string) => `leaftown-limited-titles:${groupId}`;
+export const napuRatingsKey   = (groupId: string) => `leaftown-napu-ratings:${groupId}`;
+export const easterEggKey     = (groupId: string) => `leaftown-easter-egg:${groupId}`;
 
 // ─── 레거시 데이터 이전 ─────────────────────────────────────
 async function migrateLegacyData(groupId: string): Promise<void> {

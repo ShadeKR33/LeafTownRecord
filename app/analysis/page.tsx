@@ -1,17 +1,35 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { loadGameRecords, saveGameRecords, loadNicknames } from "@/lib/stats";
 import type { GameRecord, NicknameEntry } from "@/lib/types";
 import GuideBanner from "@/components/GuideBanner";
+import { CHAMPION_LIST, normalizeChampionName } from "@/lib/champions";
+
+interface AnalysisPlayer {
+  nickname: string;
+  champion: string;
+  position?: string;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  damageDealt?: number;
+  damageTaken?: number;
+  visionScore?: number;
+  cs?: number;
+  controlWardsBought?: number;
+}
 
 interface AnalysisResult {
-  date?: string;
   winTeam: 1 | 2;
-  team1: { nickname: string; champion: string }[];
-  team2: { nickname: string; champion: string }[];
+  gameDuration?: number;
+  team1: AnalysisPlayer[];
+  team2: AnalysisPlayer[];
   bans?: { team1: string[]; team2: string[] };
 }
+
+const LINEUP_POSITIONS = ["탑", "정글", "미드", "원딜", "서포터"] as const;
 
 type GameFormat = "3판2선" | "5판3선";
 
@@ -19,19 +37,6 @@ interface DraftResult {
   gameNumber: number;
   result: AnalysisResult;
 }
-
-const CHAMPION_LIST = [
-  "가렌", "갈리오", "갱플랭크", "그라가스", "그레이브즈", "그웬", "나르", "나미", "나서스", "나피리", "노틸러스", "녹턴", "누누와 윌럼프", "니달리", "니코", "닐라",
-  "다리우스", "다이애나", "드레이븐", "라이즈", "라칸", "람머스", "럭스", "럼블", "레나타 글라스크", "레넥톤", "레오나", "렉사이", "렐", "렝가", "루시안", "룰루", "르블랑",
-  "리 신", "리븐", "리산드라", "릴리아", "마스터 이", "마오카이", "말자하", "말파이트", "모데카이저", "모르가나", "문도 박사", "미스 포츈", "밀리오", "바드", "바루스", "바이",
-  "베이가", "베인", "벡스", "벨베스", "벨코즈", "볼리베어", "브라움", "브랜드", "브라이어", "블라디미르", "블리츠크랭크", "비에고", "빅토르", "뽀삐", "사미라", "사이온", "사일러스", "샤코", "세나",
-  "세라핀", "세주아니", "세트", "소나", "소라카", "쉔", "쉬바나", "스웨인", "스카너", "스몰더", "시비르", "신 짜오", "신드라", "신지드", "쓰레쉬", "아리", "아무무", "아우렐리온 솔", "아이번",
-  "아지르", "아칼리", "아크샨", "아트록스", "아펠리오스", "알리스타", "암베사", "애니", "애니비아", "애쉬", "야스오", "에코", "엘리스", "오공", "오로라", "오른", "오리아나", "올라프", "요네",
-  "요릭", "우디르", "우르곳", "워윅", "유미", "이렐리아", "이블린", "이즈리얼", "일라오이", "자르반 4세", "자야", "자이라", "자크", "잔나", "잭스", "제드", "제라스", "제리", "제이스", "조이",
-  "직스", "진", "질리언", "징크스", "초가스", "카르마", "카밀", "카사딘", "카서스", "카시오페아", "카이사", "카직스", "카타리나", "칼리스타", "케넨", "케이틀린", "케인", "케일", "코그모", "코르키",
-  "퀸", "크산테", "클레드", "키아나", "킨드레드", "타릭", "탈론", "탈리야", "탐 켄치", "트런들", "트리스타나", "트린다미어", "트위스티드 페이트", "트위치", "티모", "파이크", "판테온", "피들스틱", "피오라",
-  "피즈", "하이머딩거", "헤카림", "흐웨이"
-];
 
 function ChampionInput({
   id,
@@ -120,6 +125,12 @@ function ChampionInput({
         value={value}
         onChange={e => { onChange(e.target.value); setHighlighted(0); setOpen(true); }}
         onFocus={() => { if (value.trim().length >= 1) setOpen(true); }}
+        onBlur={() => {
+          // 드롭다운에서 선택하지 않고 직접 타이핑했을 때, 띄어쓰기 차이로
+          // 같은 챔피언이 다른 이름으로 저장되는 것을 방지하기 위해 정규화
+          const normalized = normalizeChampionName(value);
+          if (normalized && normalized !== value) onChange(normalized);
+        }}
         onKeyDown={handleKeyDown}
         className="w-full px-2 py-1 text-sm rounded outline-none"
         style={{ background: "var(--hover)", border: "1px solid var(--border)", color: "var(--accent)" }}
@@ -146,7 +157,91 @@ function ChampionInput({
   );
 }
 
+function NicknameInput({
+  value,
+  onChange,
+  nicknames,
+  className = "flex-1",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  nicknames: NicknameEntry[];
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const norm = (s: string) => s.replace(/\s+/g, "").toLowerCase();
+
+  const filtered = value.trim().length >= 1
+    ? nicknames.filter(n => {
+        const q = norm(value);
+        return norm(n.nickname).includes(q)
+          || (n.altNicknames || []).some(a => norm(a).includes(q))
+          || norm(n.realName || "").includes(q);
+      }).slice(0, 8)
+    : [];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const select = (name: string) => {
+    onChange(name);
+    setOpen(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.nativeEvent.isComposing) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); setHighlighted(h => Math.min(h + 1, filtered.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setHighlighted(h => Math.max(h - 1, 0)); }
+    else if (e.key === "Enter" && filtered[highlighted]) { e.preventDefault(); select(filtered[highlighted].nickname); }
+    else if (e.key === "Escape") setOpen(false);
+  };
+
+  return (
+    <div ref={containerRef} className={`relative ${className}`}>
+      <input
+        type="text"
+        value={value}
+        onChange={e => { onChange(e.target.value); setHighlighted(0); setOpen(true); }}
+        onFocus={() => { if (value.trim().length >= 1) setOpen(true); }}
+        onKeyDown={handleKeyDown}
+        placeholder="닉네임"
+        className="w-full px-3 py-1.5 rounded text-sm outline-none"
+        style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 w-full mt-0.5 rounded-lg border shadow-xl overflow-auto"
+          style={{ background: "var(--panel)", borderColor: "var(--border)", maxHeight: 220 }}>
+          {filtered.map((entry, i) => (
+            <div key={entry.id}
+              onMouseDown={e => { e.preventDefault(); select(entry.nickname); }}
+              onMouseEnter={() => setHighlighted(i)}
+              className="px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between gap-2"
+              style={{
+                background: i === highlighted ? "var(--hover)" : "transparent",
+                color: i === highlighted ? "var(--accent)" : "var(--text)",
+              }}>
+              <span className="font-semibold">{entry.nickname}</span>
+              {entry.realName && <span className="text-xs flex-shrink-0" style={{ color: "var(--text-muted)" }}>{entry.realName}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AnalysisPage() {
+  const { data: session } = useSession();
+  const isViewer = session?.user?.role === "viewer";
+
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [records, setRecords] = useState<GameRecord[]>([]);
   const [dbNicknames, setDbNicknames] = useState<NicknameEntry[]>([]);
@@ -161,6 +256,11 @@ export default function AnalysisPage() {
   }, []);
 
   const [gameFormat, setGameFormat] = useState<GameFormat>("3판2선");
+
+  // 분석 전 사전 라인업 입력 (1세트 좌측=1팀 기준 팀A, 우측=2팀 기준 팀B)
+  const [rosterA, setRosterA] = useState<string[]>(["", "", "", "", ""]);
+  const [rosterB, setRosterB] = useState<string[]>(["", "", "", "", ""]);
+  const rosterFilled = rosterA.every(n => n.trim()) && rosterB.every(n => n.trim());
   
   const maxGames = gameFormat === "3판2선" ? 3 : 5;
   const winsNeeded = gameFormat === "3판2선" ? 2 : 3;
@@ -168,6 +268,10 @@ export default function AnalysisPage() {
   // 세트장 사진 업로드용 배열 상태 (인덱스 0 ~ maxGames-1)
   const [images, setImages] = useState<(string | null)[]>(Array(maxGames).fill(null));
   const [imageFiles, setImageFiles] = useState<(File | null)[]>(Array(maxGames).fill(null));
+
+  // 상세 스탯(딜량/받은피해) 스크린샷 업로드용 배열 상태 (선택, 인덱스 0 ~ maxGames-1)
+  const [statsImages, setStatsImages] = useState<(string | null)[]>(Array(maxGames).fill(null));
+  const [statsImageFiles, setStatsImageFiles] = useState<(File | null)[]>(Array(maxGames).fill(null));
 
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0); // 0 ~ 100
@@ -186,6 +290,7 @@ export default function AnalysisPage() {
   const normNick = (s: string) => s.replace(/\s+/g, "").toLowerCase();
 
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const statsFileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // 닉네임 보정 헬퍼
   const correctNickname = (name: string, nicknamesList: NicknameEntry[]): string => {
@@ -234,6 +339,34 @@ export default function AnalysisPage() {
     if (file) handleFile(index, file);
   };
 
+  const handleStatsFile = (index: number, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setError("이미지 파일만 업로드할 수 있습니다.");
+      return;
+    }
+    const newFiles = [...statsImageFiles];
+    newFiles[index] = file;
+    setStatsImageFiles(newFiles);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const newImages = [...statsImages];
+      newImages[index] = e.target?.result as string;
+      setStatsImages(newImages);
+    };
+    reader.readAsDataURL(file);
+
+    setError(null);
+    setDraftResults([]);
+    setSuccessSaved(false);
+  };
+
+  const handleStatsDrop = (index: number, e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleStatsFile(index, file);
+  };
+
   const analyzeAll = async () => {
     // 업로드된 이미지만 추출
     const uploadTasks = images.map((img, i) => {
@@ -258,7 +391,12 @@ export default function AnalysisPage() {
       for (const task of uploadTasks) {
         const base64Data = task.image.split(",")[1];
         const mediaType = task.file.type;
-        
+
+        const statsImage = statsImages[task.index];
+        const statsFile = statsImageFiles[task.index];
+        const statsBase64 = statsImage && statsFile ? statsImage.split(",")[1] : undefined;
+        const statsMediaType = statsFile?.type;
+
         const res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -267,6 +405,7 @@ export default function AnalysisPage() {
             mediaType,
             gameFormat,
             gameNumber: task.index + 1,
+            ...(statsBase64 ? { statsBase64, statsMediaType } : {}),
           }),
         });
 
@@ -282,21 +421,17 @@ export default function AnalysisPage() {
         setLoadingProgress(Math.floor((cnt / uploadTasks.length) * 100));
       }
 
-      // 첫 번째 결과에서 날짜 자동 추출
-      const extractedDate = results[0]?.result?.date;
-      if (extractedDate) setSelectedDate(extractedDate);
-
-      // 모두 완료되면 Edit 모드(draftResults)로 전시 및 닉네임 자동 보정
+      // 모두 완료되면 Edit 모드(draftResults)로 전시, 사전 입력한 라인업으로 닉네임 채우기
       setDraftResults(results.map(r => {
-        const t1Corrected = r.result.team1.map(p => ({
+        const t1Corrected = r.result.team1.map((p, i) => ({
           ...p,
           champion: "",
-          nickname: correctNickname(p.nickname, dbNicknames)
+          nickname: correctNickname(rosterA[i] || "", dbNicknames)
         }));
-        const t2Corrected = r.result.team2.map(p => ({
+        const t2Corrected = r.result.team2.map((p, i) => ({
           ...p,
           champion: "",
-          nickname: correctNickname(p.nickname, dbNicknames)
+          nickname: correctNickname(rosterB[i] || "", dbNicknames)
         }));
         const bansCorrected = {
           team1: ["", "", "", "", ""],
@@ -314,12 +449,10 @@ export default function AnalysisPage() {
         };
       }));
 
-      // 1세트 블루 진영(왼쪽) 5명을 시리즈 "팀 A"로 확정
-      if (results.length > 0) {
-        setCanonicalTeam1Nicks(
-          new Set(results[0].result.team1.map(p => normNick(correctNickname(p.nickname, dbNicknames))))
-        );
-      }
+      // 1세트 좌측(팀 A, 라인업에서 사전 입력한 rosterA) 5명을 시리즈 "팀 A"로 확정
+      setCanonicalTeam1Nicks(
+        new Set(rosterA.map(n => normNick(correctNickname(n, dbNicknames))))
+      );
 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "알 수 없는 오류";
@@ -434,6 +567,7 @@ export default function AnalysisPage() {
           team1: normalized.team1,
           team2: normalized.team2,
           winTeam: normalized.winTeam,
+          ...(draft.result.gameDuration ? { gameDuration: draft.result.gameDuration } : {}),
           ...(cleanBans && (cleanBans.team1.length > 0 || cleanBans.team2.length > 0) ? { bans: cleanBans } : {}),
         };
       });
@@ -450,6 +584,8 @@ export default function AnalysisPage() {
   const resetAll = () => {
     setImages(Array(maxGames).fill(null));
     setImageFiles(Array(maxGames).fill(null));
+    setStatsImages(Array(maxGames).fill(null));
+    setStatsImageFiles(Array(maxGames).fill(null));
     setDraftResults([]);
     setCanonicalTeam1Nicks(new Set());
     setError(null);
@@ -485,8 +621,56 @@ export default function AnalysisPage() {
         <span>저장 전에 챔피언 이름이나 승패가 제대로 되었는지 가볍게 수정한 뒤에 확정할 수 있습니다.</span>
       </p>
 
-      {/* 경기 정보 설정 */}
-      <div className="mb-5 p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
+      {isViewer ? (
+        <div className="p-8 rounded-xl border text-center my-8" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
+          <div className="text-4xl mb-3">🚫</div>
+          <h3 className="font-bold text-lg mb-2" style={{ color: "var(--loss)" }}>분석 및 저장 권한 없음</h3>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            뷰어(Viewer) 권한으로는 캡쳐 분석 기능을 이용할 수 없습니다.<br />
+            경기 기록을 등록하거나 수정하려면 그룹 관리자에게 편집자(Editor) 이상의 권한을 요청하세요.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* 라인업 사전 입력 */}
+          <div className="mb-5 p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
+            <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>👥 라인업 사전 입력 (모든 세트 공통 - 1세트 기준 좌측 5명 = 팀 A, 우측 5명 = 팀 B)</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="text-xs font-bold mb-2" style={{ color: "var(--win)" }}>팀 A</div>
+                <div className="space-y-2">
+                  {LINEUP_POSITIONS.map((pos, i) => (
+                    <div key={pos} className="flex items-center gap-2">
+                      <span className="text-xs w-10 flex-shrink-0" style={{ color: "var(--text-muted)" }}>{pos}</span>
+                      <NicknameInput
+                        value={rosterA[i]}
+                        onChange={(v) => setRosterA(prev => prev.map((p, idx) => idx === i ? v : p))}
+                        nicknames={dbNicknames}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-bold mb-2" style={{ color: "var(--loss)" }}>팀 B</div>
+                <div className="space-y-2">
+                  {LINEUP_POSITIONS.map((pos, i) => (
+                    <div key={pos} className="flex items-center gap-2">
+                      <span className="text-xs w-10 flex-shrink-0" style={{ color: "var(--text-muted)" }}>{pos}</span>
+                      <NicknameInput
+                        value={rosterB[i]}
+                        onChange={(v) => setRosterB(prev => prev.map((p, idx) => idx === i ? v : p))}
+                        nicknames={dbNicknames}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 경기 정보 설정 */}
+          <div className="mb-5 p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
         <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>경기 정보</div>
         <div className="flex flex-wrap gap-4 items-end">
           <div>
@@ -512,6 +696,8 @@ export default function AnalysisPage() {
                     const newMax = fmt === "3판2선" ? 3 : 5;
                     setImages(Array(newMax).fill(null));
                     setImageFiles(Array(newMax).fill(null));
+                    setStatsImages(Array(newMax).fill(null));
+                    setStatsImageFiles(Array(newMax).fill(null));
                     setDraftResults([]);
                     setSuccessSaved(false);
                   }}
@@ -552,40 +738,74 @@ export default function AnalysisPage() {
         <div className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             {Array.from({ length: maxGames }).map((_, i) => (
-              <div 
-                key={i}
-                className="rounded-lg border-2 border-dashed flex flex-col items-center justify-center p-4 cursor-pointer relative overflow-hidden transition-all group"
-                style={{
-                  height: "200px",
-                  borderColor: images[i] ? "var(--accent)" : "var(--border)",
-                  background: "var(--panel)",
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => handleDrop(i, e)}
-                onClick={() => fileInputRefs.current[i]?.click()}
-              >
-                {images[i] ? (
-                  <>
-                    <img src={images[i] as string} alt={`${i+1}세트`} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-10 transition-opacity" />
-                    <div className="relative z-10 text-center">
-                      <div className="text-xl mb-1">✅</div>
-                      <div className="text-sm font-bold" style={{ color: "var(--text)" }}>{i + 1}세트 이미지 등록됨</div>
-                      <div className="text-xs mt-2" style={{ color: "var(--accent)" }}>클릭하여 변경</div>
+              <div key={i} className="flex flex-col gap-2">
+                <div
+                  className="rounded-lg border-2 border-dashed flex flex-col items-center justify-center p-4 cursor-pointer relative overflow-hidden transition-all group"
+                  style={{
+                    height: "200px",
+                    borderColor: images[i] ? "var(--accent)" : "var(--border)",
+                    background: "var(--panel)",
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleDrop(i, e)}
+                  onClick={() => fileInputRefs.current[i]?.click()}
+                >
+                  {images[i] ? (
+                    <>
+                      <img src={images[i] as string} alt={`${i+1}세트`} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-10 transition-opacity" />
+                      <div className="relative z-10 text-center">
+                        <div className="text-xl mb-1">✅</div>
+                        <div className="text-sm font-bold" style={{ color: "var(--text)" }}>{i + 1}세트 ①통계 캡쳐 등록됨</div>
+                        <div className="text-xs mt-2" style={{ color: "var(--accent)" }}>클릭하여 변경</div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl mb-2 opacity-50">📁</div>
+                      <div className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>{i + 1}세트 ①통계 캡쳐 (KDA·가한피해량, 승패)</div>
+                    </>
+                  )}
+                  <input
+                    ref={(el) => { fileInputRefs.current[i] = el; }}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleFile(i, e.target.files[0])}
+                  />
+                </div>
+
+                {/* 상세 스탯(딜량/받은피해) 스크린샷 - 선택 */}
+                <div
+                  className="rounded-lg border-2 border-dashed flex flex-col items-center justify-center p-2 cursor-pointer relative overflow-hidden transition-all group"
+                  style={{
+                    height: "64px",
+                    borderColor: statsImages[i] ? "var(--accent)" : "var(--border)",
+                    background: "var(--panel)",
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => handleStatsDrop(i, e)}
+                  onClick={() => statsFileInputRefs.current[i]?.click()}
+                >
+                  {statsImages[i] ? (
+                    <>
+                      <img src={statsImages[i] as string} alt={`${i+1}세트 상세 스탯`} className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-10 transition-opacity" />
+                      <div className="relative z-10 text-center text-xs font-bold" style={{ color: "var(--text)" }}>
+                        ✅ ②통계 캡쳐 등록됨 (클릭하여 변경)
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs" style={{ color: "var(--text-dim)" }}>
+                      📊 ②통계 캡쳐 (받은피해·시야·CS) - 선택
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-2xl mb-2 opacity-50">📁</div>
-                    <div className="text-sm font-bold mb-1" style={{ color: "var(--text-muted)" }}>{i + 1}세트 사진 업로드</div>
-                  </>
-                )}
-                <input
-                  ref={(el) => { fileInputRefs.current[i] = el; }}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleFile(i, e.target.files[0])}
-                />
+                  )}
+                  <input
+                    ref={(el) => { statsFileInputRefs.current[i] = el; }}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleStatsFile(i, e.target.files[0])}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -593,16 +813,16 @@ export default function AnalysisPage() {
           <div className="flex justify-center">
             <button
               onClick={analyzeAll}
-              disabled={loading || !images.some(img => img !== null)}
+              disabled={loading || !images.some(img => img !== null) || !rosterFilled}
               className="px-8 py-4 rounded font-bold text-lg transition-all"
               style={{
-                background: loading || !images.some(img => img !== null) ? "var(--border)" : "var(--accent)",
-                color: loading || !images.some(img => img !== null) ? "var(--text-muted)" : "var(--panel-alt)",
-                cursor: loading || !images.some(img => img !== null) ? "not-allowed" : "pointer",
+                background: loading || !images.some(img => img !== null) || !rosterFilled ? "var(--border)" : "var(--accent)",
+                color: loading || !images.some(img => img !== null) || !rosterFilled ? "var(--text-muted)" : "var(--panel-alt)",
+                cursor: loading || !images.some(img => img !== null) || !rosterFilled ? "not-allowed" : "pointer",
                 boxShadow: "0 4px 14px rgba(82,216,90,0.2)"
               }}
             >
-              {loading ? `순차 분석 중... (${loadingProgress}%)` : `🚀 업로드된 사진 일괄 분석하기`}
+              {loading ? `순차 분석 중... (${loadingProgress}%)` : !rosterFilled ? `👥 라인업 10명을 모두 입력해주세요` : `🚀 업로드된 사진 일괄 분석하기`}
             </button>
           </div>
         </div>
@@ -824,6 +1044,8 @@ export default function AnalysisPage() {
             </button>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

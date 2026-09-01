@@ -1,4 +1,6 @@
 import type { GameRecord, PlayerStats, Badge, NicknameEntry } from "./types";
+import { normalizeChampionName } from "./champions";
+import { computeGameAwards } from "./awards";
 
 // ─── 닉네임 정규화 (띄어쓰기/대소문자 무시) ───────────────────
 export function normalizeId(name: string): string {
@@ -90,7 +92,7 @@ export function computeHoneyChamps(records: GameRecord[]): Set<string> {
       team.forEach((p, idx) => {
         if (!p.champion || p.champion === "?") return;
         const pos = POS[idx]; if (!pos) return;
-        const gk = `${pos}|||${p.champion}`;
+        const gk = `${pos}|||${normalizeChampionName(p.champion)}`;
         if (!pcMap.has(gk)) pcMap.set(gk, { w: 0, l: 0, p: 0 });
         const g = pcMap.get(gk)!; g.p++; if (won) g.w++; else g.l++;
         const pk = `${p.nickname}|||${gk}`;
@@ -102,7 +104,9 @@ export function computeHoneyChamps(records: GameRecord[]): Set<string> {
     proc(r.team2, r.winTeam === 2);
     if (r.bans) {
       [...(r.bans.team1 || []), ...(r.bans.team2 || [])].forEach(c => {
-        if (c) banMap.set(c, (banMap.get(c) || 0) + 1);
+        if (!c) return;
+        const nc = normalizeChampionName(c);
+        banMap.set(nc, (banMap.get(nc) || 0) + 1);
       });
     }
   });
@@ -210,7 +214,7 @@ export function computePlayerStats(nickname: string, records: GameRecord[], nick
   const championStats: PlayerStats["championStats"] = {};
   const kdaTotal = { kills: 0, deaths: 0, assists: 0, games: 0 };
   playerGames.forEach((g) => {
-    const champ = g.data.champion?.trim() || "?";
+    const champ = g.data.champion ? normalizeChampionName(g.data.champion) : "?";
     if (!championStats[champ]) championStats[champ] = { wins: 0, losses: 0, games: 0, kills: 0, deaths: 0, assists: 0 };
     championStats[champ].games++;
     if (g.won) championStats[champ].wins++; else championStats[champ].losses++;
@@ -332,12 +336,24 @@ export function computePlayerStats(nickname: string, records: GameRecord[], nick
     });
   });
 
+  // ─── MVP / ACE 카운팅 ───────────────────────────────────────
+  let mvpCount = 0;
+  let aceCount = 0;
+  playerGames.forEach((g) => {
+    const awards = computeGameAwards(g.record.team1, g.record.team2, g.record.winTeam);
+    if (!awards) return;
+    if (awards.mvpTeam === g.team && awards.mvpIndex === g.index) mvpCount++;
+    if (awards.aceTeam === g.team && awards.aceIndex === g.index) aceCount++;
+  });
+
   const badges = computeBadges({
     totalGames, winRate: totalGames > 0 ? wins / totalGames : 0,
     currentStreak, maxWinStreak, maxLoseStreak, score, championStats, vsStats, withStats, posDuoStats,
     kdaTotal: kdaTotal.games > 0 ? kdaTotal : undefined,
     honeyChamps,
     champBanCounts,
+    mvpCount,
+    aceCount,
   });
 
   return {
@@ -349,6 +365,8 @@ export function computePlayerStats(nickname: string, records: GameRecord[], nick
     topChampions, championStats, positionStats, vsStats, withStats, badges,
     honeyChamps,
     champBanCounts,
+    mvpCount,
+    aceCount,
   };
 }
 
@@ -362,6 +380,8 @@ function computeBadges(s: {
   kdaTotal?: { kills: number; deaths: number; assists: number; games: number };
   honeyChamps?: Set<string>;
   champBanCounts?: Record<string, number>;
+  mvpCount?: number;
+  aceCount?: number;
 }): Badge[] {
   const badges: Badge[] = [];
 
@@ -430,7 +450,7 @@ function computeBadges(s: {
     const kdaStr = s.kdaTotal.deaths > 0
       ? ((s.kdaTotal.kills + s.kdaTotal.assists) / s.kdaTotal.deaths).toFixed(2) : "Perfect";
     if (kdaRatio >= 5.0)
-      badges.push({ id: "bladeWhisper", icon: "🗡️", name: "칼날의 속삭임",
+      badges.push({ id: "bladeWhisper", icon: "🔪", name: "칼날의 속삭임",
         description: `평균 KDA ${kdaStr} (${s.kdaTotal.games}판)`, color: "#e91e63", grade: "희귀" });
     if (avgD <= 1.5)
       badges.push({ id: "immortal", icon: "🛡️", name: "죽지 않는 닌자",
@@ -529,7 +549,7 @@ function computeBadges(s: {
       .filter(([name, data]) => s.honeyChamps!.has(name) && data.games >= 10)
       .sort((a, b) => b[1].games - a[1].games)[0];
     if (honeyGame10)
-      badges.push({ id: "honeyProphet", icon: "🌿", name: "꿀챔 전도사",
+      badges.push({ id: "honeyProphet", icon: "🌾", name: "꿀챔 전도사",
         description: `${honeyGame10[0]} ${honeyGame10[1].games}판 플레이 (꿀챔)`, color: "#22c55e", grade: "영웅" });
   }
 
@@ -543,6 +563,29 @@ function computeBadges(s: {
 
   if (s.totalGames >= 40)
     badges.push({ id: "guardian", icon: "🌿", name: "나뭇잎의 수호자", description: `총 ${s.totalGames}경기 참여`, color: "#00e5ff", grade: "신화" });
+
+  if (uniqueChamps >= 45)
+    badges.push({ id: "champOmniscient", icon: "🎓", name: "챔피언 전집", description: `${uniqueChamps}종류의 챔피언 플레이 달성`, color: "#a855f7", grade: "신화" });
+
+  // ── MVP / ACE 업적 ──
+  const mvc = s.mvpCount ?? 0;
+  const acc = s.aceCount ?? 0;
+
+  if (mvc >= 1)
+    badges.push({ id: "mvpFirst", icon: "🥇", name: "첫 MVP", description: `MVP ${mvc}회 달성`, color: "#f59e0b", grade: "희귀" });
+  if (mvc >= 5)
+    badges.push({ id: "mvpHabit", icon: "🌠", name: "MVP 상습범", description: `MVP ${mvc}회 달성`, color: "#f59e0b", grade: "영웅" });
+  if (mvc >= 10)
+    badges.push({ id: "mvpMachine", icon: "🏅", name: "MVP 머신", description: `MVP ${mvc}회 달성`, color: "#f59e0b", grade: "전설" });
+  if (mvc >= 20)
+    badges.push({ id: "mvpGod", icon: "🔱", name: "MVP의 신", description: `MVP ${mvc}회 달성`, color: "#f59e0b", grade: "신화" });
+
+  if (acc >= 1)
+    badges.push({ id: "aceFirst", icon: "🕯️", name: "패배 속의 빛", description: `ACE ${acc}회 달성 (패배팀 최고 기여)`, color: "#7c3aed", grade: "희귀" });
+  if (acc >= 5)
+    badges.push({ id: "aceSpirit", icon: "💥", name: "불굴의 용사", description: `ACE ${acc}회 달성`, color: "#7c3aed", grade: "영웅" });
+  if (acc >= 10)
+    badges.push({ id: "aceLegend", icon: "💜", name: "ACE의 저주", description: `ACE ${acc}회 달성 — 질 때도 빛났다`, color: "#7c3aed", grade: "전설" });
 
   if (s.maxWinStreak >= 10)
     badges.push({ id: "destroyer", icon: "👹", name: "파괴신", description: `최고 ${s.maxWinStreak}연승 달성`, color: "#c62828", grade: "전설" });

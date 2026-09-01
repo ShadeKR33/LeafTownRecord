@@ -52,7 +52,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.4; }
   50%       { transform: translateY(-6px) rotate(4deg); opacity: 0.7; }
 }
-.leaf-float { animation: leafFloat 3s ease-in-out infinite; }
+.leaf-float { animation: leafFloat 3s ease-in-out infinite; pointer-events: auto; cursor: pointer; }
 
 /* ── 비 마을 모드 ──────────────────────────────────────────────────
    그레이 + 연보라 테마. 다크모드가 아닌 "그레이 모드".
@@ -181,10 +181,355 @@ html.aka-mode ::-webkit-scrollbar-track { background: #0c0c0e; }
 html.aka-mode ::-webkit-scrollbar-thumb { background: #3c1313; }
 html.aka-mode ::-webkit-scrollbar-thumb:hover { background: #6b1d1d; }
 
+/* ── 모래 마을 모드 ──────────────────────────────────────────────────
+   황토색/베이지색/모래색의 따뜻하고 견고한 사막 테마.
+──────────────────────────────────────────────────────────────── */
+html.sand-mode {
+  --bg:           #f5eee0; /* 부드럽고 따뜻한 모래색 (Warm Sandy Beige) */
+  --panel:        #faf5eb; /* 밝고 차분한 모래 패널 (Sand Cream Panel) */
+  --panel-alt:    #fdfaf3;
+  --hover:        #eae1cf; /* 미세하게 짙은 모래 호버 */
+  --border:       #e3d8c5;
+  --border-green: #d0b894; /* 강조용 샌드 오렌지/브라운 테두리 */
+  --accent:       #b27c30; /* 모래 마을의 황금빛 사막 갈색 (Golden Desert Terracotta) */
+  --accent-light: #d49f55;
+  --accent-dark:  #8b5c1c;
+  --accent-gold:  #e0b060;
+  --orange:       #b27c30;
+  --text:         #3e3223; /* 눈이 편안한 깊은 흙/에스프레소 갈색 텍스트 */
+  --text-muted:   #7d6c57;
+  --text-dim:     #ab9a85;
+  --text-bright:  #8a5818;
+  --win:          #16a34a;
+  --loss:         #dc2626;
+}
+
+html.sand-mode body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(178, 124, 48, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(208, 184, 148, 0.1) 0%, transparent 60%);
+  background-size: auto;
+}
+
+/* 나뭇잎 숨기기 */
+html.sand-mode .leaf-float { display: none; }
+
+/* 모래바람 레이어 */
+.sand-wind-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.sand-grain {
+  position: absolute;
+  background: radial-gradient(circle, rgba(220, 165, 90, 0.8) 0%, rgba(178, 124, 48, 0.1) 85%);
+  border-radius: 50%;
+  animation: sandDrift linear infinite;
+}
+@keyframes sandDrift {
+  from { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 0.85; }
+  90%  { opacity: 0.85; }
+  to   { transform: translate(120vw, -15vh) rotate(360deg); opacity: 0; }
+}
+
+html.sand-mode ::-webkit-scrollbar-track { background: #f5eee0; }
+html.sand-mode ::-webkit-scrollbar-thumb { background: #d0b894; }
+html.sand-mode ::-webkit-scrollbar-thumb:hover { background: #b27c30; }
+
+/* ── 구름 마을 모드 ──────────────────────────────────────────────────
+   하늘색/실버그레이/쿨화이트의 상쾌하고 시원한 고산지대 테마.
+──────────────────────────────────────────────────────────────── */
+html.cloud-mode {
+  --bg:           #eef5f9; /* 맑고 상쾌한 하늘빛 미스트 그레이 (Cool Sky Grey) */
+  --panel:        #f6fafd; /* 시원하고 밝은 연파랑 패널 */
+  --panel-alt:    #fafcfe;
+  --hover:        #e2eff7;
+  --border:       #d2e2ee;
+  --border-green: #a3c9e6; /* 강조용 쿨 스틸 블루 테두리 */
+  --accent:       #1d4ed8; /* 구름 마을 번개의 진한 로열 블루 (Lightning Royal Blue) */
+  --accent-light: #3b82f6;
+  --accent-dark:  #1e3a8a;
+  --accent-gold:  #f59e0b;
+  --orange:       #2563eb;
+  --text:         #0f172a; /* 신뢰감 주는 네이비 블랙 텍스트 */
+  --text-muted:   #475569;
+  --text-dim:     #94a3b8;
+  --text-bright:  #2563eb;
+  --win:          #16a34a;
+  --loss:         #dc2626;
+}
+
+html.cloud-mode body {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(163, 201, 230, 0.1) 0%, transparent 60%);
+  background-size: auto;
+}
+
+/* 나뭇잎 숨기기 */
+html.cloud-mode .leaf-float { display: none; }
+
+/* 안개/구름 레이어 */
+.cloud-mist-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.cloud-wisp {
+  position: absolute;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.85) 0%, rgba(190, 215, 245, 0.3) 60%, transparent 100%);
+  border-radius: 50%;
+  animation: cloudMistFloat linear infinite;
+  filter: blur(10px);
+}
+@keyframes cloudMistFloat {
+  0%   { transform: translate(-15vw, 0) scale(1); opacity: 0; }
+  15%  { opacity: 0.98; }
+  85%  { opacity: 0.98; }
+  to   { transform: translate(115vw, -5vh) scale(1.4); opacity: 0; }
+}
+
+html.cloud-mode ::-webkit-scrollbar-track { background: #eef5f9; }
+html.cloud-mode ::-webkit-scrollbar-thumb { background: #a3c9e6; }
+html.cloud-mode ::-webkit-scrollbar-thumb:hover { background: #1d4ed8; }
+
 /* 두루마리 장식선 */
 .scroll-border {
   border-top: 2px solid transparent;
   border-bottom: 2px solid transparent;
   border-image: linear-gradient(to right, transparent 5%, #C8971A 30%, #2A5C1E 50%, #C8971A 70%, transparent 95%) 1;
   opacity: 0.5;
+}
+
+/* ── 우치하 지하아지트 모드 ─────────────────────────────────────── */
+html.hideout-mode {
+  --bg:           #474b54; /* 석조 회색 (medium stone gray) */
+  --panel:        #545963; /* 패널 (lighter stone gray) */
+  --panel-alt:    #4d515a; /* 보조 패널 (medium-dark stone gray) */
+  --hover:        #664444; /* 회적색 조화 */
+  --border:       #696e79; /* 뚜렷한 회색 테두리 */
+  --border-green: #ef4444; /* 사륜안 빨간색 */
+  --accent:       #dc2626;
+  --accent-light: #f87171;
+  --accent-dark:  #991b1b;
+  --accent-gold:  #fca5a5;
+  --orange:       #ea2027;
+  --text:         #f8fafc;
+  --text-muted:   #e2e8f0; /* 회색 배경에서 가독성을 높인 텍스트 */
+  --text-dim:     #cbd5e1;
+  --text-bright:  #ef4444;
+  --win:          #10b981;
+  --loss:         #ef4444;
+}
+html.hideout-mode body {
+  background-color: #474b54;
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(239,68,68,0.16) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(153,27,27,0.14) 0%, transparent 60%);
+  background-size: auto;
+}
+html.hideout-mode .leaf-float { display: none; }
+html.hideout-mode ::-webkit-scrollbar-track { background: #474b54; }
+html.hideout-mode ::-webkit-scrollbar-thumb { background: #696e79; }
+html.hideout-mode ::-webkit-scrollbar-thumb:hover { background: #dc2626; }
+
+/* 화둔 불씨 이펙트 */
+.hideout-ember-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.ember-particle {
+  position: absolute;
+  background: radial-gradient(circle, rgba(255, 100, 50, 0.7) 0%, rgba(234, 32, 39, 0.1) 80%);
+  border-radius: 50%;
+  animation: emberRise linear infinite;
+}
+@keyframes emberRise {
+  0% { transform: translateY(105vh) translateX(0) scale(1); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(-5vh) translateX(30px) scale(0.6); opacity: 0; }
+}
+
+/* ── 묘목산 모드 ────────────────────────────────────────────── */
+html.myoboku-mode {
+  --bg:           #f2f6ee; /* 소프트 선술 연초록 */
+  --panel:        #ffffff;
+  --panel-alt:    #fafcf7;
+  --hover:        #e7f0e0;
+  --border:       #d4e2cb;
+  --border-green: #15803d; /* 나뭇잎/풀 숲 초록 */
+  --accent:       #166534; /* 깊은 선술 초록 */
+  --accent-light: #22c55e;
+  --accent-dark:  #14532d;
+  --accent-gold:  #ea580c; /* 묘목산 오렌지 기름 색상 */
+  --orange:       #ea580c;
+  --text:         #102a16;
+  --text-muted:   #2d5035;
+  --text-dim:     #d97706; /* 묘목산 호박색 오렌지 */
+  --text-bright:  #15803d;
+  --win:          #15803d;
+  --loss:         #b91c1c;
+}
+html.myoboku-mode body {
+  background-color: #f2f6ee;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(22,101,52,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 90% 80%, rgba(234,88,12,0.07) 0%, transparent 65%);
+  background-size: auto;
+}
+html.myoboku-mode .leaf-float { display: none; }
+html.myoboku-mode ::-webkit-scrollbar-track { background: #f2f6ee; }
+html.myoboku-mode ::-webkit-scrollbar-thumb { background: #d4e2cb; }
+html.myoboku-mode ::-webkit-scrollbar-thumb:hover { background: #15803d; }
+
+/* 선술 에너지 입자 (초록/오렌지 번갈아 띄움) */
+.myoboku-energy-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.energy-particle {
+  position: absolute;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.75) 0%, rgba(21, 128, 61, 0.05) 80%);
+  border-radius: 50%;
+  animation: energyFloat ease-in-out infinite;
+}
+.energy-particle:nth-child(even) {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.75) 0%, rgba(217, 119, 6, 0.05) 80%);
+}
+@keyframes energyFloat {
+  0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  50% { transform: translateY(-30px) translateX(15px); }
+}
+
+/* ── 암살전술 특수부대 모드 ─────────────────────────────────────── */
+html.anbu-mode {
+  --bg:           #1e2430; /* 명확한 슬레이트 회색 바탕 */
+  --panel:        #262d3a; /* 슬레이트 회색 패널 */
+  --panel-alt:    #1f2530;
+  --hover:        #333b4c;
+  --border:       #3f4a5f;
+  --border-green: #06b6d4; /* 청록색/화이트 테마 */
+  --accent:       #06b6d4; /* 생생한 청록색 */
+  --accent-light: #22d3ee;
+  --accent-dark:  #0891b2;
+  --accent-gold:  #e2e8f0; /* 흰색/회색 */
+  --orange:       #06b6d4;
+  --text:         #ffffff; /* 흰색 본문 */
+  --text-muted:   #cbd5e1; /* 연회색 */
+  --text-dim:     #94a3b8;
+  --text-bright:  #22d3ee;
+  --win:          #22c55e;
+  --loss:         #ef4444;
+}
+html.anbu-mode body {
+  background-color: #1e2430;
+  background-image:
+    radial-gradient(circle at 80% 20%, rgba(6,182,212,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 80%, rgba(226,232,240,0.08) 0%, transparent 60%);
+  background-size: auto;
+}
+html.anbu-mode .leaf-float { display: none; }
+html.anbu-mode ::-webkit-scrollbar-track { background: #1e2430; }
+html.anbu-mode ::-webkit-scrollbar-thumb { background: #3f4a5f; }
+html.anbu-mode ::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+
+/* 그림자 연기 효과 (청록색 안개) */
+.anbu-shadow-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.shadow-smoke {
+  position: absolute;
+  background: radial-gradient(circle, rgba(8, 145, 178, 0.4) 0%, rgba(17, 24, 32, 0.05) 75%, transparent 100%);
+  border-radius: 50%;
+  animation: smokeFloat ease-in-out infinite;
+  filter: blur(20px);
+}
+@keyframes smokeFloat {
+  0%, 100% { transform: scale(1) translate(0, 0); opacity: 0; }
+  30% { opacity: 0.9; }
+  70% { opacity: 0.9; }
+  50% { transform: scale(1.3) translate(20px, -20px); }
+}
+
+/* ── 오로치마루의 비밀 실험실 모드 ─────────────────────────────── */
+html.orochimaru-mode {
+  --bg:           #130e26; /* 살짝 밝게 조정한 심연 보라 */
+  --panel:        #1b1433;
+  --panel-alt:    #21183c;
+  --hover:        #2f2355;
+  --border:       #3f3070;
+  --border-green: #22c55e;
+  --accent:       #a855f7;
+  --accent-light: #ca8af9;
+  --accent-dark:  #7e22ce;
+  --accent-gold:  #4ade80;
+  --orange:       #22c55e;
+  --text:         #f3e8ff;
+  --text-muted:   #d8b4fe;
+  --text-dim:     #a855f7;
+  --text-bright:  #22c55e;
+  --win:          #22c55e;
+  --loss:         #ef4444;
+}
+html.orochimaru-mode body {
+  background-color: #130e26;
+  background-image:
+    radial-gradient(circle at 30% 20%, rgba(168,85,247,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(34,197,94,0.1) 0%, transparent 60%);
+  background-size: auto;
+}
+html.orochimaru-mode .leaf-float { display: none; }
+html.orochimaru-mode ::-webkit-scrollbar-track { background: #130e26; }
+html.orochimaru-mode ::-webkit-scrollbar-thumb { background: #3f3070; }
+html.orochimaru-mode ::-webkit-scrollbar-thumb:hover { background: #a855f7; }
+
+/* 실험실 액체 거품 효과 */
+.orochi-bubble-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.orochi-bubble {
+  position: absolute;
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.3) 0%, rgba(168, 85, 247, 0.08) 80%);
+  border-radius: 50%;
+  animation: bubbleRise linear infinite;
+}
+@keyframes bubbleRise {
+  0% { transform: translateY(105vh) scale(0.8); opacity: 0; }
+  10% { opacity: 0.75; }
+  90% { opacity: 0.75; }
+  100% { transform: translateY(-5vh) scale(1.2); opacity: 0; }
+}
+
+
+@keyframes limitedPulse {
+  0%   { box-shadow: 0 0 6px var(--lp-c1), 0 0 14px var(--lp-c2); }
+  100% { box-shadow: 0 0 10px var(--lp-c1), 0 0 26px var(--lp-c2); }
+}
+.limited-badge-circle {
+  animation: limitedPulse 1.8s ease-in-out infinite alternate;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 
 interface SectionProps {
@@ -75,6 +76,7 @@ function Label({ children }: { children: React.ReactNode }) {
 }
 
 export default function GuidePage() {
+  const [secretOpen, setSecretOpen] = useState(false);
   const sections = [
     { id: "start",    icon: "🚀", label: "빠른 시작"   },
     { id: "manage",   icon: "🏕️", label: "마을 관리"   },
@@ -83,6 +85,7 @@ export default function GuidePage() {
     { id: "champion", icon: "⚔️", label: "챔피언 분석" },
     { id: "calendar", icon: "📅", label: "달력"        },
     { id: "team",     icon: "🎲", label: "팀 편성"     },
+    { id: "theme",    icon: "🎨", label: "마을 테마"   },
   ];
 
   return (
@@ -266,13 +269,11 @@ export default function GuidePage() {
           <Label>달력 사용 방법</Label>
           <Steps items={[
             "내전이 있었던 날짜에는 점(●)이 표시됩니다. 날짜를 클릭하면 해당 날의 게임 목록이 나와요.",
-            "우측 상단 '+ 기록 추가' 버튼으로 날짜·게임 결과를 직접 입력할 수 있습니다.",
             "게임 목록에서 항목을 클릭하면 세부 내용을 수정하거나 삭제할 수 있어요.",
             "캡쳐 분석으로 등록한 기록도 달력에 자동으로 반영됩니다.",
           ]} />
         </Card>
         <Tips items={[
-          "직접 입력 시 날짜를 클릭하면 해당 날짜가 자동으로 선택됩니다.",
           "달력은 그룹 전체의 기록을 기준으로 표시됩니다.",
         ]} />
       </Section>
@@ -316,17 +317,107 @@ export default function GuidePage() {
           ]} />
         </Card>
         <Tips items={[
-          "홀수 인원도 가능하지만 한 팀이 1명 더 많아질 수 있어요.",
-          "팀 편성 결과는 저장되지 않습니다. 기록이 필요하면 달력·캡쳐 분석을 이용하세요.",
+          "팀 편성 결과는 저장되지 않습니다. 기록이 필요하면 캡쳐 분석을 이용하세요.",
         ]} />
       </Section>
+
+      {/* ── 마을 테마 ── */}
+      <Section id="theme" icon="🎨" title="마을 테마">
+        <Card>
+          <Label>마을 테마 선택 및 연동</Label>
+          <p className="text-sm leading-relaxed mb-3" style={{ color: "var(--text-muted)" }}>
+            내전 기록소는 다섯 가지 고유한 마을 테마를 제공하며, 각 테마는 사이트의 전체적인 비주얼과 특수 효과(애니메이션 등)를 변경합니다.
+          </p>
+          <div className="flex flex-col gap-3">
+            {[
+              { icon: "🍃", name: "나뭇잎 마을 내전 기록소 (Leaf Town)", desc: "성장과 팀워크를 중시하는 따뜻한 녹색 테마입니다. 은은하게 날아다니는 나뭇잎 장식 효과가 적용됩니다." },
+              { icon: "🌧️", name: "비 마을 내전 기록소 (Rain Town)", desc: "데이터와 전략적인 분석을 중시하는 차분한 보라색 테마입니다. 화면 전체에 운치 있게 내리는 빗줄기 효과가 적용됩니다." },
+              { icon: "🌕", name: "아카츠키 전쟁 기록소 (Akatsuki)", desc: "승리와 압도적인 무력을 추구하는 강렬한 붉은색 테마입니다. 아카츠키의 상징인 붉은 구름이 유유히 흘러가는 효과가 적용됩니다." },
+              { icon: "🏜️", name: "모래 마을 내전 기록소 (Sand Village)", desc: "인내와 거친 환경에서의 생존을 상징하는 황토/베이지색 테마입니다. 사막의 느낌이 나는 모래바람 효과 및 단순화된 돔형 가옥과 카제카게 관저 실루엣 배경이 적용됩니다." },
+              { icon: "⚡", name: "구름 마을 내전 기록소 (Cloud Village)", desc: "단결과 시원한 추진력을 상징하는 상쾌한 스카이 블루/실버 그레이 테마입니다. 높은 고도의 산맥에서 볼 수 있는 천천히 흐르는 안개구름 효과 및 절벽 관저/피뢰침 실루엣 배경이 적용됩니다." }
+            ].map(t => (
+              <div key={t.name} className="flex items-start gap-3 p-3.5 rounded-xl border"
+                style={{ background: "var(--hover)", borderColor: "var(--border)" }}>
+                <span className="text-2xl mt-0.5" style={t.name.startsWith("아카츠키") ? { filter: "sepia(1) saturate(8) hue-rotate(310deg) brightness(0.85)" } : undefined}>{t.icon}</span>
+                <div>
+                  <p className="text-xs font-black" style={{ color: "var(--text)" }}>{t.name}</p>
+                  <p className="text-xs mt-1 leading-relaxed" style={{ color: "var(--text-dim)" }}>{t.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <Tips items={[
+          "언제든지 화면 우측 상단의 테마 셀렉터(🍃, 🌧️, 🌕, 🏜️, ⚡ 아이콘)를 클릭해 실시간으로 원하는 테마를 직접 변경하고 토글할 수 있습니다."
+        ]} />
+      </Section>
+
+      {/* 📜 알려지지 않은 비밀의 서 (이스터에그 힌트) */}
+      <div className="rounded-2xl p-5 mb-10 transition-all duration-300"
+        style={{
+          background: "var(--panel)",
+          border: "1px solid var(--border)",
+          boxShadow: secretOpen ? "0 8px 24px rgba(0, 0, 0, 0.08), 0 0 12px var(--accent-light)" : "none",
+        }}>
+        <button
+          onClick={() => setSecretOpen(!secretOpen)}
+          className="w-full flex items-center justify-between text-left focus:outline-none"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📜</span>
+            <div>
+              <p className="text-sm font-black" style={{ color: "var(--accent)" }}>알려지지 않은 비밀의 서</p>
+              <p className="text-xs" style={{ color: "var(--text-dim)" }}>대륙 전역에 숨겨진 4가지 비술 테마의 실마리가 봉인되어 있습니다.</p>
+            </div>
+          </div>
+          <span className="text-lg transition-transform duration-300" style={{ transform: secretOpen ? "rotate(180deg)" : "rotate(0deg)", color: "var(--text-dim)" }}>
+            ▼
+          </span>
+        </button>
+
+        {secretOpen && (
+          <div className="mt-5 pt-5 border-t flex flex-col gap-4" style={{ borderColor: "var(--border)" }}>
+            {[
+              {
+                title: "우치하 지하아지트 테마 👁️",
+                desc: "어둠 속에서 진실의 눈을 뜨고 싶다면 그 일족의 이름이나 천재 형제들의 이름을 나열하시오"
+              },
+              {
+                title: "묘목산 테마 🐸",
+                desc: "나뭇잎 마을의 푸른 바람을 타고 화면 위로 날아다니는 상징적인 잎새중 하나를 빠르게 포착 하십시요"
+              },
+              {
+                title: "암살전술 특수부대 테마 🎭",
+                desc: "상세 페이지에서 닌자들의 명예로운 서열이 기록된 랭킹 페이지 최하단, 어둠의 경계에 희미하게 숨겨진 그림자를 찾아 어둠을 불러들이십시오."
+              },
+              {
+                title: "오로치마루의 비밀 실험실 테마 🧪",
+                desc: "백사의 주인이 행하는 금단 연구의 비밀을 열기 위해서는, 마을 관리 페이지의 성향 퀴즈에서 자신의 강한 신념을 나타내여 집요하게 클릭해야 할 것입니다."
+              }
+            ].map((hint, i) => (
+              <div key={i} className="p-3.5 rounded-xl border transition-all"
+                style={{ background: "var(--hover)", borderColor: "var(--border)" }}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="text-xs font-bold" style={{ color: "var(--text-dim)" }}>비술 힌트 {i + 1}:</span>
+                  <span className="text-xs font-black transition-all duration-300 blur-[5px] hover:blur-none select-none cursor-pointer"
+                    style={{ color: "var(--accent)" }}
+                    title="마우스를 올리면 봉인이 해제됩니다">
+                    {hint.title}
+                  </span>
+                </div>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{hint.desc}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* 저작권 안내 */}
       <div className="rounded-2xl p-5 mb-10" style={{ background: "var(--hover)", border: "1px solid var(--border)" }}>
         <p className="text-xs font-black mb-2" style={{ color: "var(--text-muted)" }}>⚠️ 저작권 관련 안내</p>
         <p className="text-xs leading-relaxed" style={{ color: "var(--text-dim)" }}>
           이 사이트는 애니메이션 <strong style={{ color: "var(--text-muted)" }}>나루토(NARUTO)</strong>의 세계관과 설정
-          (나뭇잎 마을, 비 마을, 아카츠키, 달의 눈 계획, 페인의 시험 등)에서 아이디어를 차용하여 제작되었습니다.
+          (나뭇잎 마을, 비 마을, 모래 마을, 구름 마을, 아카츠키, 달의 눈 계획, 페인의 시험 등)에서 아이디어를 차용하여 제작되었습니다.
           나루토의 모든 저작권은 <strong style={{ color: "var(--text-muted)" }}>기시모토 마사시 / 집영사 / TV도쿄 / 피에로</strong>에 있습니다.
         </p>
         <p className="text-xs leading-relaxed mt-2" style={{ color: "var(--text-dim)" }}>

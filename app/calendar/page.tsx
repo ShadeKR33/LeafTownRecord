@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { loadGameRecords, saveGameRecords, loadNicknames } from "@/lib/stats";
-import type { GameRecord, PlayerGameData } from "@/lib/types";
+import type { GameRecord, PlayerGameData, NapuSeriesRating } from "@/lib/types";
 import GuideBanner from "@/components/GuideBanner";
+import MatchStatsChart from "@/components/MatchStatsChart";
 
 const POSITIONS = ["탑", "정글", "미드", "원딜", "서포터"];
 const ROLE_COLORS: Record<string, string> = {
@@ -13,6 +15,27 @@ const ROLE_COLORS: Record<string, string> = {
 const emptyTeamRow = (position: string): PlayerGameData => ({
   nickname: "", position, champion: "",
 });
+
+const formatDuration = (mins?: number): string | null => {
+  if (!mins) return null;
+  const totalSeconds = Math.round(mins * 60);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}분 ${s}초`;
+};
+
+const durationToMmSs = (mins: number): string => {
+  const totalSeconds = Math.round(mins * 60);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+};
+
+const parseMmSs = (str: string): number | undefined => {
+  const match = str.trim().match(/^(\d{1,3}):(\d{2})$/);
+  if (!match) return undefined;
+  return parseInt(match[1]) + parseInt(match[2]) / 60;
+};
 
 const emptyGameRecord = (): Omit<GameRecord, "id"> => ({
   date: new Date().toISOString().slice(0, 10),
@@ -25,6 +48,9 @@ const emptyGameRecord = (): Omit<GameRecord, "id"> => ({
 });
 
 export default function CalendarPage() {
+  const { data: session } = useSession();
+  const isViewer = session?.user?.role === "viewer";
+
   const [records, setRecords] = useState<GameRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -35,6 +61,12 @@ export default function CalendarPage() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
+
+  const [durationStr, setDurationStr] = useState("");
+  const [napuRating, setNapuRating] = useState<NapuSeriesRating | null>(null);
+  const [showNapu, setShowNapu] = useState(false);
+  const [napuLoading, setNapuLoading] = useState(false);
+  const [napuGenerating, setNapuGenerating] = useState(false);
 
   // 닉네임 자동완성용
   const [allNicknames, setAllNicknames] = useState<string[]>([]);
@@ -54,6 +86,33 @@ export default function CalendarPage() {
     saveGameRecords(data);
   };
 
+  // 날짜 선택 시 나푸평점 조회
+  useEffect(() => {
+    if (!selectedDate) { setNapuRating(null); return; }
+    setNapuLoading(true);
+    fetch(`/api/napu-rating?date=${selectedDate}`)
+      .then(r => r.json())
+      .then((data: NapuSeriesRating | null) => setNapuRating(data ?? null))
+      .catch(() => setNapuRating(null))
+      .finally(() => setNapuLoading(false));
+  }, [selectedDate]);
+
+  const generateNapuRating = async () => {
+    if (!selectedDate) return;
+    setNapuGenerating(true);
+    try {
+      const res = await fetch("/api/napu-rating", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: selectedDate }),
+      });
+      const data = await res.json() as NapuSeriesRating & { error?: string };
+      if (data.error) alert(data.error);
+      else setNapuRating(data);
+    } catch { alert("평점 생성 중 오류가 발생했습니다"); }
+    finally { setNapuGenerating(false); }
+  };
+
   // ─── 폼 유틸 ────────────────────────────────────────────────────────
   const updateTeamPlayer = (team: 1 | 2, idx: number, field: keyof PlayerGameData, value: string | number) => {
     setForm((prev) => {
@@ -68,18 +127,24 @@ export default function CalendarPage() {
     const hasPlayers = form.team1.some((p) => p.nickname.trim()) || form.team2.some((p) => p.nickname.trim());
     if (!hasPlayers || !form.date) return;
 
+    const parsedDuration = durationStr.trim() ? parseMmSs(durationStr) : undefined;
+    const gameDuration = parsedDuration !== undefined ? parsedDuration : form.gameDuration;
+    const recordData = { ...form, gameDuration };
+
     if (editId) {
-      save(records.map((r) => (r.id === editId ? { ...form, id: editId } : r)));
+      save(records.map((r) => (r.id === editId ? { ...recordData, id: editId } : r)));
       setEditId(null);
     } else {
-      save([...records, { ...form, id: Date.now().toString() }]);
+      save([...records, { ...recordData, id: Date.now().toString() }]);
     }
     setForm(emptyGameRecord());
+    setDurationStr("");
     setShowForm(false);
   };
 
   const startEdit = (r: GameRecord) => {
-    setForm({ date: r.date, gameFormat: r.gameFormat, gameNumber: r.gameNumber, team1: r.team1, team2: r.team2, winTeam: r.winTeam, summary: r.summary || "" });
+    setForm({ date: r.date, gameFormat: r.gameFormat, gameNumber: r.gameNumber, team1: r.team1, team2: r.team2, winTeam: r.winTeam, summary: r.summary || "", bans: r.bans, gameDuration: r.gameDuration });
+    setDurationStr(r.gameDuration ? durationToMmSs(r.gameDuration) : "");
     setEditId(r.id);
     setShowForm(true);
     setSelectedDate(null);
@@ -114,29 +179,6 @@ export default function CalendarPage() {
     return day >= 1 && day <= daysInMonth ? day : null;
   });
 
-  const TeamTable = ({ team, label, isWinner }: { team: PlayerGameData[]; label: string; isWinner: boolean }) => (
-    <div className={`flex-1 min-w-0 p-3 rounded-lg transition-all ${isWinner ? "border shadow-sm" : ""}`}
-         style={isWinner ? { background: "rgba(82, 168, 255, 0.08)", borderColor: "rgba(82, 168, 255, 0.3)" } : {}}>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-bold" style={{ color: isWinner ? "var(--win)" : "var(--loss)" }}>
-          {label}
-        </span>
-        {isWinner && <span className="text-xs px-2 py-0.5 rounded shadow-sm" style={{ background: "var(--win)", color: "var(--panel-alt)", fontWeight: "bold" }}>🏆 승리</span>}
-      </div>
-      <div className="space-y-1">
-        {team.filter((p) => p.nickname).map((p, i) => (
-          <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded text-xs" style={{ background: isWinner ? "rgba(255, 255, 255, 0.5)" : "var(--panel-alt)" }}>
-            <span className="w-12 text-center rounded px-1" style={{ background: (ROLE_COLORS[p.position || ""] || "var(--accent)") + "22", color: ROLE_COLORS[p.position || ""] || "var(--accent)", fontSize: "10px", fontWeight: "bold" }}>
-              {p.position}
-            </span>
-            <span className="flex-1 font-semibold" style={{ color: "var(--text)" }}>{p.nickname}</span>
-            {p.champion && <span style={{ color: "var(--accent)", fontWeight: "bold" }}>{p.champion}</span>}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <GuideBanner
@@ -146,19 +188,12 @@ export default function CalendarPage() {
         guideAnchor="calendar"
         items={[
           "내전이 있었던 날짜에 점(●)이 표시됩니다. 날짜를 클릭하면 해당 날의 게임 목록을 볼 수 있어요.",
-          "우측 상단 '+ 기록 추가' 버튼으로 게임 결과를 직접 입력할 수 있습니다.",
           "캡쳐 분석 페이지에서 등록한 기록도 달력에 자동으로 반영됩니다.",
           "게임 항목을 클릭하면 세부 내용을 수정하거나 삭제할 수 있어요.",
         ]}
       />
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold" style={{ color: "var(--accent)" }}>📅 내전 달력</h2>
-        <button
-          onClick={() => { setShowForm(!showForm); setEditId(null); setForm(emptyGameRecord()); setSelectedDate(null); }}
-          className="px-4 py-2 rounded text-sm font-semibold"
-          style={{ background: "var(--accent)", color: "var(--panel-alt)" }}>
-          + 경기 기록 추가
-        </button>
       </div>
 
       {/* ─── 경기 기록 등록 폼 ─── */}
@@ -211,6 +246,27 @@ export default function CalendarPage() {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* 게임 시간 */}
+          <div className="mb-4">
+            <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>⏱ 게임 시간 (MM:SS)</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                className="w-28 px-3 py-2 rounded text-sm"
+                style={{ background: "var(--panel-alt)", border: `1px solid ${durationStr && parseMmSs(durationStr) === undefined ? "var(--loss)" : "var(--border)"}`, color: "var(--text)" }}
+                value={durationStr}
+                onChange={(e) => setDurationStr(e.target.value)}
+                placeholder="32:15"
+              />
+              {durationStr && parseMmSs(durationStr) === undefined && (
+                <span className="text-xs" style={{ color: "var(--loss)" }}>MM:SS 형식으로 입력 (예: 32:15)</span>
+              )}
+              {durationStr && parseMmSs(durationStr) !== undefined && (
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{formatDuration(parseMmSs(durationStr))}</span>
+              )}
             </div>
           </div>
 
@@ -272,7 +328,7 @@ export default function CalendarPage() {
             <button onClick={handleSubmit} className="px-5 py-2 rounded text-sm font-semibold" style={{ background: "var(--accent)", color: "var(--panel-alt)" }}>
               {editId ? "저장" : "등록"}
             </button>
-            <button onClick={() => { setShowForm(false); setEditId(null); }} className="px-5 py-2 rounded text-sm" style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+            <button onClick={() => { setShowForm(false); setEditId(null); setDurationStr(""); }} className="px-5 py-2 rounded text-sm" style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
               취소
             </button>
           </div>
@@ -346,15 +402,30 @@ export default function CalendarPage() {
           {/* ─── 선택한 날의 상세 기록 ─── */}
           {selectedDate && (
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
                 <h3 className="font-bold text-base" style={{ color: "var(--accent)" }}>
                   {selectedDate} 경기 기록 ({dayRecords.length}경기)
                 </h3>
-                <button onClick={() => { setForm({ ...emptyGameRecord(), date: selectedDate }); setShowForm(true); setEditId(null); }}
-                  className="px-3 py-1.5 rounded text-xs font-semibold"
-                  style={{ background: "var(--accent)", color: "var(--panel-alt)" }}>
-                  + 이 날 경기 추가
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowNapu(true)}
+                    className="px-3 py-1 rounded text-xs font-bold flex items-center gap-1"
+                    style={{
+                      background: napuRating
+                        ? "linear-gradient(var(--panel-alt), var(--panel-alt)) padding-box, linear-gradient(135deg, #22c55e, #3b82f6) border-box"
+                        : "var(--hover)",
+                      border: napuRating ? "1px solid transparent" : "1px solid var(--border)",
+                      color: napuRating ? "var(--accent)" : "var(--text-muted)",
+                    }}>
+                    🍃 나푸평점{napuRating ? " ✓" : napuLoading ? " ..." : ""}
+                  </button>
+                  <button
+                    onClick={() => setSelectedDate(null)}
+                    className="px-3 py-1 rounded text-xs font-semibold"
+                    style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                    ✕ 닫기
+                  </button>
+                </div>
               </div>
 
               {dayRecords.length === 0 ? (
@@ -372,25 +443,19 @@ export default function CalendarPage() {
                           <div className="flex items-center gap-3">
                             <span className="text-xs px-2 py-1 rounded font-semibold"
                               style={{ background: "var(--hover)", color: "var(--accent)", border: "1px solid var(--border)" }}>
-                              {r.gameFormat} · {r.gameNumber}경기
-                            </span>
-                            <span className="text-sm font-bold"
-                              style={{ color: r.winTeam === 1 ? "var(--win)" : "var(--loss)" }}>
-                              팀{r.winTeam} 승리
+                              {r.gameFormat} · {r.gameNumber}경기{formatDuration(r.gameDuration) ? ` · ⏱ ${formatDuration(r.gameDuration)}` : ""}
                             </span>
                           </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => startEdit(r)} className="px-2 py-1 rounded text-xs" style={{ background: "var(--hover)", color: "var(--accent)", border: "1px solid var(--border)" }}>수정</button>
-                            <button onClick={() => deleteRecord(r.id)} className="px-2 py-1 rounded text-xs" style={{ background: "var(--hover)", color: "var(--loss)", border: "1px solid var(--border)" }}>삭제</button>
-                          </div>
+                          {!isViewer && (
+                            <div className="flex gap-2">
+                              <button onClick={() => startEdit(r)} className="px-2 py-1 rounded text-xs" style={{ background: "var(--hover)", color: "var(--accent)", border: "1px solid var(--border)" }}>수정</button>
+                              <button onClick={() => deleteRecord(r.id)} className="px-2 py-1 rounded text-xs" style={{ background: "var(--hover)", color: "var(--loss)", border: "1px solid var(--border)" }}>삭제</button>
+                            </div>
+                          )}
                         </div>
 
-                        {/* 팀 구성 */}
-                        <div className="flex flex-col md:flex-row gap-4">
-                          <TeamTable team={r.team1} label="팀 1" isWinner={r.winTeam === 1} />
-                          <div className="hidden md:flex items-center" style={{ color: "var(--border)", fontSize: "24px" }}>VS</div>
-                          <TeamTable team={r.team2} label="팀 2" isWinner={r.winTeam === 2} />
-                        </div>
+                        {/* 경기 기록 상세 정보 (승패/KDA/DMG%/DT%/KP%, 딜량 비교, 밴픽) */}
+                        <MatchStatsChart record={r} />
 
                         {/* 경기 요약 */}
                         {r.summary && (
@@ -446,6 +511,220 @@ export default function CalendarPage() {
           )}
         </>
       )}
+
+      {/* ── 나푸평점 모달 ──────────────────────────────────────────── */}
+      {showNapu && selectedDate && (
+        <NapuRatingModal
+          date={selectedDate}
+          rating={napuRating}
+          generating={napuGenerating}
+          canGenerate={!isViewer}
+          onGenerate={generateNapuRating}
+          onClose={() => setShowNapu(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ── 나푸평점 모달 컴포넌트 ──────────────────────────────────────────────────
+const SCORE_COLOR_T1 = "#e05050";
+const SCORE_COLOR_T2 = "#4f8ef7";
+const POS_EMOJI: Record<string, string> = {
+  탑: "⚔️", 정글: "🌿", 미드: "⚡", 원딜: "🎯", 서포터: "🛡️",
+};
+
+function scoreStyle(score: number, teamColor: string) {
+  const alpha = score >= 8 ? "ff" : score >= 6 ? "dd" : "99";
+  return {
+    background: teamColor + "22",
+    border: `1.5px solid ${teamColor}${alpha}`,
+    color: teamColor,
+    fontWeight: 800,
+    fontSize: 15,
+    borderRadius: 6,
+    padding: "3px 10px",
+    minWidth: 48,
+    textAlign: "center" as const,
+    letterSpacing: "0.02em",
+    opacity: score < 5 ? 0.7 : 1,
+  };
+}
+
+function NapuRatingModal({ date, rating, generating, canGenerate, onGenerate, onClose }: {
+  date: string;
+  rating: NapuSeriesRating | null;
+  generating: boolean;
+  canGenerate: boolean;
+  onGenerate: () => void;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const normNick = (s: string) => s.toLowerCase().replace(/\s+/g, "");
+  const getScore = (nick: string) =>
+    rating?.ratings.find(r => r.nickname === nick)?.score
+    ?? rating?.ratings.find(r => normNick(r.nickname) === normNick(nick))?.score
+    ?? null;
+
+  const copyToClipboard = () => {
+    if (!rating) return;
+    const winner = rating.team1Wins > rating.team2Wins ? "팀1 우승" : "팀2 우승";
+    const lines: string[] = [
+      `🍃 나뭇잎 마을 나푸평점`,
+      `📅 ${date}  |  팀1 ${rating.team1Wins} : ${rating.team2Wins} 팀2  (${winner})`,
+      ``,
+      `🔴 팀 1`,
+    ];
+    rating.team1Players.forEach(p => {
+      const s = getScore(p);
+      lines.push(`  ${p}  ${s !== null ? s.toFixed(1) : "—"}`);
+    });
+    lines.push(``);
+    lines.push(`🔵 팀 2`);
+    rating.team2Players.forEach(p => {
+      const s = getScore(p);
+      lines.push(`  ${p}  ${s !== null ? s.toFixed(1) : "—"}`);
+    });
+    lines.push(``);
+    lines.push(`📊 평가기준: KDA > 딜기여도 > CS > 받은피해 > 승패`);
+    navigator.clipboard.writeText(lines.join("\n")).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const maxRows = rating
+    ? Math.max(rating.team1Players.length, rating.team2Players.length)
+    : 0;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.82)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full mx-4 rounded-2xl flex flex-col overflow-hidden"
+        style={{ maxWidth: 480, background: "var(--panel)", border: "1px solid var(--border)", boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* 헤더 */}
+        <div className="px-6 pt-5 pb-3 flex items-center justify-between"
+          style={{ borderBottom: "1px solid var(--border)" }}>
+          <div>
+            <div className="font-black text-base tracking-tight" style={{ color: "var(--text)" }}>
+              🍃 나뭇잎 마을 나푸평점
+            </div>
+            <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{date}</div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full"
+            style={{ background: "var(--hover)", color: "var(--text-muted)", fontSize: 16 }}>✕</button>
+        </div>
+
+        {/* 시리즈 결과 */}
+        {rating && (
+          <div className="flex items-center justify-center gap-6 py-4 px-6"
+            style={{ borderBottom: "1px solid var(--hover)" }}>
+            <span className="font-black text-base" style={{ color: SCORE_COLOR_T1 }}>팀 1</span>
+            <div className="flex items-center gap-3">
+              <span className="text-3xl font-black" style={{ color: rating.team1Wins > rating.team2Wins ? SCORE_COLOR_T1 : "var(--text-muted)" }}>
+                {rating.team1Wins}
+              </span>
+              <span style={{ color: "var(--text-dim)", fontWeight: 700, fontSize: 18 }}>─</span>
+              <span className="text-3xl font-black" style={{ color: rating.team2Wins > rating.team1Wins ? SCORE_COLOR_T2 : "var(--text-muted)" }}>
+                {rating.team2Wins}
+              </span>
+            </div>
+            <span className="font-black text-base" style={{ color: SCORE_COLOR_T2 }}>팀 2</span>
+          </div>
+        )}
+
+        {/* 플레이어 평점 */}
+        <div className="px-4 py-3 flex flex-col gap-1.5">
+          {rating ? (
+            Array.from({ length: maxRows }).map((_, i) => {
+              const p1 = rating.team1Players[i];
+              const p2 = rating.team2Players[i];
+              const s1 = p1 ? getScore(p1) : null;
+              const s2 = p2 ? getScore(p2) : null;
+              return (
+                <div key={i} className="flex items-center gap-2">
+                  {/* 팀1 플레이어 */}
+                  <div className="flex items-center gap-2 flex-1 justify-end">
+                    <span className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{p1 ?? ""}</span>
+                    {s1 !== null && <div style={scoreStyle(s1, SCORE_COLOR_T1)}>{s1.toFixed(1)}</div>}
+                    {p1 && s1 === null && <div style={{ ...scoreStyle(0, SCORE_COLOR_T1), opacity: 0.3 }}>—</div>}
+                  </div>
+
+                  {/* 중앙 구분선 */}
+                  <div className="w-6 flex-shrink-0 text-center text-sm" style={{ color: "var(--text-dim)" }}>│</div>
+
+                  {/* 팀2 플레이어 */}
+                  <div className="flex items-center gap-2 flex-1">
+                    {s2 !== null && <div style={scoreStyle(s2, SCORE_COLOR_T2)}>{s2.toFixed(1)}</div>}
+                    {p2 && s2 === null && <div style={{ ...scoreStyle(0, SCORE_COLOR_T2), opacity: 0.3 }}>—</div>}
+                    <span className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{p2 ?? ""}</span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="py-6 text-center" style={{ color: "var(--text-muted)" }}>
+              {canGenerate ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="text-sm">이 시리즈의 나푸평점이 아직 생성되지 않았습니다.</div>
+                  <div className="text-xs" style={{ color: "var(--text-dim)" }}>
+                    KDA, 딜량, CS 등 스탯이 입력된 경우에만 생성 가능합니다.
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm">평점이 아직 생성되지 않았습니다.</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 푸터 */}
+        <div className="px-5 py-4 flex items-center justify-between gap-2"
+          style={{ borderTop: "1px solid var(--border)" }}>
+          <div className="text-xs" style={{ color: "var(--text-dim)" }}>
+            {rating
+              ? `생성: ${new Date(rating.generatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}`
+              : "AI 자동 분석 · 스탯 기반"}
+          </div>
+          <div className="flex items-center gap-2">
+            {rating && (
+              <button
+                onClick={copyToClipboard}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                style={{
+                  background: copied ? "#22c55e22" : "var(--hover)",
+                  color: copied ? "#22c55e" : "var(--text-muted)",
+                  border: `1px solid ${copied ? "#22c55e66" : "var(--border)"}`,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}>
+                {copied ? "✓ 복사됨" : "📋 복사"}
+              </button>
+            )}
+            {canGenerate && (
+              <button
+                onClick={onGenerate}
+                disabled={generating}
+                className="px-4 py-1.5 rounded-lg text-xs font-bold"
+                style={{
+                  background: generating ? "var(--hover)" : "var(--accent)",
+                  color: generating ? "var(--text-muted)" : "#fff",
+                  border: "none",
+                  opacity: generating ? 0.7 : 1,
+                  cursor: generating ? "not-allowed" : "pointer",
+                }}>
+                {generating ? "⏳ 분석 중..." : rating ? "🔄 재생성" : "✨ AI 평점 생성"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

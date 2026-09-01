@@ -10,7 +10,7 @@ function init(): Promise<void> {
     try {
       const versions: string[] = await fetch(
         "https://ddragon.leagueoflegends.com/api/versions.json",
-        { cache: "force-cache" }
+        { cache: "no-cache" }
       ).then(r => r.json());
 
       const version = versions[0];

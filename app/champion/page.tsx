@@ -6,6 +6,7 @@ import { loadGameRecords, loadNicknames, normalizeId } from "@/lib/stats";
 import type { GameRecord } from "@/lib/types";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
 import GuideBanner from "@/components/GuideBanner";
+import { normalizeChampionName } from "@/lib/champions";
 
 export const POSITIONS = ["탑", "정글", "미드", "원딜", "서포터"] as const;
 export type Position = (typeof POSITIONS)[number];
@@ -179,7 +180,7 @@ export default function ChampionPage() {
           team.forEach((p, idx) => {
             if (!p.champion || p.champion === "?") return;
             const pos = POSITIONS[idx]; if (!pos) return;
-            const gk = `${pos}|||${p.champion}`;
+            const gk = `${pos}|||${normalizeChampionName(p.champion)}`;
             if (!posChampMap.has(gk)) posChampMap.set(gk, { wins: 0, losses: 0, picks: 0 });
             const gs = posChampMap.get(gk)!;
             gs.picks++; if (won) gs.wins++; else gs.losses++;
@@ -201,7 +202,9 @@ export default function ChampionPage() {
       loadedRecords.forEach(r => {
         if (!r.bans) return;
         [...(r.bans.team1 || []), ...(r.bans.team2 || [])].forEach(c => {
-          if (c) banMap.set(c, (banMap.get(c) || 0) + 1);
+          if (!c) return;
+          const nc = normalizeChampionName(c);
+          banMap.set(nc, (banMap.get(nc) || 0) + 1);
         });
       });
 
@@ -282,7 +285,7 @@ export default function ChampionPage() {
 
     records.forEach(r => {
       const checkPlayer = (p: any, won: boolean) => {
-        if (!p.champion || p.champion !== champName) return;
+        if (!p.champion || normalizeChampionName(p.champion) !== champName) return;
 
         let mainNickname = p.nickname;
         const norm = p.nickname.replace(/\s+/g, "").toLowerCase();

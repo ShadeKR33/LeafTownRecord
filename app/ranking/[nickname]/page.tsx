@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { computePlayerStats, loadGameRecords, loadNicknames, formatWinRate, normalizeId, getSeriesData } from "@/lib/stats";
-import type { PlayerStats } from "@/lib/types";
+import type { PlayerStats, LimitedTitle } from "@/lib/types";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
 import { WinRateTrend } from "@/components/WinRateTrend";
+import { LIMITED_TITLE_DEFS } from "@/lib/limitedTitles";
 
 const POSITION_ORDER = ["탑", "정글", "미드", "원딜", "서포터"];
 const ROLE_COLORS: Record<string, string> = {
@@ -30,9 +31,16 @@ export default function PlayerDetailPage() {
   const [tab, setTab] = useState<TabKey>("overview");
   const [loading, setLoading] = useState(true);
   const [winTrend, setWinTrend] = useState<{ date: string; rate: number; won: boolean }[]>([]);
+  const [limitedTitles, setLimitedTitles] = useState<LimitedTitle[]>([]);
+  const [mainNickname, setMainNickname] = useState<string>("");
 
   useEffect(() => {
-    Promise.all([loadGameRecords(), loadNicknames()]).then(([records, nicknames]) => {
+    Promise.all([
+      loadGameRecords(),
+      loadNicknames(),
+      fetch("/api/limited-titles").then(r => r.json()).catch(() => [] as LimitedTitle[]),
+    ]).then(([records, nicknames, titlesData]: [any, any, LimitedTitle[]]) => {
+      setLimitedTitles(Array.isArray(titlesData) ? titlesData : []);
       if (records.length > 0) {
         setStats(computePlayerStats(nickname, records, nicknames));
         // 승률 추이 계산
@@ -56,7 +64,12 @@ export default function PlayerDetailPage() {
         normalizeId(n.nickname) === normalizeId(nickname) ||
         (n.altNicknames || []).some((alt: string) => normalizeId(alt) === normalizeId(nickname))
       );
-      if (found) setNicknameInfo(found);
+      if (found) {
+        setNicknameInfo(found);
+        setMainNickname(found.nickname);
+      } else {
+        setMainNickname(nickname);
+      }
       setLoading(false);
     });
   }, [nickname]);
@@ -408,7 +421,7 @@ export default function PlayerDetailPage() {
     return (
       <div>
         <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>상대방이 적팀에 있을 때 내 전적 (높을수록 상대방에 강함)</p>
-        <div className="rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
+        <div className="rounded-lg overflow-x-auto border" style={{ borderColor: "var(--border)" }}>
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "var(--panel)", borderBottom: "1px solid var(--border)" }}>
@@ -461,7 +474,7 @@ export default function PlayerDetailPage() {
     return (
       <div>
         <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>같은 팀일 때 전적 (높을수록 찰떡 시너지)</p>
-        <div className="rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
+        <div className="rounded-lg overflow-x-auto border" style={{ borderColor: "var(--border)" }}>
           <table className="w-full text-sm">
             <thead>
               <tr style={{ background: "var(--panel)", borderBottom: "1px solid var(--border)" }}>
@@ -532,7 +545,7 @@ export default function PlayerDetailPage() {
     { id: "nemesis",       icon: "😤", name: "철천지원수",        hint: "특정 상대에게 5패 이상 당함",                 color: "#ab47bc", grade: "희귀" },
     { id: "regularRival",  icon: "🤺", name: "단골 맞대결",      hint: "특정 상대와 5번 이상 맞대결",                  color: "#5c6bc0", grade: "희귀" },
     { id: "pillar",        icon: "🏛️", name: "팀의 기둥",        hint: "특정 파트너와 10경기 이상 함께 출전",          color: "#26a69a", grade: "희귀" },
-    { id: "bladeWhisper",  icon: "🗡️", name: "칼날의 속삭임",   hint: "KDA 5판 이상 기록 · 평균 KDA 5.0 이상",         color: "#e91e63", grade: "희귀" },
+    { id: "bladeWhisper",  icon: "🔪", name: "칼날의 속삭임",   hint: "KDA 5판 이상 기록 · 평균 KDA 5.0 이상",         color: "#e91e63", grade: "희귀" },
     { id: "immortal",      icon: "🛡️", name: "죽지 않는 닌자",  hint: "KDA 5판 이상 기록 · 평균 데스 1.5 이하",        color: "#7c4dff", grade: "희귀" },
     { id: "honeyFinder",   icon: "🍯", name: "꿀챔 발굴자",     hint: "꿀챔 판정 챔피언으로 5판 이상 + 승률 50%+",     color: "#f59e0b", grade: "희귀" },
     { id: "publicEnemy",   icon: "⚠️", name: "공공의 적",        hint: "내 모스트 챔피언이 내전에서 3회 이상 밴당함",    color: "#f97316", grade: "희귀" },
@@ -553,7 +566,7 @@ export default function PlayerDetailPage() {
     { id: "topMid",        icon: "🏔️", name: "무적의 상체",     hint: "탑-미드 콤비로 5승 이상",                      color: "#8d6e63", grade: "영웅" },
     { id: "slayer",        icon: "💀", name: "학살자",            hint: "KDA 5판 이상 기록 · 평균 KDA 10.0 이상",        color: "#c62828", grade: "영웅" },
     { id: "battleDominator", icon: "💫", name: "전장의 지배자",   hint: "KDA 5판 이상 기록 · 평균 KDA 7.0 이상",         color: "#ba68c8", grade: "영웅" },
-    { id: "honeyProphet",  icon: "🌿", name: "꿀챔 전도사",      hint: "꿀챔 판정 챔피언으로 10판 이상 플레이",          color: "#22c55e", grade: "영웅" },
+    { id: "honeyProphet",  icon: "🌾", name: "꿀챔 전도사",      hint: "꿀챔 판정 챔피언으로 10판 이상 플레이",          color: "#22c55e", grade: "영웅" },
     // ── 전설 ──
     { id: "legend",        icon: "🌟", name: "전설의 닌자",      hint: "25경기 이상 + 승률 70% 이상",                 color: "#ff6f00", grade: "전설" },
     { id: "champLegend",   icon: "⚜️", name: "챔피언 달인",      hint: "특정 챔피언 15경기 이상 + 승률 70% 이상",      color: "#ff4081", grade: "전설" },
@@ -563,7 +576,16 @@ export default function PlayerDetailPage() {
     { id: "eternalRival",  icon: "🔮", name: "영원한 숙적",       hint: "특정 상대와 15번 이상 맞대결",                color: "#1a237e", grade: "전설" },
     { id: "champCollector",icon: "🎪", name: "챔피언 수집가",    hint: "30종류 이상의 챔피언 플레이",                    color: "#ff6f00", grade: "전설" },
     // ── 신화 ──
-    { id: "guardian",      icon: "🌿", name: "나뭇잎의 수호자",  hint: "시리즈 40경기 이상 참여",                      color: "#00e5ff", grade: "신화" },
+    { id: "guardian",        icon: "🌿", name: "나뭇잎의 수호자",  hint: "시리즈 40경기 이상 참여",           color: "#00e5ff", grade: "신화" },
+    { id: "champOmniscient", icon: "🎓", name: "챔피언 전집",      hint: "45종류 이상의 챔피언 플레이",        color: "#a855f7", grade: "신화" },
+    { id: "mvpGod",          icon: "🔱", name: "MVP의 신",          hint: "MVP 20회 이상 달성",                color: "#f59e0b", grade: "신화" },
+    // ── MVP / ACE ──
+    { id: "mvpMachine",  icon: "🏅", name: "MVP 머신",       hint: "MVP 10회 이상 달성",                    color: "#f59e0b", grade: "전설" },
+    { id: "aceLegend",   icon: "💜", name: "ACE의 저주",     hint: "ACE 10회 이상 달성",                    color: "#7c3aed", grade: "전설" },
+    { id: "mvpHabit",    icon: "🌠", name: "MVP 상습범",     hint: "MVP 5회 이상 달성",                     color: "#f59e0b", grade: "영웅" },
+    { id: "aceSpirit",   icon: "💥", name: "불굴의 용사",    hint: "ACE 5회 이상 달성",                     color: "#7c3aed", grade: "영웅" },
+    { id: "mvpFirst",    icon: "🥇", name: "첫 MVP",         hint: "MVP 1회 이상 달성",                     color: "#f59e0b", grade: "희귀" },
+    { id: "aceFirst",    icon: "🕯️", name: "패배 속의 빛",  hint: "ACE 1회 이상 달성 (패배팀 최고 기여)",  color: "#7c3aed", grade: "희귀" },
   ];
 
   const getBadgeProgress = (id: string): { current: number; target: number; label: string } | null => {
@@ -624,7 +646,15 @@ export default function PlayerDetailPage() {
       case "longPartner":   return { current: bestWithTotal, target: 15, label: `파트너 최다 ${bestWithTotal}경기` };
       case "eternalPartner":return { current: bestWithTotal, target: 25, label: `파트너 최다 ${bestWithTotal}경기` };
       case "ruthless":      return { current: dominatedCount, target: 3, label: `${dominatedCount}명에게 5승+` };
-      case "champCollector": return { current: uniqueChamps, target: 30, label: `${uniqueChamps}/30종류` };
+      case "champCollector":    return { current: uniqueChamps, target: 30, label: `${uniqueChamps}/30종류` };
+      case "champOmniscient":   return { current: uniqueChamps, target: 45, label: `${uniqueChamps}/45종류` };
+      case "mvpFirst":   return { current: Math.min(stats.mvpCount ?? 0, 1),  target: 1,  label: `MVP ${stats.mvpCount ?? 0}회` };
+      case "mvpHabit":   return { current: Math.min(stats.mvpCount ?? 0, 5),  target: 5,  label: `MVP ${stats.mvpCount ?? 0}회` };
+      case "mvpMachine": return { current: Math.min(stats.mvpCount ?? 0, 10), target: 10, label: `MVP ${stats.mvpCount ?? 0}회` };
+      case "mvpGod":     return { current: Math.min(stats.mvpCount ?? 0, 20), target: 20, label: `MVP ${stats.mvpCount ?? 0}회` };
+      case "aceFirst":   return { current: Math.min(stats.aceCount ?? 0, 1),  target: 1,  label: `ACE ${stats.aceCount ?? 0}회` };
+      case "aceSpirit":  return { current: Math.min(stats.aceCount ?? 0, 5),  target: 5,  label: `ACE ${stats.aceCount ?? 0}회` };
+      case "aceLegend":  return { current: Math.min(stats.aceCount ?? 0, 10), target: 10, label: `ACE ${stats.aceCount ?? 0}회` };
       case "bladeWhisper": {
         if (!stats.kdaTotal || stats.kdaTotal.games < 5) return { current: stats.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${stats.kdaTotal?.games ?? 0}판` };
         const kda = stats.kdaTotal.deaths > 0 ? (stats.kdaTotal.kills + stats.kdaTotal.assists) / stats.kdaTotal.deaths : 999;
@@ -673,68 +703,135 @@ export default function PlayerDetailPage() {
 
   const BadgesTab = () => {
     const earnedIds = new Set(stats.badges.map((b) => b.id));
-    const gradeOrder: BadgeGrade[] = ["전설", "영웅", "희귀", "일반"];
+    const gradeOrder: BadgeGrade[] = ["신화", "전설", "영웅", "희귀", "일반"];
     const sorted = [...ALL_BADGE_HINTS].sort((a, b) => {
       const aEarned = earnedIds.has(a.id) ? 0 : 1;
       const bEarned = earnedIds.has(b.id) ? 0 : 1;
       if (aEarned !== bEarned) return aEarned - bEarned;
       return gradeOrder.indexOf(a.grade) - gradeOrder.indexOf(b.grade);
     });
+
+    const myLimitedTitles = limitedTitles.filter(t => t.holder === mainNickname);
+
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {sorted.map((template) => {
-          const earned = earnedIds.has(template.id);
-          const badge = stats.badges.find((b) => b.id === template.id);
-          const gs = GRADE_STYLE[template.grade];
-          const prog = !earned ? getBadgeProgress(template.id) : null;
-          return (
-            <div key={template.id} className="p-4 rounded-lg border flex items-center gap-3"
-              style={{
-                background: "var(--panel)",
-                borderColor: earned ? template.color + "44" : "var(--border)",
-                opacity: earned ? 1 : 0.4,
-                boxShadow: earned && template.grade === "전설" ? `0 0 12px ${template.color}44` : "none",
-              }}>
-              <div className="text-3xl w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
-                style={{ background: earned ? template.color + "22" : "var(--hover)", filter: earned ? "none" : "grayscale(1)" }}>
-                {template.icon}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-bold" style={{ color: earned ? template.color : "var(--text-muted)" }}>
-                    {template.name}
-                  </span>
-                  <span className="text-xs px-1.5 py-0.5 rounded font-bold"
-                    style={{ background: gs.bg, color: gs.color, border: `1px solid ${gs.color}44` }}>
-                    {gs.label}
-                  </span>
-                </div>
-                <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                  {earned ? badge!.description : `🔒 ${template.hint}`}
-                </div>
-              </div>
-              {!earned && prog && (
-                <div className="flex-shrink-0 text-right" style={{ width: 60 }}>
-                  <div className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>
-                    {prog.current} <span style={{ color: "var(--text-dim)" }}>/ {prog.target}</span>
-                  </div>
-                  <div style={{ height: 5, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>
-                    <div style={{
-                      height: "100%", borderRadius: 3,
-                      width: `${Math.min(100, Math.round((prog.current / prog.target) * 100))}%`,
-                      background: Math.round((prog.current / prog.target) * 100) >= 80
-                        ? template.color
-                        : Math.round((prog.current / prog.target) * 100) >= 50
-                        ? template.color + "bb"
-                        : template.color + "77",
-                    }} />
-                  </div>
-                  <div className="mt-0.5" style={{ color: "var(--text-dim)", fontSize: 9 }}>{prog.label}</div>
-                </div>
-              )}
+      <div className="space-y-6">
+        {/* ── 리미티드 업적 섹션 ── */}
+        {LIMITED_TITLE_DEFS.length > 0 && (
+          <div>
+            <div className="text-xs font-bold mb-3 px-1" style={{ color: "var(--accent)" }}>
+              🏆 리미티드 업적
             </div>
-          );
-        })}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {LIMITED_TITLE_DEFS.map(def => {
+                const record = limitedTitles.find(t => t.id === def.id);
+                const isMine = record?.holder === mainNickname;
+                const isClaimed = !!record;
+                return (
+                  <div key={def.id} className="p-4 rounded-lg border flex items-center gap-3"
+                    style={{
+                      background: "var(--panel)",
+                      borderColor: isMine ? def.color + "88" : "var(--border)",
+                      opacity: isClaimed && !isMine ? 0.5 : 1,
+                      boxShadow: isMine ? `0 0 12px ${def.color}33` : "none",
+                    }}>
+                    <div className="text-3xl w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
+                      style={{
+                        background: isMine
+                          ? `linear-gradient(var(--panel), var(--panel)) padding-box, linear-gradient(135deg, ${def.color}, ${def.accentColor}) border-box`
+                          : "var(--hover)",
+                        border: isMine ? "1.5px solid transparent" : "none",
+                        filter: !isClaimed ? "grayscale(0.3)" : isMine ? "none" : "grayscale(0.6)",
+                      }}>
+                      {def.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span className="font-bold" style={{ color: isMine ? def.color : "var(--text)" }}>
+                          {def.name}
+                        </span>
+                        <span className="text-xs px-1.5 py-0.5 rounded font-bold"
+                          style={{ background: isMine ? def.color + "22" : "#33333322", color: isMine ? def.color : "var(--text-dim)", border: "1px solid var(--border)" }}>
+                          {isClaimed ? (isMine ? "소유중" : `${record.holder} 달성`) : "미달성"}
+                        </span>
+                        <span className="text-xs px-1.5 py-0.5 rounded font-bold ml-auto"
+                          style={{ background: "#33333322", color: "var(--text-dim)", fontSize: 10 }}>
+                          리미티드
+                        </span>
+                      </div>
+                      <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                        {isClaimed
+                          ? `${def.description} · ${record.date} 달성`
+                          : `🔒 ${def.condition}`}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── 일반 업적 섹션 ── */}
+        <div>
+          <div className="text-xs font-bold mb-3 px-1" style={{ color: "var(--text-muted)" }}>
+            🏅 일반 업적 ({stats.badges.length} / {ALL_BADGE_HINTS.length})
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {sorted.map((template) => {
+              const earned = earnedIds.has(template.id);
+              const badge = stats.badges.find((b) => b.id === template.id);
+              const gs = GRADE_STYLE[template.grade];
+              const prog = !earned ? getBadgeProgress(template.id) : null;
+              return (
+                <div key={template.id} className="p-4 rounded-lg border flex items-center gap-3"
+                  style={{
+                    background: "var(--panel)",
+                    borderColor: earned ? template.color + "44" : "var(--border)",
+                    opacity: earned ? 1 : 0.4,
+                    boxShadow: earned && (template.grade === "전설" || template.grade === "신화") ? `0 0 12px ${template.color}44` : "none",
+                  }}>
+                  <div className="text-3xl w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
+                    style={{ background: earned ? template.color + "22" : "var(--hover)", filter: earned ? "none" : "grayscale(1)" }}>
+                    {template.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-bold" style={{ color: earned ? template.color : "var(--text-muted)" }}>
+                        {template.name}
+                      </span>
+                      <span className="text-xs px-1.5 py-0.5 rounded font-bold"
+                        style={{ background: gs.bg, color: gs.color, border: `1px solid ${gs.color}44` }}>
+                        {gs.label}
+                      </span>
+                    </div>
+                    <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                      {earned ? badge!.description : `🔒 ${template.hint}`}
+                    </div>
+                  </div>
+                  {!earned && prog && (
+                    <div className="flex-shrink-0 text-right" style={{ width: 60 }}>
+                      <div className="text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>
+                        {prog.current} <span style={{ color: "var(--text-dim)" }}>/ {prog.target}</span>
+                      </div>
+                      <div style={{ height: 5, borderRadius: 3, background: "var(--border)", overflow: "hidden" }}>
+                        <div style={{
+                          height: "100%", borderRadius: 3,
+                          width: `${Math.min(100, Math.round((prog.current / prog.target) * 100))}%`,
+                          background: Math.round((prog.current / prog.target) * 100) >= 80
+                            ? template.color
+                            : Math.round((prog.current / prog.target) * 100) >= 50
+                            ? template.color + "bb"
+                            : template.color + "77",
+                        }} />
+                      </div>
+                      <div className="mt-0.5" style={{ color: "var(--text-dim)", fontSize: 9 }}>{prog.label}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     );
   };
