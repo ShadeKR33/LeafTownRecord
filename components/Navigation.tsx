@@ -126,6 +126,16 @@ const MYOBOKU_SPARKS = Array.from({ length: 25 }, (_, i) => ({
   shadow: i % 2 === 0 ? "0 0 8px #a3e635" : "0 0 8px #facc15",
 }));
 
+// 암부 그림자 분신 흔적 — 화면 가장자리에 순간 나타났다 사라지는 닌자 실루엣
+const ANBU_SHADOWS = [
+  { left: "2%",  top: "58%", delay: "0s",    duration: "10s",  flip: false },
+  { left: "86%", top: "52%", delay: "4.2s",  duration: "9s",   flip: true  },
+  { left: "7%",  top: "72%", delay: "7.8s",  duration: "11s",  flip: false },
+  { left: "77%", top: "68%", delay: "2.1s",  duration: "8.5s", flip: true  },
+  { left: "44%", top: "76%", delay: "13s",   duration: "9.5s", flip: false },
+  { left: "93%", top: "60%", delay: "5.8s",  duration: "10.5s",flip: true  },
+];
+
 // 독성 가스 기포: 동그란 물방울 대신 위로 피어오르는 독연기 와이프 형태로 표현
 const OROCHI_BUBBLES = Array.from({ length: 20 }, (_, i) => ({
   left: `${(i * 5.2 + (i % 3) * 4.5) % 100}%`,
@@ -1579,6 +1589,56 @@ export default function Navigation() {
                 }
               `}</style>
               <div className="anbu-mist" style={{ top: '-50%', left: '-50%' }} />
+            </div>
+            {/* 그림자 분신 흔적 — 가장자리에 닌자 실루엣이 순간 출현했다 사라짐 */}
+            <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+              <style>{`
+                @keyframes shadowCloneAppear {
+                  0%   { opacity: 0;    transform: translateY(14px) scale(0.86); filter: blur(5px); }
+                  12%  { opacity: 0.72; transform: translateY(0px)  scale(1);    filter: blur(0px); }
+                  60%  { opacity: 0.60; transform: translateY(0px)  scale(1);    filter: blur(0px); }
+                  82%  { opacity: 0.18; transform: translateY(-9px) scale(1.05); filter: blur(3px); }
+                  100% { opacity: 0;    transform: translateY(-18px) scale(0.9); filter: blur(6px); }
+                }
+                .shadow-clone-figure {
+                  filter: drop-shadow(0 0 6px rgba(6,182,212,0.9)) drop-shadow(0 0 18px rgba(6,182,212,0.35));
+                  animation: shadowCloneAppear ease-in-out infinite;
+                }
+              `}</style>
+              {ANBU_SHADOWS.map((s, i) => (
+                <div
+                  key={`shadow-${i}`}
+                  style={{
+                    position: "absolute",
+                    left: s.left,
+                    top: s.top,
+                    transform: s.flip ? "scaleX(-1)" : undefined,
+                  }}
+                >
+                  <svg
+                    className="shadow-clone-figure"
+                    width="46"
+                    height="78"
+                    viewBox="0 0 46 78"
+                    style={{ animationDelay: s.delay, animationDuration: s.duration }}
+                  >
+                    {/* 머리 */}
+                    <ellipse cx="23" cy="9" rx="8" ry="9" fill="#06b6d4" opacity="0.85" />
+                    {/* 어깨/목 */}
+                    <path d="M19 17 L27 17 L30 22 L16 22 Z" fill="#06b6d4" opacity="0.85" />
+                    {/* 상체 (살짝 앞으로 기운 자세) */}
+                    <path d="M15 22 C13 32 11 41 10 50 L36 50 C35 41 33 32 31 22 Z" fill="#06b6d4" opacity="0.85" />
+                    {/* 왼팔 (앞으로 뻗음) */}
+                    <path d="M16 27 L1 38 L3 42 L18 31 Z" fill="#06b6d4" opacity="0.85" />
+                    {/* 오른팔 (뒤로 당김) */}
+                    <path d="M30 27 L44 20 L43 24 L29 31 Z" fill="#06b6d4" opacity="0.85" />
+                    {/* 왼다리 (앞으로 뻗음, 크라우치) */}
+                    <path d="M15 50 L10 65 L17 67 L22 52 Z" fill="#06b6d4" opacity="0.85" />
+                    {/* 오른다리 (뒤로 구부림) */}
+                    <path d="M29 50 L34 65 L41 62 L37 50 Z" fill="#06b6d4" opacity="0.85" />
+                  </svg>
+                </div>
+              ))}
             </div>
           </div>
         </>
