@@ -19,8 +19,14 @@ export function useIsDarkTheme() {
       setIsDark(val === "1");
     };
     check();
+    // html 클래스 변경 감지 (드롭다운 테마 변경 포함)
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     window.addEventListener("themechange", check);
-    return () => window.removeEventListener("themechange", check);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("themechange", check);
+    };
   }, []);
 
   return isDark;
