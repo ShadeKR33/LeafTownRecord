@@ -126,19 +126,20 @@ const MYOBOKU_SPARKS = Array.from({ length: 25 }, (_, i) => ({
   shadow: i % 2 === 0 ? "0 0 8px #a3e635" : "0 0 8px #facc15",
 }));
 
-// 암부 쿠나이 — 화면을 빠르게 가로질러 날아가는 쿠나이 (6s 주기 × 10개, 0.6s 간격)
-const ANBU_KUNAI = [
-  { top: "12%", delay: "0s",   dir: "lr" },
-  { top: "38%", delay: "0.6s", dir: "rl" },
-  { top: "62%", delay: "1.2s", dir: "lr" },
-  { top: "85%", delay: "1.8s", dir: "rl" },
-  { top: "25%", delay: "2.4s", dir: "lr" },
-  { top: "50%", delay: "3.0s", dir: "rl" },
-  { top: "75%", delay: "3.6s", dir: "lr" },
-  { top: "8%",  delay: "4.2s", dir: "rl" },
-  { top: "45%", delay: "4.8s", dir: "lr" },
-  { top: "92%", delay: "5.4s", dir: "rl" },
+// 암부 수리검 박힘 — 화면 가장자리에 수리검이 꽂혔다가 사라지는 효과 (12s 주기)
+const ANBU_SHURIKENS = [
+  { top: "6%",  left: "2%",              delay: "0s",   rot: 22  },
+  { top: "42%", left: "1.5%",            delay: "1.8s", rot: 67  },
+  { top: "78%", left: "3%",              delay: "3.6s", rot: 11  },
+  { top: "18%", left: "96%",             delay: "0.9s", rot: 145 },
+  { top: "58%", left: "97%",             delay: "2.7s", rot: 200 },
+  { top: "91%", left: "22%",             delay: "4.5s", rot: 35  },
+  { top: "4%",  left: "68%",             delay: "1.2s", rot: 78  },
+  { top: "96%", left: "52%",             delay: "5.4s", rot: 190 },
+  { top: "88%", left: "80%",             delay: "3.0s", rot: 310 },
+  { top: "30%", left: "98%",             delay: "6.3s", rot: 255 },
 ] as const;
+
 
 // 독성 가스 기포: 동그란 물방울 대신 위로 피어오르는 독연기 와이프 형태로 표현
 const OROCHI_BUBBLES = Array.from({ length: 20 }, (_, i) => ({
@@ -1594,59 +1595,55 @@ export default function Navigation() {
               `}</style>
               <div className="anbu-mist" style={{ top: '-50%', left: '-50%' }} />
             </div>
-            {/* 쿠나이 — 화면을 빠르게 가로질러 날아감 */}
+            {/* 수리검 박힘 + 핏자국 */}
             <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
               <style>{`
-                @keyframes kunaiLR {
-                  0%, 17%, 100% { transform: translateX(-80px) rotate(12deg); opacity: 0; }
-                  2%  { transform: translateX(-80px) rotate(12deg); opacity: 1; }
-                  15% { transform: translateX(calc(100vw + 80px)) translateY(16px) rotate(12deg); opacity: 1; }
-                  16% { transform: translateX(calc(100vw + 80px)) translateY(16px) rotate(12deg); opacity: 0; }
+                @keyframes shurikenImpact {
+                  0%   { opacity: 0; transform: scale(2.8); }
+                  4%   { opacity: 1; transform: scale(0.82); }
+                  8%   { transform: scale(1.1); }
+                  13%  { transform: scale(1); }
+                  70%  { opacity: 0.88; }
+                  88%  { opacity: 0.35; }
+                  100% { opacity: 0; transform: scale(1); }
                 }
-                @keyframes kunaiRL {
-                  0%, 17%, 100% { transform: translateX(0px) rotate(168deg); opacity: 0; }
-                  2%  { transform: translateX(0px) rotate(168deg); opacity: 1; }
-                  15% { transform: translateX(calc(-100vw - 80px)) translateY(16px) rotate(168deg); opacity: 1; }
-                  16% { transform: translateX(calc(-100vw - 80px)) translateY(16px) rotate(168deg); opacity: 0; }
-                }
-                .kunai-svg {
-                  filter: drop-shadow(0 0 4px rgba(34,211,238,0.95)) drop-shadow(0 0 14px rgba(34,211,238,0.5));
-                  animation-timing-function: linear;
-                  animation-iteration-count: infinite;
-                  animation-duration: 6s;
+                .shuriken-svg {
+                  filter: drop-shadow(0 0 5px rgba(34,211,238,0.9)) drop-shadow(0 0 14px rgba(34,211,238,0.5));
+                  animation: shurikenImpact 12s ease-out infinite;
+                  display: block;
                 }
               `}</style>
-              {ANBU_KUNAI.map((k, i) => (
-                <svg
-                  key={`kunai-${i}`}
-                  className="kunai-svg"
-                  width="56"
-                  height="14"
-                  viewBox="0 0 56 14"
+
+              {/* 수리검들 — 각도는 wrapper div에서 고정, 크기/투명도 애니메이션만 svg에서 */}
+              {ANBU_SHURIKENS.map((s, i) => (
+                <div
+                  key={`shuriken-${i}`}
                   style={{
                     position: "absolute",
-                    left: k.dir === "lr" ? 0 : "100%",
-                    top: k.top,
-                    animationName: k.dir === "lr" ? "kunaiLR" : "kunaiRL",
-                    animationDelay: k.delay,
+                    top: s.top,
+                    left: s.left,
+                    transform: `rotate(${s.rot}deg)`,
                   }}
                 >
-                  {/* 날카로운 칼날 끝 */}
-                  <polygon points="56,7 38,1 38,13" fill="#22d3ee" />
-                  {/* 날 어깨 */}
-                  <rect x="33" y="3" width="6" height="8" rx="0.5" fill="#0891b2" />
-                  {/* 손잡이 */}
-                  <rect x="12" y="4.5" width="22" height="5" rx="1" fill="#0891b2" />
-                  {/* 그립 텍스처 */}
-                  <line x1="17" y1="4.5" x2="17" y2="9.5" stroke="#22d3ee" strokeWidth="0.8" opacity="0.7" />
-                  <line x1="21" y1="4.5" x2="21" y2="9.5" stroke="#22d3ee" strokeWidth="0.8" opacity="0.7" />
-                  <line x1="25" y1="4.5" x2="25" y2="9.5" stroke="#22d3ee" strokeWidth="0.8" opacity="0.7" />
-                  <line x1="29" y1="4.5" x2="29" y2="9.5" stroke="#22d3ee" strokeWidth="0.8" opacity="0.7" />
-                  {/* 끝 고리 */}
-                  <circle cx="6" cy="7" r="5" fill="none" stroke="#22d3ee" strokeWidth="2.2" />
-                  <circle cx="6" cy="7" r="1.8" fill="#0891b2" />
-                </svg>
+                  <svg
+                    className="shuriken-svg"
+                    width="28"
+                    height="28"
+                    viewBox="0 0 32 32"
+                    style={{ animationDelay: s.delay }}
+                  >
+                    {/* 4날 수리검 (4-pointed star) */}
+                    <polygon
+                      points="16,2 21.7,10.3 30,16 21.7,21.7 16,30 10.3,21.7 2,16 10.3,10.3"
+                      fill="#22d3ee"
+                    />
+                    {/* 중심 고리 */}
+                    <circle cx="16" cy="16" r="4" fill="#0c4a6e" />
+                    <circle cx="16" cy="16" r="2" fill="#22d3ee" />
+                  </svg>
+                </div>
               ))}
+
             </div>
           </div>
         </>
