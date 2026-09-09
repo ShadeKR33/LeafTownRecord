@@ -8,7 +8,7 @@ interface LimitedTitleBadgeProps {
   title: LimitedTitle;
 }
 
-function useIsDarkTheme() {
+export function useIsDarkTheme() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {

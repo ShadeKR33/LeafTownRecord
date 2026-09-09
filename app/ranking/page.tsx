@@ -16,7 +16,7 @@ import {
 import type { PlayerStats, NicknameEntry, BadgeGrade, GameRecord, SeasonDef, Badge, LimitedTitle } from "@/lib/types";
 import GuideBanner from "@/components/GuideBanner";
 import { TrophyList } from "@/components/TrophyBadge";
-import { LimitedTitleBadge } from "@/components/LimitedTitleBadge";
+import { LimitedTitleBadge, useIsDarkTheme } from "@/components/LimitedTitleBadge";
 import { LIMITED_TITLE_DEFS, getLimitedTitleDef } from "@/lib/limitedTitles";
 
 type RankedPerson = PlayerStats & {
@@ -272,6 +272,7 @@ function BadgeModal({
   onEquip: (titleId: string) => void;
 }) {
   const [tab, setTab] = useState<"badges" | "limited">("badges");
+  const isDark = useIsDarkTheme();
   const earnedMap = new Map(person.badges.map(b => [b.id, b]));
   const earnedCount = person.badges.length;
   const myLimitedIds = new Set(allLimitedTitles.filter(t => t.holder === person.mainNickname).map(t => t.id));
@@ -485,7 +486,7 @@ function BadgeModal({
                         fontSize: 22,
                         filter: !isClaimed ? "grayscale(0.3)" : isMine ? "none" : "grayscale(0.6)",
                       }}>
-                      {def.icon}
+                      {isDark && def.darkIcon ? def.darkIcon : def.icon}
                     </div>
 
                     {/* 이름 + 조건 */}
@@ -576,6 +577,7 @@ function BadgeModal({
 export default function RankingPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const isDark = useIsDarkTheme();
   const [persons, setPersons] = useState<RankedPerson[]>([]);
   const [nicknameEntries, setNicknameEntries] = useState<NicknameEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1385,7 +1387,7 @@ export default function RankingPage() {
                                   ["--lp-c2" as any]: `${equippedDef.accentColor}33`,
                                 }}>
                                 <span style={{ fontSize: 13, lineHeight: 1 }}>
-                                  {equippedDef.icon}
+                                  {isDark && equippedDef.darkIcon ? equippedDef.darkIcon : equippedDef.icon}
                                 </span>
                               </div>
                             </div>
@@ -1514,7 +1516,7 @@ export default function RankingPage() {
               }}
             >
               <div className="flex items-center gap-1.5 mb-1.5">
-                <span style={{ fontSize: 18 }}>{def.icon}</span>
+                <span style={{ fontSize: 18 }}>{isDark && def.darkIcon ? def.darkIcon : def.icon}</span>
                 <span className="font-black text-sm" style={{ color: def.color }}>{def.name}</span>
                 <span className="ml-auto px-1.5 py-0.5 rounded font-bold"
                   style={{ background: `${def.color}22`, color: def.color, fontSize: 10, border: `1px solid ${def.color}44` }}>

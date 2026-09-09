@@ -126,18 +126,17 @@ const MYOBOKU_SPARKS = Array.from({ length: 25 }, (_, i) => ({
   shadow: i % 2 === 0 ? "0 0 8px #a3e635" : "0 0 8px #facc15",
 }));
 
-// 암부 수리검 박힘 — 화면 가장자리에 수리검이 꽂혔다가 사라지는 효과 (12s 주기)
-const ANBU_SHURIKENS = [
-  { top: "6%",  left: "2%",              delay: "0s",   rot: 22  },
-  { top: "42%", left: "1.5%",            delay: "1.8s", rot: 67  },
-  { top: "78%", left: "3%",              delay: "3.6s", rot: 11  },
-  { top: "18%", left: "96%",             delay: "0.9s", rot: 145 },
-  { top: "58%", left: "97%",             delay: "2.7s", rot: 200 },
-  { top: "91%", left: "22%",             delay: "4.5s", rot: 35  },
-  { top: "4%",  left: "68%",             delay: "1.2s", rot: 78  },
-  { top: "96%", left: "52%",             delay: "5.4s", rot: 190 },
-  { top: "88%", left: "80%",             delay: "3.0s", rot: 310 },
-  { top: "30%", left: "98%",             delay: "6.3s", rot: 255 },
+// 암부 핏자국 — 화면 가장자리 혈흔이 나타났다가 사라지는 효과 (14s 주기)
+const ANBU_BLOOD_MARKS = [
+  { top: "-8px",             left: "18%",              delay: "0s",   rot: 0,   size: 1.0  },
+  { top: "-6px",             left: "52%",              delay: "2.8s", rot: 8,   size: 0.85 },
+  { top: "-8px",             left: "80%",              delay: "5.5s", rot: -6,  size: 1.15 },
+  { top: "22%",              left: "-8px",             delay: "1.2s", rot: 90,  size: 0.9  },
+  { top: "62%",              left: "-6px",             delay: "4.2s", rot: 88,  size: 1.1  },
+  { top: "38%",              left: "calc(100% + 6px)", delay: "0.5s", rot: -90, size: 0.85 },
+  { top: "74%",              left: "calc(100% + 8px)", delay: "3.6s", rot: -92, size: 1.0  },
+  { top: "calc(100% + 6px)", left: "28%",              delay: "6.0s", rot: 180, size: 0.9  },
+  { top: "calc(100% + 8px)", left: "70%",              delay: "2.0s", rot: 176, size: 1.05 },
 ] as const;
 
 
@@ -1595,55 +1594,51 @@ export default function Navigation() {
               `}</style>
               <div className="anbu-mist" style={{ top: '-50%', left: '-50%' }} />
             </div>
-            {/* 수리검 박힘 + 핏자국 */}
+            {/* 핏자국 — 화면 가장자리 혈흔이 나타났다 사라짐 */}
             <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
               <style>{`
-                @keyframes shurikenImpact {
-                  0%   { opacity: 0; transform: scale(2.8); }
-                  4%   { opacity: 1; transform: scale(0.82); }
-                  8%   { transform: scale(1.1); }
-                  13%  { transform: scale(1); }
-                  70%  { opacity: 0.88; }
-                  88%  { opacity: 0.35; }
-                  100% { opacity: 0; transform: scale(1); }
+                @keyframes bloodFade {
+                  0%   { opacity: 0; }
+                  5%   { opacity: 0.82; }
+                  70%  { opacity: 0.72; }
+                  88%  { opacity: 0.25; }
+                  100% { opacity: 0; }
                 }
-                .shuriken-svg {
-                  filter: drop-shadow(0 0 5px rgba(34,211,238,0.9)) drop-shadow(0 0 14px rgba(34,211,238,0.5));
-                  animation: shurikenImpact 12s ease-out infinite;
+                .blood-svg {
+                  animation: bloodFade 14s ease-in-out infinite;
                   display: block;
                 }
               `}</style>
 
-              {/* 수리검들 — 각도는 wrapper div에서 고정, 크기/투명도 애니메이션만 svg에서 */}
-              {ANBU_SHURIKENS.map((s, i) => (
+              {ANBU_BLOOD_MARKS.map((b, i) => (
                 <div
-                  key={`shuriken-${i}`}
+                  key={`blood-${i}`}
                   style={{
                     position: "absolute",
-                    top: s.top,
-                    left: s.left,
-                    transform: `rotate(${s.rot}deg)`,
+                    top: b.top,
+                    left: b.left,
+                    transform: `rotate(${b.rot}deg) scale(${b.size})`,
+                    transformOrigin: "center top",
                   }}
                 >
                   <svg
-                    className="shuriken-svg"
-                    width="28"
-                    height="28"
-                    viewBox="0 0 32 32"
-                    style={{ animationDelay: s.delay }}
+                    className="blood-svg"
+                    width="26"
+                    height="34"
+                    viewBox="0 0 28 36"
+                    style={{ animationDelay: b.delay }}
                   >
-                    {/* 4날 수리검 (4-pointed star) */}
-                    <polygon
-                      points="16,2 21.7,10.3 30,16 21.7,21.7 16,30 10.3,21.7 2,16 10.3,10.3"
-                      fill="#22d3ee"
-                    />
-                    {/* 중심 고리 */}
-                    <circle cx="16" cy="16" r="4" fill="#0c4a6e" />
-                    <circle cx="16" cy="16" r="2" fill="#22d3ee" />
+                    {/* 메인 핏자국 */}
+                    <ellipse cx="14" cy="9" rx="12" ry="9" fill="#7f1d1d" />
+                    {/* 흘러내리는 피 */}
+                    <path d="M 10,16 Q 12,26 14,34 Q 16,26 18,16" fill="#7f1d1d" />
+                    {/* 위성 핏방울 */}
+                    <circle cx="3" cy="7" r="4" fill="#7f1d1d" />
+                    <circle cx="23" cy="3" r="3" fill="#7f1d1d" />
+                    <circle cx="26" cy="14" r="2.5" fill="#7f1d1d" />
                   </svg>
                 </div>
               ))}
-
             </div>
           </div>
         </>

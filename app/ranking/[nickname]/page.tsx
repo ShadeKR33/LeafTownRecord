@@ -7,6 +7,7 @@ import type { PlayerStats, LimitedTitle } from "@/lib/types";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
 import { WinRateTrend } from "@/components/WinRateTrend";
 import { LIMITED_TITLE_DEFS } from "@/lib/limitedTitles";
+import { useIsDarkTheme } from "@/components/LimitedTitleBadge";
 
 const POSITION_ORDER = ["탑", "정글", "미드", "원딜", "서포터"];
 const ROLE_COLORS: Record<string, string> = {
@@ -33,6 +34,7 @@ export default function PlayerDetailPage() {
   const [winTrend, setWinTrend] = useState<{ date: string; rate: number; won: boolean }[]>([]);
   const [limitedTitles, setLimitedTitles] = useState<LimitedTitle[]>([]);
   const [mainNickname, setMainNickname] = useState<string>("");
+  const isDark = useIsDarkTheme();
 
   useEffect(() => {
     Promise.all([
@@ -742,7 +744,7 @@ export default function PlayerDetailPage() {
                         border: isMine ? "1.5px solid transparent" : "none",
                         filter: !isClaimed ? "grayscale(0.3)" : isMine ? "none" : "grayscale(0.6)",
                       }}>
-                      {def.icon}
+                      {isDark && def.darkIcon ? def.darkIcon : def.icon}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-0.5 flex-wrap">
