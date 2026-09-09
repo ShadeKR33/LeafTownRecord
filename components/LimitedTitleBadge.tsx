@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { LimitedTitle } from "@/lib/types";
 import { getLimitedTitleDef } from "@/lib/limitedTitles";
 
@@ -7,9 +8,30 @@ interface LimitedTitleBadgeProps {
   title: LimitedTitle;
 }
 
+function useIsDarkTheme() {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const check = () => {
+      const val = getComputedStyle(document.documentElement)
+        .getPropertyValue("--theme-is-dark")
+        .trim();
+      setIsDark(val === "1");
+    };
+    check();
+    window.addEventListener("themechange", check);
+    return () => window.removeEventListener("themechange", check);
+  }, []);
+
+  return isDark;
+}
+
 export function LimitedTitleBadge({ title }: LimitedTitleBadgeProps) {
   const def = getLimitedTitleDef(title.id);
+  const isDark = useIsDarkTheme();
   if (!def) return null;
+
+  const icon = isDark && def.darkIcon ? def.darkIcon : def.icon;
 
   return (
     <span
@@ -27,7 +49,7 @@ export function LimitedTitleBadge({ title }: LimitedTitleBadgeProps) {
         whiteSpace: "nowrap",
       }}
     >
-      {def.icon} {def.name}
+      {icon} {def.name}
     </span>
   );
 }

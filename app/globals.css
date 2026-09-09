@@ -58,6 +58,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    그레이 + 연보라 테마. 다크모드가 아닌 "그레이 모드".
    눈이 편한 중간 밝기의 회색에 연보라 포인트.
 ──────────────────────────────────────────────────────────────── */
+/* 어두운 테마에서 darkIcon 교체를 위한 플래그 변수 */
+html.ame-mode,
+html.aka-mode,
+html.hideout-mode,
+html.anbu-mode,
+html.orochimaru-mode {
+  --theme-is-dark: 1;
+}
+
 html.ame-mode {
   --bg:           #3a3c44;
   --panel:        #43454f;
