@@ -8,7 +8,7 @@ import type { NicknameEntry, PlayerStats, GameRecord } from "@/lib/types";
 type Tab = "dday" | "draft" | "players" | "guide" | "scrim";
 
 const TABS: { key: Tab; icon: string; label: string }[] = [
-  { key: "dday",    icon: "⏳", label: "D-Day"   },
+  { key: "dday",    icon: "⏳", label: "디데이"  },
   { key: "draft",   icon: "⚔️", label: "드래프트" },
   { key: "players", icon: "🃏", label: "선수단"   },
   { key: "scrim",   icon: "📊", label: "스크림"   },
@@ -55,7 +55,7 @@ function DDayTab() {
           제2회 나뭇잎 마을<br />월드 챔피언십
         </h2>
         <div className="flex items-center justify-center gap-3 mt-3 text-xs" style={{ color: "var(--text-dim)" }}>
-          <span>📍 부산광역시</span>
+          <span>📍 여수시</span>
           <span>·</span>
           <span>🗓️ 12월 28일 ~ 30일</span>
           <span>·</span>
@@ -1700,7 +1700,7 @@ function GuideTab() {
       <div className="rounded-2xl p-8 mb-10 text-center"
         style={{ background: "linear-gradient(160deg, #1a3a1a, #0d1f0d)", border: "1px solid #2a5c2a" }}>
         <p className="text-xs tracking-widest font-bold mb-2" style={{ color: "#c8a951" }}>
-          2026 WINTER · BUSAN
+          2026 WINTER · YEOSU
         </p>
         <h2 className="text-2xl font-black mb-1" style={{ color: "#fff" }}>
           제2회 나뭇잎 마을<br />월드 챔피언십
@@ -1712,7 +1712,7 @@ function GuideTab() {
           — 단 하나의 왕좌, 열두 명의 닌자 —
         </p>
         <div className="flex justify-center gap-4 mt-4 text-xs" style={{ color: "#6a8060" }}>
-          <span>개최지 · 부산광역시</span>
+          <span>개최지 · 여수시</span>
           <span>·</span>
           <span>기간 · 12월 28일 ~ 30일</span>
           <span>·</span>
@@ -1792,7 +1792,7 @@ function GuideTab() {
       <GuideSection num="03" title="대회 개요">
         <InfoTable rows={[
           { label: "대회명",   value: "제2회 나뭇잎 마을 월드 챔피언십", sub: "(The 2nd Konoha Worlds)" },
-          { label: "개최지",   value: "부산광역시" },
+          { label: "개최지",   value: "여수시" },
           { label: "기간",     value: "12월 28일 ~ 30일" },
           { label: "참가 인원", value: "총 12명 (코치 2명, 선수 10명)" },
           { label: "참가 팀",  value: "2개 팀 (팀당 코치 1명, 선수 5명)" },
@@ -1882,7 +1882,7 @@ function GuideTab() {
         <div className="rounded-xl p-6 text-center"
           style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
           <p className="text-sm leading-loose" style={{ color: "var(--text-muted)" }}>
-            한 해의 끝, 부산의 겨울 하늘 아래에서<br />
+            한 해의 끝, 여수의 겨울 바다 아래에서<br />
             새로운 전설이 쓰인다.<br /><br />
             준비한 자만이 살아남고,<br />
             포기하지 않는 자만이 왕좌에 오른다.<br /><br />

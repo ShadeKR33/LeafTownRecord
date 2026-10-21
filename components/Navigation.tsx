@@ -26,7 +26,7 @@ const navItems = [
   { href: "/calendar", label: "달력",        icon: "📅" },
   { href: "/analysis", label: "경기등록",     icon: "🎮" },
   { href: "/team",     label: "팀편성",      icon: "🎲" },
-  { href: "/worlds",   label: "Worlds",      icon: "🌍" },
+  { href: "/worlds",   label: "월즈",         icon: "🌍" },
   { href: "/manage",   label: "마을 관리",   icon: "🏕️" },
 ];
 

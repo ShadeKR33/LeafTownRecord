@@ -67,6 +67,7 @@ export default function CalendarPage() {
   const [showNapu, setShowNapu] = useState(false);
   const [napuLoading, setNapuLoading] = useState(false);
   const [napuGenerating, setNapuGenerating] = useState(false);
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
 
   // 닉네임 자동완성용
   const [allNicknames, setAllNicknames] = useState<string[]>([]);
@@ -335,16 +336,51 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* ─── 월 선택 탭 ─── */}
-      <div className="flex gap-2 mb-5 flex-wrap">
-        {displayMonths.map((m) => (
-          <button key={m} onClick={() => { setSelectedMonth(m); setSelectedDate(null); }}
-            className="px-4 py-1.5 rounded-full text-sm transition-all"
-            style={{ background: selectedMonth === m ? "var(--accent)" : "var(--panel)", color: selectedMonth === m ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${selectedMonth === m ? "var(--accent)" : "var(--border)"}`, fontWeight: selectedMonth === m ? 700 : 400 }}>
-            {m.replace("-", "년 ")}월
-          </button>
-        ))}
-      </div>
+      {/* ─── 월 선택 드롭다운 ─── */}
+      {(() => {
+        const monthGameCounts = displayMonths.reduce<Record<string, number>>((acc, m) => {
+          acc[m] = records.filter(r => r.date.startsWith(m)).length;
+          return acc;
+        }, {});
+        const label = selectedMonth.replace("-", "년 ") + "월";
+        return (
+          <div className="relative mb-5" style={{ maxWidth: 240 }}>
+            <button onClick={() => setMonthPickerOpen(v => !v)}
+              className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+              style={{ background: "var(--panel)", border: "1px solid var(--border)", color: "var(--accent)", cursor: "pointer" }}>
+              <span>📅 {label}</span>
+              <span style={{ color: "var(--text-dim)", fontSize: 11 }}>{monthPickerOpen ? "▲" : "▼"}</span>
+            </button>
+            {monthPickerOpen && (
+              <div className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden shadow-xl"
+                style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+                {displayMonths.map(m => {
+                  const count = monthGameCounts[m] ?? 0;
+                  const isActive = selectedMonth === m;
+                  return (
+                    <button key={m}
+                      onClick={() => { setSelectedMonth(m); setSelectedDate(null); setMonthPickerOpen(false); }}
+                      className="flex items-center justify-between w-full px-4 py-2.5 text-sm transition-all hover:brightness-95"
+                      style={{
+                        background: isActive ? "var(--accent)" + "22" : "transparent",
+                        color: isActive ? "var(--accent)" : "var(--text-muted)",
+                        fontWeight: isActive ? 700 : 400,
+                        borderBottom: "1px solid var(--border)",
+                        cursor: "pointer",
+                      }}>
+                      <span>{m.replace("-", "년 ")}월</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                        style={{ background: count > 0 ? "var(--accent)" + "22" : "var(--hover)", color: count > 0 ? "var(--accent)" : "var(--text-dim)" }}>
+                        {count}경기
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {loading ? (
         <div className="py-20 text-center" style={{ color: "var(--text-muted)" }}>

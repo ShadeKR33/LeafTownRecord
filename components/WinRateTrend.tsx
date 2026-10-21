@@ -164,7 +164,7 @@ export function WinRateTrend({ data }: Props) {
         <span className="flex items-center gap-1">
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f87171", display: "inline-block" }} /> 패배
         </span>
-        <span>{data.length}경기 · 점 클릭 시 날짜 표시</span>
+        <span>{data.length}경기</span>
       </div>
     </div>
   );
