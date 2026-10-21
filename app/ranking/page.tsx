@@ -1325,19 +1325,6 @@ export default function RankingPage() {
                           <span className="font-semibold" style={{ color: "var(--text)" }}>{p.displayName}</span>
                         )}
 
-                        {p.topChampions.length > 0 && (
-                          <div className="flex gap-1 ml-1 items-center">
-                            {p.topChampions.map((c, ci) => {
-                              const textColor = ci === 0 ? "var(--accent)" : ci === 1 ? "var(--text-muted)" : "var(--text-dim)";
-                              return (
-                                <span key={c.name} className="px-1.5 py-0.5 rounded"
-                                  style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", fontSize: "10px", fontWeight: 600, color: textColor, lineHeight: 1.4 }}>
-                                  {c.name}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        )}
                         <TrophyList trophies={getTrophies(p.mainNickname)} />
                         {(() => {
                           const equippedId = getEquippedLimitedTitle(p.mainNickname);
