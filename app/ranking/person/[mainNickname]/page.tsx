@@ -3,10 +3,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { computeAggregatedStats, loadGameRecords, loadNicknames, normalizeId, formatWinRate, getSeriesData } from "@/lib/stats";
-import type { NicknameEntry, PlayerStats, BadgeGrade, GameRecord } from "@/lib/types";
+import type { NicknameEntry, PlayerStats, BadgeGrade, GameRecord, LimitedTitle } from "@/lib/types";
 import { WinRateTrend } from "@/components/WinRateTrend";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
 import { TrophyShowcase } from "@/components/TrophyBadge";
+import { LimitedTitleIcon, useIsDarkTheme } from "@/components/LimitedTitleBadge";
+import { LIMITED_TITLE_DEFS, getLimitedTitleDef } from "@/lib/limitedTitles";
 
 const POSITION_ORDER = ["탑", "정글", "미드", "원딜", "서포터"];
 const ROLE_COLORS: Record<string, string> = {
@@ -42,6 +44,14 @@ export default function PersonDetailPage() {
   const [tab, setTab] = useState<TabKey>("overview");
   const [loading, setLoading] = useState(true);
   const [winTrend, setWinTrend] = useState<{ date: string; rate: number; won: boolean }[]>([]);
+  const [limitedTitles, setLimitedTitles] = useState<LimitedTitle[]>([]);
+  const isDark = useIsDarkTheme();
+
+  useEffect(() => {
+    fetch("/api/limited-titles", { cache: "no-store" }).then(r => r.json()).then(d => {
+      setLimitedTitles(Array.isArray(d) ? d : []);
+    }).catch(() => {});
+  }, [mainNickname]);
 
   useEffect(() => {
     Promise.all([loadGameRecords(), loadNicknames()]).then(([records, nicknameEntries]) => {
@@ -203,6 +213,36 @@ export default function PersonDetailPage() {
           <TrophyShowcase trophies={entry.trophies!} />
         </div>
       )}
+
+      {(() => {
+        const myTitles = limitedTitles.filter(t => t.holder === entry.nickname);
+        if (myTitles.length === 0) return null;
+        return (
+          <div className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
+            <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>리미티드 업적</div>
+            <div className="flex flex-wrap gap-3">
+              {myTitles.map(t => {
+                const def = getLimitedTitleDef(t.id);
+                if (!def) return null;
+                return (
+                  <div key={t.id} title={def.description}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                    style={{
+                      background: `linear-gradient(var(--panel-alt), var(--panel-alt)) padding-box, linear-gradient(135deg, ${def.color}, ${def.accentColor}) border-box`,
+                      border: "1.5px solid transparent",
+                    }}>
+                    <LimitedTitleIcon def={def} size={28} isDark={isDark} />
+                    <div>
+                      <div className="text-xs font-black" style={{ color: def.color }}>{def.name}</div>
+                      <div className="text-xs" style={{ color: "var(--text-dim)", fontSize: 10 }}>{t.date}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       <WinRateTrend data={winTrend} />
 
@@ -662,8 +702,43 @@ export default function PersonDetailPage() {
       );
     };
 
+    const myLimitedTitles = limitedTitles.filter(t => t.holder === entry.nickname);
+
     return (
       <div className="space-y-4">
+        {myLimitedTitles.length > 0 && (
+          <>
+            <div className="text-xs font-bold" style={{ color: "var(--accent)" }}>리미티드 업적 ({myLimitedTitles.length}개)</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {myLimitedTitles.map(t => {
+                const def = getLimitedTitleDef(t.id);
+                if (!def) return null;
+                return (
+                  <div key={t.id} className="p-4 rounded-lg border flex items-center gap-3"
+                    style={{
+                      background: `linear-gradient(var(--panel), var(--panel)) padding-box, linear-gradient(135deg, ${def.color}44, ${def.accentColor}44) border-box`,
+                      border: "1.5px solid transparent",
+                      boxShadow: `0 0 12px ${def.color}22`,
+                    }}>
+                    <div className="w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
+                      style={{ background: def.color + "22", border: `1.5px solid ${def.color}66` }}>
+                      <LimitedTitleIcon def={def} size={32} isDark={isDark} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-bold" style={{ color: def.color }}>{def.name}</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded font-bold"
+                          style={{ background: def.color + "22", color: def.color, border: `1px solid ${def.color}44` }}>리미티드</span>
+                      </div>
+                      <div className="text-xs" style={{ color: "var(--text-muted)" }}>{def.description}</div>
+                      <div className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>달성일 {t.date}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
         {earnedDefs.length > 0 && (
           <>
             <div className="text-xs font-bold" style={{ color: "var(--accent)" }}>보유 업적 ({earnedDefs.length}개)</div>
