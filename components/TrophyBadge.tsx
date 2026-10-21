@@ -143,9 +143,10 @@ function TrophyIcon({
 interface TrophyBadgeProps {
   trophy: SeasonTrophy;
   size?: number;
+  iconOnly?: boolean;
 }
 
-export function TrophyBadge({ trophy, size = 13 }: TrophyBadgeProps) {
+export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadgeProps) {
   const rawUid = useId();
   const uid = rawUid.replace(/:/g, "");
   const isWorlds = trophy.type === "worlds";
@@ -155,11 +156,19 @@ export function TrophyBadge({ trophy, size = 13 }: TrophyBadgeProps) {
     : `${trophy.seasonLabel} ${trophy.rank}위`;
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
 
+  const iconSize = iconOnly ? 20 : size;
+
   return (
     <span className="inline-flex items-center">
       <span
         className="inline-flex items-center gap-0.5 cursor-default select-none"
-        style={{
+        style={iconOnly ? {
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2px",
+          filter: `drop-shadow(0 1px 3px ${s.border}88)`,
+        } : {
           background: s.bg,
           border: `1px solid ${s.border}`,
           borderRadius: "6px",
@@ -176,10 +185,12 @@ export function TrophyBadge({ trophy, size = 13 }: TrophyBadgeProps) {
         }}
         onMouseLeave={() => setPos(null)}
       >
-        <TrophyIcon trophy={trophy} size={size} uid={uid} />
-        <span style={{ marginLeft: 3 }}>
-          {isWorlds ? "월즈" : `${trophy.rank}위`}
-        </span>
+        <TrophyIcon trophy={trophy} size={iconSize} uid={uid} />
+        {!iconOnly && (
+          <span style={{ marginLeft: 3 }}>
+            {isWorlds ? "월즈" : `${trophy.rank}위`}
+          </span>
+        )}
       </span>
 
       {pos && (
@@ -256,7 +267,7 @@ export function TrophyShowcase({ trophies }: { trophies: SeasonTrophy[] }) {
 }
 
 // ── TrophyList: 작은 배지 목록 ──────────────────────────────────────────────
-export function TrophyList({ trophies }: { trophies: SeasonTrophy[] }) {
+export function TrophyList({ trophies, iconOnly = true }: { trophies: SeasonTrophy[]; iconOnly?: boolean }) {
   if (!trophies || trophies.length === 0) return null;
   const sorted = [...trophies].sort((a, b) => {
     if (a.type === "worlds" && b.type !== "worlds") return -1;
@@ -264,9 +275,9 @@ export function TrophyList({ trophies }: { trophies: SeasonTrophy[] }) {
     return b.season.localeCompare(a.season);
   });
   return (
-    <span className="inline-flex flex-wrap gap-1">
+    <span className="inline-flex flex-wrap gap-1 items-center">
       {sorted.map((t, i) => (
-        <TrophyBadge key={`${t.season}-${t.rank}-${i}`} trophy={t} />
+        <TrophyBadge key={`${t.season}-${t.rank}-${i}`} trophy={t} iconOnly={iconOnly} />
       ))}
     </span>
   );
