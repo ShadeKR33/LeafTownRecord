@@ -124,6 +124,22 @@ export default function PersonDetailPage() {
 
   // ── 개요 ──
   const OverviewTab = () => {
+    const [displayScore, setDisplayScore] = useState(0);
+    useEffect(() => {
+      if (!stats) return;
+      const target = stats.score;
+      let current = 0;
+      const step = Math.max(1, Math.ceil(Math.abs(target) / 25));
+      const timer = setInterval(() => {
+        current += target >= 0 ? step : -step;
+        if ((target >= 0 && current >= target) || (target < 0 && current <= target)) {
+          current = target;
+          clearInterval(timer);
+        }
+        setDisplayScore(current);
+      }, 20);
+      return () => clearInterval(timer);
+    }, []);
     const getKdaCard = () => {
       if (!stats.kdaTotal || stats.kdaTotal.games === 0) {
         return { label: "평균 KDA", value: "-", sub: "기록 없음", color: "var(--text-muted)" };
@@ -144,7 +160,7 @@ export default function PersonDetailPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: "전체 승률", value: formatWinRate(stats.wins, stats.totalGames), sub: `${stats.wins}승 ${stats.losses}패`, color: "var(--accent)" },
-            { label: "점수", value: `${stats.score >= 0 ? "+" : ""}${stats.score}`, sub: "승 +3 / 패 -1", color: stats.score >= 0 ? "var(--win)" : "var(--loss)" },
+            { label: "점수", value: `${displayScore >= 0 ? "+" : ""}${displayScore}`, sub: "승 +3 / 패 -1", color: stats.score >= 0 ? "var(--win)" : "var(--loss)" },
             { label: "총 경기", value: `${stats.totalGames}`, sub: "경기", color: "var(--text-muted)" },
             getKdaCard(),
           ].map(c => (
@@ -563,6 +579,7 @@ export default function PersonDetailPage() {
   ];
 
   const BadgesTab = () => {
+    const [showUnearned, setShowUnearned] = useState(false);
     const earnedMap = new Map(stats.badges.map(b => [b.id, b]));
     const gradeOrder: BadgeGrade[] = ["전설", "영웅", "희귀", "일반"];
     const earnedDefs = ALL_BADGE_HINTS.filter(d => earnedMap.has(d.id))
@@ -577,17 +594,17 @@ export default function PersonDetailPage() {
         <div key={def.id} className="p-4 rounded-lg border flex items-center gap-3"
           style={{
             background: "var(--panel)",
-            borderColor: earned ? def.color + "44" : "var(--border)",
+            borderColor: earned ? gs.color + "44" : "var(--border)",
             opacity: earned ? 1 : 0.4,
-            boxShadow: earned && def.grade === "전설" ? `0 0 12px ${def.color}44` : "none",
+            boxShadow: earned && def.grade === "전설" ? `0 0 12px ${gs.color}44` : "none",
           }}>
           <div className="text-3xl w-12 h-12 flex items-center justify-center rounded-full flex-shrink-0"
-            style={{ background: earned ? def.color + "22" : "var(--hover)", filter: earned ? "none" : "grayscale(1)" }}>
+            style={{ background: earned ? gs.color + "22" : "var(--hover)", filter: earned ? "none" : "grayscale(1)" }}>
             {def.icon}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="font-bold" style={{ color: earned ? def.color : "var(--text-muted)" }}>{def.name}</span>
+              <span className="font-bold" style={{ color: earned ? gs.color : "var(--text-muted)" }}>{def.name}</span>
               <span className="text-xs px-1.5 py-0.5 rounded font-bold"
                 style={{ background: gs.bg, color: gs.color, border: `1px solid ${gs.color}44` }}>{gs.label}</span>
             </div>
@@ -611,10 +628,18 @@ export default function PersonDetailPage() {
         )}
         {unearnedDefs.length > 0 && (
           <>
-            <div className="text-xs font-bold mt-2" style={{ color: "var(--text-muted)" }}>미달성 업적 ({unearnedDefs.length}개)</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {unearnedDefs.map(d => renderBadge(d, false))}
-            </div>
+            <button
+              onClick={() => setShowUnearned(v => !v)}
+              className="flex items-center gap-2 text-xs font-bold mt-2"
+              style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+              <span>{showUnearned ? "▲" : "▼"}</span>
+              <span>미달성 업적 {unearnedDefs.length}개 {showUnearned ? "접기" : "펼치기"}</span>
+            </button>
+            {showUnearned && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
+                {unearnedDefs.map(d => renderBadge(d, false))}
+              </div>
+            )}
           </>
         )}
       </div>

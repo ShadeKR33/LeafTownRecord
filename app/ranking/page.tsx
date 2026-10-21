@@ -324,11 +324,11 @@ function BadgeModal({
               const gs = GRADE_STYLE[b.grade];
               return (
                 <div className="mx-5 mt-4 px-4 py-3 rounded-xl flex items-center gap-3 flex-shrink-0"
-                  style={{ background: b.color + "18", border: `1px solid ${b.color}55` }}>
+                  style={{ background: GRADE_STYLE[b.grade].color + "18", border: `1px solid ${GRADE_STYLE[b.grade].color}55` }}>
                   <span style={{ fontSize: 28 }}>{b.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm" style={{ color: b.color }}>{b.name}</span>
+                      <span className="font-bold text-sm" style={{ color: GRADE_STYLE[b.grade].color }}>{b.name}</span>
                       <span className="text-xs px-1.5 py-0.5 rounded font-bold"
                         style={{ background: gs.bg, color: gs.color }}>대표</span>
                     </div>
@@ -361,17 +361,17 @@ function BadgeModal({
                       className="flex items-center gap-3 px-4 py-3 rounded-xl"
                       style={{
                         background: earned ? "var(--panel-alt)" : "var(--hover)",
-                        border: isRep ? `1px solid ${def.color}88` : "1px solid var(--border)",
+                        border: isRep ? `1px solid ${gs.color}88` : "1px solid var(--border)",
                         opacity: earned ? 1 : 0.4,
-                        boxShadow: isRep ? `0 0 8px ${def.color}33` : "none",
+                        boxShadow: isRep ? `0 0 8px ${gs.color}33` : "none",
                       }}>
                       <div className="w-10 h-10 flex items-center justify-center rounded-full flex-shrink-0"
-                        style={{ background: earned ? def.color + "22" : "var(--border)", filter: earned ? "none" : "grayscale(1)", fontSize: 22 }}>
+                        style={{ background: earned ? gs.color + "22" : "var(--border)", filter: earned ? "none" : "grayscale(1)", fontSize: 22 }}>
                         {def.icon}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="font-semibold text-sm" style={{ color: earned ? def.color : "var(--text-muted)" }}>
+                          <span className="font-semibold text-sm" style={{ color: earned ? gs.color : "var(--text-muted)" }}>
                             {def.name}
                           </span>
                           <span className="text-xs px-1.5 py-0.5 rounded font-bold"
@@ -380,7 +380,7 @@ function BadgeModal({
                           </span>
                           {isRep && (
                             <span className="text-xs px-1.5 py-0.5 rounded font-bold"
-                              style={{ background: def.color + "22", color: def.color }}>★ 대표</span>
+                              style={{ background: gs.color + "22", color: gs.color }}>★ 대표</span>
                           )}
                         </div>
                         <div className="text-xs" style={{ color: "var(--text-muted)" }}>
@@ -392,7 +392,7 @@ function BadgeModal({
                           onClick={() => onSet(def.id)}
                           className="text-xs px-2.5 py-1.5 rounded-lg font-semibold flex-shrink-0"
                           style={{
-                            background: isRep ? def.color : "var(--hover)",
+                            background: isRep ? gs.color : "var(--hover)",
                             color: isRep ? "#fff" : "var(--text-muted)",
                             border: isRep ? "none" : "1px solid var(--border)",
                           }}>
@@ -411,7 +411,7 @@ function BadgeModal({
                               <div style={{
                                 height: "100%", borderRadius: 3,
                                 width: `${pct}%`,
-                                background: pct >= 80 ? def.color : pct >= 50 ? def.color + "bb" : def.color + "77",
+                                background: pct >= 80 ? gs.color : pct >= 50 ? gs.color + "bb" : gs.color + "77",
                                 transition: "width 0.3s",
                               }} />
                             </div>
@@ -1298,12 +1298,22 @@ export default function RankingPage() {
                                  : ranks[i] === 2 ? "4px solid #94a3b8"
                                  : ranks[i] === 3 ? "4px solid #f97316"
                                  : "3px solid transparent",
+                      transition: "filter 0.15s, border-left-color 0.15s",
+                    }}
+                    onMouseEnter={e => {
+                      const gc = displayBadge ? GRADE_STYLE[displayBadge.grade].color : "var(--accent)";
+                      if (ranks[i] > 3) e.currentTarget.style.borderLeft = `4px solid ${gc}cc`;
+                      e.currentTarget.style.filter = "brightness(0.93)";
+                    }}
+                    onMouseLeave={e => {
+                      if (ranks[i] > 3) e.currentTarget.style.borderLeft = "3px solid transparent";
+                      e.currentTarget.style.filter = "";
                     }}
                     onClick={() => {
                       if (p.hasAlts) router.push(`/ranking/person/${encodeURIComponent(p.mainNickname)}`);
                       else router.push(`/ranking/${encodeURIComponent(p.nicknames[0])}`);
                     }}
-                    className="hover:brightness-95 transition-all">
+                    className="transition-all">
                     <td className="px-4 py-3 font-bold" style={{ color: ranks[i] <= 3 ? "var(--accent)" : "var(--text-muted)" }}>{rankIcon(ranks[i])}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-2">
@@ -1470,13 +1480,13 @@ export default function RankingPage() {
             className="px-3 py-2.5 rounded-lg text-xs shadow-2xl"
             style={{
               background: "var(--panel)",
-              border: `1px solid ${badgeTooltip.badge.color}99`,
+              border: `1px solid ${GRADE_STYLE[badgeTooltip.badge.grade].color}99`,
               color: "var(--text)",
               whiteSpace: "nowrap",
-              boxShadow: `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${badgeTooltip.badge.color}44`,
+              boxShadow: `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${GRADE_STYLE[badgeTooltip.badge.grade].color}44`,
             }}
           >
-            <div className="font-bold mb-1" style={{ color: badgeTooltip.badge.color }}>
+            <div className="font-bold mb-1" style={{ color: GRADE_STYLE[badgeTooltip.badge.grade].color }}>
               {badgeTooltip.badge.icon} {badgeTooltip.badge.name}
             </div>
             <div className="mb-1" style={{ color: "var(--text-muted)" }}>{badgeTooltip.badge.description}</div>
