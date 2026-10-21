@@ -48,7 +48,22 @@ export default function PersonDetailPage() {
       if (!found) { setLoading(false); return; }
       setEntry(found);
 
-      const nicks = [found.nickname, ...(found.altNicknames || []).filter(Boolean)];
+      const basNicks = [found.nickname, ...(found.altNicknames || []).filter(Boolean)];
+      // 레코드에 "#KR1" 형태로 저장된 닉네임도 포함 (Riot ID 매핑 없이 등록된 경우)
+      const baseNickSet = new Set(basNicks.map(n => normalizeId(n)));
+      const tagVariants: string[] = [];
+      for (const record of records) {
+        for (const player of [...record.team1, ...record.team2]) {
+          const pn = player.nickname || "";
+          if (!pn.includes("#")) continue;
+          const base = normalizeId(pn.split("#")[0]);
+          if (baseNickSet.has(base) && !baseNickSet.has(normalizeId(pn))) {
+            baseNickSet.add(normalizeId(pn));
+            tagVariants.push(pn);
+          }
+        }
+      }
+      const nicks = [...basNicks, ...tagVariants];
       setAllNicknames(nicks);
 
       const displayName = found.realName?.trim() || found.nickname;

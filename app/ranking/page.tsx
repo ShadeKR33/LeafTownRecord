@@ -706,7 +706,11 @@ export default function RankingPage() {
       const standaloneNicknames: string[] = [];
 
       getAllNicknames(records).forEach((nick) => {
-        const entry = nicknameToEntry.get(normalizeId(nick));
+        // Riot ID 매핑 없이 저장된 경우 "#KR1" 등 태그가 붙어있을 수 있음 → 태그 제거 후 재시도
+        let entry = nicknameToEntry.get(normalizeId(nick));
+        if (!entry && nick.includes("#")) {
+          entry = nicknameToEntry.get(normalizeId(nick.split("#")[0]));
+        }
         if (entry) {
           if (!entryGroups.has(entry.id)) entryGroups.set(entry.id, { entry, nicks: [] });
           entryGroups.get(entry.id)!.nicks.push(nick);
@@ -981,7 +985,10 @@ export default function RankingPage() {
     const entryGroups = new Map<string, { entry: NicknameEntry; nicks: string[] }>();
     const standaloneNicknames: string[] = [];
     getAllNicknames(filtered).forEach(nick => {
-      const entry = nicknameToEntry.get(normalizeId(nick));
+      let entry = nicknameToEntry.get(normalizeId(nick));
+      if (!entry && nick.includes("#")) {
+        entry = nicknameToEntry.get(normalizeId(nick.split("#")[0]));
+      }
       if (entry) {
         if (!entryGroups.has(entry.id)) entryGroups.set(entry.id, { entry, nicks: [] });
         entryGroups.get(entry.id)!.nicks.push(nick);
@@ -1329,12 +1336,6 @@ export default function RankingPage() {
                             : null;
                           return equipped ? <LimitedTitleBadge key={equipped.id} title={equipped} /> : null;
                         })()}
-                        {p.hasAlts && (
-                          <span className="text-xs px-1.5 py-0.5 rounded"
-                            style={{ background: "var(--hover)", color: "#0f766e", border: "1px solid #5eead4", fontSize: "10px" }}>
-                            계정 多
-                          </span>
-                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center"><StreakBadge streak={p.currentStreak} /></td>

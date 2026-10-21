@@ -21,8 +21,16 @@ function findFirstAchievers(
       aliasMap.set(normalizeId(alt), entry.nickname);
     }
   }
-  const resolve = (raw: string): string =>
-    aliasMap.get(normalizeId(raw)) ?? raw;
+  const resolve = (raw: string): string => {
+    const direct = aliasMap.get(normalizeId(raw));
+    if (direct) return direct;
+    // "#KR1" 등 Riot 태그가 붙은 경우 태그 제거 후 재시도
+    if (raw.includes("#")) {
+      const base = aliasMap.get(normalizeId(raw.split("#")[0]));
+      if (base) return base;
+    }
+    return raw;
+  };
 
   const sorted = [...records].sort(
     (a, b) => a.date.localeCompare(b.date) || a.gameNumber - b.gameNumber,
@@ -269,14 +277,34 @@ export async function GET() {
     kv.get<{ holder: string; date: string }>(easterEggKey(user.groupId)),
   ]);
 
-  const claimedIds = new Set(existing.map(t => t.id));
+  // "#KR1" 등 Riot 태그로 잘못 저장된 holder 수정
+  const holderAliasMap = new Map<string, string>();
+  for (const entry of nicknames) {
+    holderAliasMap.set(normalizeId(entry.nickname), entry.nickname);
+    for (const alt of entry.altNicknames ?? []) {
+      if (alt.trim()) holderAliasMap.set(normalizeId(alt.trim()), entry.nickname);
+    }
+  }
+  const fixHolder = (raw: string): string => {
+    const direct = holderAliasMap.get(normalizeId(raw));
+    if (direct) return direct;
+    if (raw.includes("#")) {
+      const base = holderAliasMap.get(normalizeId(raw.split("#")[0]));
+      if (base) return base;
+    }
+    return raw;
+  };
+  const fixedExisting = existing.map(t => ({ ...t, holder: fixHolder(t.holder) }));
+  const holderChanged = fixedExisting.some((t, i) => t.holder !== existing[i].holder);
+
+  const claimedIds = new Set(fixedExisting.map(t => t.id));
   const allIds = LIMITED_TITLE_DEFS.map(d => d.id);
 
   const newTitles: LimitedTitle[] = [];
 
   // 이스터에그 칭호: 별도 KV 기반
   if (!claimedIds.has(EASTER_TITLE_ID) && easterRecord) {
-    newTitles.push({ id: EASTER_TITLE_ID, holder: easterRecord.holder, date: easterRecord.date });
+    newTitles.push({ id: EASTER_TITLE_ID, holder: fixHolder(easterRecord.holder), date: easterRecord.date });
   }
 
   // 게임 기록 기반 칭호
@@ -291,11 +319,11 @@ export async function GET() {
     }
   }
 
-  if (newTitles.length > 0) {
-    const updated = [...existing, ...newTitles];
+  if (newTitles.length > 0 || holderChanged) {
+    const updated = [...fixedExisting, ...newTitles];
     await kv.set(limitedTitlesKey(user.groupId), updated);
     return Response.json(updated);
   }
 
-  return Response.json(existing);
+  return Response.json(fixedExisting);
 }

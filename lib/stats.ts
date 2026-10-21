@@ -616,9 +616,28 @@ export function computeAggregatedStats(displayName: string, nicknames: string[],
   const score = wins * 3 - losses;
   const winRate = totalGames > 0 ? wins / totalGames : 0;
 
-  // 현재 연승은 절대값이 가장 큰 계정 기준
-  const currentStreak = allStats.reduce((best, s) =>
-    Math.abs(s.currentStreak) > Math.abs(best) ? s.currentStreak : best, 0);
+  // 여러 닉네임을 시간순으로 합산해 현재 연승/연패 계산 (같은 사람이 닉네임 바꾼 경우 정확도 향상)
+  const normNickSet = new Set(nicknames.map(n => normalizeId(n)));
+  const combinedSeries = getSeriesData(records)
+    .filter(s => s.isComplete && s.records.some(r =>
+      [...r.team1, ...r.team2].some(p => normNickSet.has(normalizeId(p.nickname || "")))
+    ))
+    .map(s => {
+      let t1Count = 0, t2Count = 0;
+      s.records.forEach(r => {
+        r.team1.forEach(p => { if (normNickSet.has(normalizeId(p.nickname || ""))) t1Count++; });
+        r.team2.forEach(p => { if (normNickSet.has(normalizeId(p.nickname || ""))) t2Count++; });
+      });
+      return { won: s.winTeam === (t1Count >= t2Count ? 1 : 2) };
+    });
+  let currentStreak = 0;
+  if (combinedSeries.length > 0) {
+    const lastWon = combinedSeries[combinedSeries.length - 1].won;
+    for (let i = combinedSeries.length - 1; i >= 0; i--) {
+      if (combinedSeries[i].won === lastWon) currentStreak += lastWon ? 1 : -1;
+      else break;
+    }
+  }
   const maxWinStreak = allStats.reduce((m, s) => Math.max(m, s.maxWinStreak), 0);
   const maxLoseStreak = allStats.reduce((m, s) => Math.max(m, s.maxLoseStreak), 0);
 

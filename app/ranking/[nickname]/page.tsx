@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { computePlayerStats, loadGameRecords, loadNicknames, formatWinRate, normalizeId, getSeriesData } from "@/lib/stats";
-import type { PlayerStats, LimitedTitle } from "@/lib/types";
+import type { PlayerStats, LimitedTitle, SeasonDef, GameRecord, NicknameEntry } from "@/lib/types";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
 import { WinRateTrend } from "@/components/WinRateTrend";
 import { LIMITED_TITLE_DEFS } from "@/lib/limitedTitles";
@@ -28,6 +28,11 @@ export default function PlayerDetailPage() {
   const nickname = decodeURIComponent(rawNickname as string);
   const router = useRouter();
   const [stats, setStats] = useState<PlayerStats | null>(null);
+  const [careerStats, setCareerStats] = useState<PlayerStats | null>(null);
+  const [allRecords, setAllRecords] = useState<GameRecord[]>([]);
+  const [allNicknames, setAllNicknames] = useState<NicknameEntry[]>([]);
+  const [seasons, setSeasons] = useState<SeasonDef[]>([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>("all");
   const [nicknameInfo, setNicknameInfo] = useState<{ tier?: string; tierDiv?: string; lp?: string; realName?: string; roles?: string[] } | null>(null);
   const [tab, setTab] = useState<TabKey>("overview");
   const [loading, setLoading] = useState(true);
@@ -36,33 +41,20 @@ export default function PlayerDetailPage() {
   const [mainNickname, setMainNickname] = useState<string>("");
   const isDark = useIsDarkTheme();
 
+  // 데이터 로딩
   useEffect(() => {
     Promise.all([
       loadGameRecords(),
       loadNicknames(),
       fetch("/api/limited-titles").then(r => r.json()).catch(() => [] as LimitedTitle[]),
-    ]).then(([records, nicknames, titlesData]: [any, any, LimitedTitle[]]) => {
+      fetch("/api/seasons").then(r => r.json()).catch(() => [] as SeasonDef[]),
+    ]).then(([records, nicknames, titlesData, seasonData]: [GameRecord[], NicknameEntry[], LimitedTitle[], SeasonDef[]]) => {
       setLimitedTitles(Array.isArray(titlesData) ? titlesData : []);
-      if (records.length > 0) {
-        setStats(computePlayerStats(nickname, records, nicknames));
-        // 승률 추이 계산
-        const normN = normalizeId(nickname);
-        const allSeries = getSeriesData(records);
-        const playerSeries = allSeries.filter(s =>
-          s.isComplete && s.records.some(r =>
-            [...r.team1, ...r.team2].some(p => normalizeId(p.nickname || "") === normN)
-          )
-        ).map(s => {
-          const inT1 = s.records.some(r => r.team1.some(p => normalizeId(p.nickname || "") === normN));
-          return { date: s.date, won: s.winTeam === (inT1 ? 1 : 2) };
-        });
-        const trend = playerSeries.map((s, i) => {
-          const wins = playerSeries.slice(0, i + 1).filter(x => x.won).length;
-          return { date: s.date, rate: wins / (i + 1), won: s.won };
-        });
-        setWinTrend(trend);
-      }
-      const found = nicknames.find((n: { nickname: string; altNicknames?: string[] }) =>
+      setAllRecords(records);
+      setAllNicknames(nicknames);
+      setSeasons(seasonData);
+
+      const found = nicknames.find((n: NicknameEntry) =>
         normalizeId(n.nickname) === normalizeId(nickname) ||
         (n.altNicknames || []).some((alt: string) => normalizeId(alt) === normalizeId(nickname))
       );
@@ -72,9 +64,58 @@ export default function PlayerDetailPage() {
       } else {
         setMainNickname(nickname);
       }
+
+      // 진행중인 시즌 자동 선택
+      const today = new Date().toISOString().slice(0, 10);
+      const active = (seasonData as SeasonDef[]).find(
+        s => !s.closed && s.startDate <= today && (!s.endDate || s.endDate >= today)
+      );
+      setSelectedSeasonId(active?.id ?? "all");
+
       setLoading(false);
     });
   }, [nickname]);
+
+  // 시즌 필터에 따른 통계 재계산
+  const computeStats = useCallback(() => {
+    if (allRecords.length === 0) return;
+
+    // 커리어 통계 (업적 계산용 — 항상 전체 기록)
+    const career = computePlayerStats(nickname, allRecords, allNicknames);
+    setCareerStats(career);
+
+    // 시즌 필터 적용
+    let filtered = allRecords;
+    if (selectedSeasonId !== "all") {
+      const season = seasons.find(s => s.id === selectedSeasonId);
+      if (season) {
+        const today = new Date().toISOString().slice(0, 10);
+        const endDate = season.endDate ?? today;
+        filtered = allRecords.filter(r => r.date >= season.startDate && r.date <= endDate);
+      }
+    }
+
+    setStats(computePlayerStats(nickname, filtered, allNicknames));
+
+    // 승률 추이 (필터 적용)
+    const normN = normalizeId(nickname);
+    const allSeries = getSeriesData(filtered);
+    const playerSeries = allSeries.filter(s =>
+      s.isComplete && s.records.some(r =>
+        [...r.team1, ...r.team2].some(p => normalizeId(p.nickname || "") === normN)
+      )
+    ).map(s => {
+      const inT1 = s.records.some(r => r.team1.some(p => normalizeId(p.nickname || "") === normN));
+      return { date: s.date, won: s.winTeam === (inT1 ? 1 : 2) };
+    });
+    const trend = playerSeries.map((s, i) => {
+      const wins = playerSeries.slice(0, i + 1).filter(x => x.won).length;
+      return { date: s.date, rate: wins / (i + 1), won: s.won };
+    });
+    setWinTrend(trend);
+  }, [nickname, allRecords, allNicknames, seasons, selectedSeasonId]);
+
+  useEffect(() => { computeStats(); }, [computeStats]);
 
   if (loading) {
     return (
@@ -106,7 +147,7 @@ export default function PlayerDetailPage() {
     { key: "positions", label: "포지션" },
     { key: "vs", label: "상대전적" },
     { key: "with", label: "시너지" },
-    { key: "badges", label: `업적 (${stats.badges.length})` },
+    { key: "badges", label: `업적 (${careerStats?.badges.length ?? 0})` },
   ];
 
   // ─── 섹션 렌더러 ────────────────────────────────────────────────────
@@ -194,12 +235,12 @@ export default function PlayerDetailPage() {
         </div>
       )}
 
-      {/* 뱃지 미리보기 */}
-      {stats.badges.length > 0 && (
+      {/* 뱃지 미리보기 (커리어 기준) */}
+      {(careerStats?.badges.length ?? 0) > 0 && (
         <div className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
           <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>보유 업적</div>
           <div className="flex flex-wrap gap-2">
-            {stats.badges.map((b) => (
+            {(careerStats?.badges ?? []).map((b) => (
               <div key={b.id} title={b.description} className="px-3 py-1.5 rounded-full text-xs font-semibold"
                 style={{ background: b.color + "22", color: b.color, border: `1px solid ${b.color}44` }}>
                 {b.icon} {b.name}
@@ -591,9 +632,11 @@ export default function PlayerDetailPage() {
   ];
 
   const getBadgeProgress = (id: string): { current: number; target: number; label: string } | null => {
-    const vs = stats.vsStats || {};
-    const w = stats.withStats || {};
-    const cs = stats.championStats || {};
+    const cs_ = careerStats;
+    if (!cs_) return null;
+    const vs = cs_.vsStats || {};
+    const w = cs_.withStats || {};
+    const cs = cs_.championStats || {};
     const champEntries = Object.entries(cs).filter(([n]) => n !== "?");
     const uniqueChamps = champEntries.length;
     const bestChampGames = champEntries.reduce((m, [, v]) => Math.max(m, v.games), 0);
@@ -603,39 +646,39 @@ export default function PlayerDetailPage() {
     const bestWithTotal = Object.values(w).reduce((m, v) => Math.max(m, v.wins + v.losses), 0);
     const dominatedCount   = Object.values(vs).filter(v => v.wins >= 5).length;
     const closeAlliesCount = Object.values(w).filter(v => v.wins + v.losses >= 5).length;
-    const wr = Math.round(stats.winRate * 100);
+    const wr = Math.round(cs_.winRate * 100);
     switch (id) {
-      case "first":         return { current: Math.min(stats.totalGames, 1), target: 1,  label: "1경기 참여" };
-      case "flow":          return { current: stats.maxWinStreak, target: 3,  label: `최고 연승 ${stats.maxWinStreak}회` };
-      case "fire":          return { current: stats.maxWinStreak, target: 5,  label: `최고 연승 ${stats.maxWinStreak}회` };
-      case "unstoppable":   return { current: stats.maxWinStreak, target: 6,  label: `최고 연승 ${stats.maxWinStreak}회` };
-      case "destroyer":     return { current: stats.maxWinStreak, target: 10, label: `최고 연승 ${stats.maxWinStreak}회` };
+      case "first":         return { current: Math.min(cs_.totalGames, 1), target: 1,  label: "1경기 참여" };
+      case "flow":          return { current: cs_.maxWinStreak, target: 3,  label: `최고 연승 ${cs_.maxWinStreak}회` };
+      case "fire":          return { current: cs_.maxWinStreak, target: 5,  label: `최고 연승 ${cs_.maxWinStreak}회` };
+      case "unstoppable":   return { current: cs_.maxWinStreak, target: 6,  label: `최고 연승 ${cs_.maxWinStreak}회` };
+      case "destroyer":     return { current: cs_.maxWinStreak, target: 10, label: `최고 연승 ${cs_.maxWinStreak}회` };
       case "ace":
-        if (stats.totalGames < 10) return { current: stats.totalGames, target: 10, label: `${stats.totalGames}/10경기` };
+        if (cs_.totalGames < 10) return { current: cs_.totalGames, target: 10, label: `${cs_.totalGames}/10경기` };
         return { current: wr, target: 60, label: `승률 ${wr}%` };
       case "crown":
-        if (stats.totalGames < 20) return { current: stats.totalGames, target: 20, label: `${stats.totalGames}/20경기` };
+        if (cs_.totalGames < 20) return { current: cs_.totalGames, target: 20, label: `${cs_.totalGames}/20경기` };
         return { current: wr, target: 70, label: `승률 ${wr}%` };
       case "legend":
-        if (stats.totalGames < 25) return { current: stats.totalGames, target: 25, label: `${stats.totalGames}/25경기` };
+        if (cs_.totalGames < 25) return { current: cs_.totalGames, target: 25, label: `${cs_.totalGames}/25경기` };
         return { current: wr, target: 70, label: `승률 ${wr}%` };
-      case "steady":        return { current: stats.totalGames, target: 10, label: `${stats.totalGames}/10경기` };
-      case "diamond":       return { current: stats.totalGames, target: 20, label: `${stats.totalGames}/20경기` };
-      case "veteran":       return { current: stats.totalGames, target: 30, label: `${stats.totalGames}/30경기` };
-      case "guardian":      return { current: stats.totalGames, target: 40, label: `${stats.totalGames}/40경기` };
+      case "steady":        return { current: cs_.totalGames, target: 10, label: `${cs_.totalGames}/10경기` };
+      case "diamond":       return { current: cs_.totalGames, target: 20, label: `${cs_.totalGames}/20경기` };
+      case "veteran":       return { current: cs_.totalGames, target: 30, label: `${cs_.totalGames}/30경기` };
+      case "guardian":      return { current: cs_.totalGames, target: 40, label: `${cs_.totalGames}/40경기` };
       case "explorer":      return { current: uniqueChamps, target: 5,  label: `${uniqueChamps}종류` };
       case "versatile":     return { current: uniqueChamps, target: 10, label: `${uniqueChamps}종류` };
       case "manyFaces":     return { current: uniqueChamps, target: 20, label: `${uniqueChamps}종류` };
       case "champMaster":   return { current: bestChampGames, target: 5,  label: `최다 챔피언 ${bestChampGames}경기` };
       case "champExpert":   return { current: bestChampGames, target: 10, label: `최다 챔피언 ${bestChampGames}경기` };
       case "champLegend":   return { current: bestChampGames, target: 15, label: `최다 챔피언 ${bestChampGames}경기` };
-      case "scoreRich":     return { current: Math.max(0, stats.score), target: 20, label: `현재 ${stats.score}점` };
-      case "scoreMaster":   return { current: Math.max(0, stats.score), target: 25, label: `현재 ${stats.score}점` };
-      case "scoreKing":     return { current: Math.max(0, stats.score), target: 35, label: `현재 ${stats.score}점` };
-      case "unlucky":       return { current: stats.maxLoseStreak, target: 5, label: `최고 연패 ${stats.maxLoseStreak}회` };
+      case "scoreRich":     return { current: Math.max(0, cs_.score), target: 20, label: `현재 ${cs_.score}점` };
+      case "scoreMaster":   return { current: Math.max(0, cs_.score), target: 25, label: `현재 ${cs_.score}점` };
+      case "scoreKing":     return { current: Math.max(0, cs_.score), target: 35, label: `현재 ${cs_.score}점` };
+      case "unlucky":       return { current: cs_.maxLoseStreak, target: 5, label: `최고 연패 ${cs_.maxLoseStreak}회` };
       case "comeback":
-        if (stats.maxLoseStreak < 3) return { current: stats.maxLoseStreak, target: 3, label: `최고 연패 ${stats.maxLoseStreak}회` };
-        if (stats.totalGames < 10)   return { current: stats.totalGames, target: 10, label: `${stats.totalGames}/10경기` };
+        if (cs_.maxLoseStreak < 3) return { current: cs_.maxLoseStreak, target: 3, label: `최고 연패 ${cs_.maxLoseStreak}회` };
+        if (cs_.totalGames < 10)   return { current: cs_.totalGames, target: 10, label: `${cs_.totalGames}/10경기` };
         return { current: wr, target: 50, label: `승률 ${wr}%` };
       case "revenge":       return { current: bestVsWins,   target: 3,  label: `최다 상대승 ${bestVsWins}승` };
       case "lion":          return { current: bestVsWins,   target: 5,  label: `최다 상대승 ${bestVsWins}승` };
@@ -650,51 +693,51 @@ export default function PlayerDetailPage() {
       case "ruthless":      return { current: dominatedCount, target: 3, label: `${dominatedCount}명에게 5승+` };
       case "champCollector":    return { current: uniqueChamps, target: 30, label: `${uniqueChamps}/30종류` };
       case "champOmniscient":   return { current: uniqueChamps, target: 45, label: `${uniqueChamps}/45종류` };
-      case "mvpFirst":   return { current: Math.min(stats.mvpCount ?? 0, 1),  target: 1,  label: `MVP ${stats.mvpCount ?? 0}회` };
-      case "mvpHabit":   return { current: Math.min(stats.mvpCount ?? 0, 5),  target: 5,  label: `MVP ${stats.mvpCount ?? 0}회` };
-      case "mvpMachine": return { current: Math.min(stats.mvpCount ?? 0, 10), target: 10, label: `MVP ${stats.mvpCount ?? 0}회` };
-      case "mvpGod":     return { current: Math.min(stats.mvpCount ?? 0, 20), target: 20, label: `MVP ${stats.mvpCount ?? 0}회` };
-      case "aceFirst":   return { current: Math.min(stats.aceCount ?? 0, 1),  target: 1,  label: `ACE ${stats.aceCount ?? 0}회` };
-      case "aceSpirit":  return { current: Math.min(stats.aceCount ?? 0, 5),  target: 5,  label: `ACE ${stats.aceCount ?? 0}회` };
-      case "aceLegend":  return { current: Math.min(stats.aceCount ?? 0, 10), target: 10, label: `ACE ${stats.aceCount ?? 0}회` };
+      case "mvpFirst":   return { current: Math.min(cs_.mvpCount ?? 0, 1),  target: 1,  label: `MVP ${cs_.mvpCount ?? 0}회` };
+      case "mvpHabit":   return { current: Math.min(cs_.mvpCount ?? 0, 5),  target: 5,  label: `MVP ${cs_.mvpCount ?? 0}회` };
+      case "mvpMachine": return { current: Math.min(cs_.mvpCount ?? 0, 10), target: 10, label: `MVP ${cs_.mvpCount ?? 0}회` };
+      case "mvpGod":     return { current: Math.min(cs_.mvpCount ?? 0, 20), target: 20, label: `MVP ${cs_.mvpCount ?? 0}회` };
+      case "aceFirst":   return { current: Math.min(cs_.aceCount ?? 0, 1),  target: 1,  label: `ACE ${cs_.aceCount ?? 0}회` };
+      case "aceSpirit":  return { current: Math.min(cs_.aceCount ?? 0, 5),  target: 5,  label: `ACE ${cs_.aceCount ?? 0}회` };
+      case "aceLegend":  return { current: Math.min(cs_.aceCount ?? 0, 10), target: 10, label: `ACE ${cs_.aceCount ?? 0}회` };
       case "bladeWhisper": {
-        if (!stats.kdaTotal || stats.kdaTotal.games < 5) return { current: stats.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${stats.kdaTotal?.games ?? 0}판` };
-        const kda = stats.kdaTotal.deaths > 0 ? (stats.kdaTotal.kills + stats.kdaTotal.assists) / stats.kdaTotal.deaths : 999;
+        if (!cs_.kdaTotal || cs_.kdaTotal.games < 5) return { current: cs_.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${cs_.kdaTotal?.games ?? 0}판` };
+        const kda = cs_.kdaTotal.deaths > 0 ? (cs_.kdaTotal.kills + cs_.kdaTotal.assists) / cs_.kdaTotal.deaths : 999;
         return { current: Math.min(kda, 5), target: 5, label: `현재 KDA ${kda >= 999 ? "Perfect" : kda.toFixed(2)}` };
       }
       case "slayer": {
-        if (!stats.kdaTotal || stats.kdaTotal.games < 5) return { current: stats.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${stats.kdaTotal?.games ?? 0}판` };
-        const kda = stats.kdaTotal.deaths > 0 ? (stats.kdaTotal.kills + stats.kdaTotal.assists) / stats.kdaTotal.deaths : 999;
+        if (!cs_.kdaTotal || cs_.kdaTotal.games < 5) return { current: cs_.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${cs_.kdaTotal?.games ?? 0}판` };
+        const kda = cs_.kdaTotal.deaths > 0 ? (cs_.kdaTotal.kills + cs_.kdaTotal.assists) / cs_.kdaTotal.deaths : 999;
         return { current: Math.min(kda, 10), target: 10, label: `현재 KDA ${kda >= 999 ? "Perfect" : kda.toFixed(2)}` };
       }
       case "battleDominator": {
-        if (!stats.kdaTotal || stats.kdaTotal.games < 5) return { current: stats.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${stats.kdaTotal?.games ?? 0}판` };
-        const kda = stats.kdaTotal.deaths > 0 ? (stats.kdaTotal.kills + stats.kdaTotal.assists) / stats.kdaTotal.deaths : 999;
+        if (!cs_.kdaTotal || cs_.kdaTotal.games < 5) return { current: cs_.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${cs_.kdaTotal?.games ?? 0}판` };
+        const kda = cs_.kdaTotal.deaths > 0 ? (cs_.kdaTotal.kills + cs_.kdaTotal.assists) / cs_.kdaTotal.deaths : 999;
         return { current: Math.min(kda, 7), target: 7, label: `현재 KDA ${kda >= 999 ? "Perfect" : kda.toFixed(2)}` };
       }
       case "immortal": {
-        if (!stats.kdaTotal || stats.kdaTotal.games < 5) return { current: stats.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${stats.kdaTotal?.games ?? 0}판` };
-        const avgD = stats.kdaTotal.deaths / stats.kdaTotal.games;
+        if (!cs_.kdaTotal || cs_.kdaTotal.games < 5) return { current: cs_.kdaTotal?.games ?? 0, target: 5, label: `KDA 기록 ${cs_.kdaTotal?.games ?? 0}판` };
+        const avgD = cs_.kdaTotal.deaths / cs_.kdaTotal.games;
         return { current: 1.5, target: avgD, label: `평균 데스 ${avgD.toFixed(1)}회` };
       }
       case "honeyFinder": {
-        if (!stats.honeyChamps || stats.honeyChamps.size === 0) return { current: 0, target: 5, label: "꿀챔 플레이 없음" };
-        const honeyEntries = champEntries.filter(([name]) => stats.honeyChamps!.has(name));
+        if (!cs_.honeyChamps || cs_.honeyChamps.size === 0) return { current: 0, target: 5, label: "꿀챔 플레이 없음" };
+        const honeyEntries = champEntries.filter(([name]) => cs_.honeyChamps!.has(name));
         if (honeyEntries.length === 0) return { current: 0, target: 5, label: "꿀챔 플레이 없음" };
         const bestHoney = honeyEntries.sort((a, b) => b[1].games - a[1].games)[0];
-        const wr = bestHoney[1].wins / bestHoney[1].games;
+        const honeyWr = bestHoney[1].wins / bestHoney[1].games;
         if (bestHoney[1].games < 5) return { current: bestHoney[1].games, target: 5, label: `${bestHoney[0]} ${bestHoney[1].games}판` };
-        return { current: Math.round(wr * 100), target: 50, label: `${bestHoney[0]} 승률 ${Math.round(wr * 100)}%` };
+        return { current: Math.round(honeyWr * 100), target: 50, label: `${bestHoney[0]} 승률 ${Math.round(honeyWr * 100)}%` };
       }
       case "publicEnemy": {
-        if (!stats.champBanCounts || champEntries.length === 0) return { current: 0, target: 3, label: "밴 횟수 0회" };
+        if (!cs_.champBanCounts || champEntries.length === 0) return { current: 0, target: 3, label: "밴 횟수 0회" };
         const mostPlayed = [...champEntries].sort((a, b) => b[1].games - a[1].games)[0];
-        const banCount = stats.champBanCounts[mostPlayed[0]] || 0;
+        const banCount = cs_.champBanCounts[mostPlayed[0]] || 0;
         return { current: banCount, target: 3, label: `${mostPlayed[0]} 밴 ${banCount}회` };
       }
       case "honeyProphet": {
-        if (!stats.honeyChamps || stats.honeyChamps.size === 0) return { current: 0, target: 10, label: "꿀챔 플레이 없음" };
-        const honeyEntries = champEntries.filter(([name]) => stats.honeyChamps!.has(name));
+        if (!cs_.honeyChamps || cs_.honeyChamps.size === 0) return { current: 0, target: 10, label: "꿀챔 플레이 없음" };
+        const honeyEntries = champEntries.filter(([name]) => cs_.honeyChamps!.has(name));
         if (honeyEntries.length === 0) return { current: 0, target: 10, label: "꿀챔 플레이 없음" };
         const bestHoney = honeyEntries.sort((a, b) => b[1].games - a[1].games)[0];
         return { current: bestHoney[1].games, target: 10, label: `${bestHoney[0]} ${bestHoney[1].games}판` };
@@ -704,7 +747,7 @@ export default function PlayerDetailPage() {
   };
 
   const BadgesTab = () => {
-    const earnedIds = new Set(stats.badges.map((b) => b.id));
+    const earnedIds = new Set((careerStats?.badges ?? []).map((b) => b.id));
     const gradeOrder: BadgeGrade[] = ["신화", "전설", "영웅", "희귀", "일반"];
     const sorted = [...ALL_BADGE_HINTS].sort((a, b) => {
       const aEarned = earnedIds.has(a.id) ? 0 : 1;
@@ -776,12 +819,12 @@ export default function PlayerDetailPage() {
         {/* ── 일반 업적 섹션 ── */}
         <div>
           <div className="text-xs font-bold mb-3 px-1" style={{ color: "var(--text-muted)" }}>
-            🏅 일반 업적 ({stats.badges.length} / {ALL_BADGE_HINTS.length})
+            🏅 일반 업적 ({careerStats?.badges.length ?? 0} / {ALL_BADGE_HINTS.length})
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {sorted.map((template) => {
               const earned = earnedIds.has(template.id);
-              const badge = stats.badges.find((b) => b.id === template.id);
+              const badge = (careerStats?.badges ?? []).find((b) => b.id === template.id);
               const gs = GRADE_STYLE[template.grade];
               const prog = !earned ? getBadgeProgress(template.id) : null;
               return (
@@ -882,6 +925,26 @@ export default function PlayerDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* 시즌 필터 */}
+      {seasons.length > 0 && (
+        <div className="flex gap-1.5 mb-4 flex-wrap">
+          {[{ id: "all", label: "전체 기간" } as { id: string; label: string }, ...seasons.map(s => ({ id: s.id, label: s.label }))].map(s => {
+            const selected = selectedSeasonId === s.id;
+            return (
+              <button key={s.id} onClick={() => setSelectedSeasonId(s.id)}
+                className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+                style={{
+                  background: selected ? "var(--accent)" : "var(--panel)",
+                  color: selected ? "var(--bg)" : "var(--text-muted)",
+                  border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`,
+                }}>
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* 탭 */}
       <div className="flex gap-1 mb-5 border-b" style={{ borderColor: "var(--border)" }}>
