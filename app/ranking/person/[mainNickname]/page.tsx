@@ -239,6 +239,14 @@ export default function PersonDetailPage() {
                   </div>
                 );
               })}
+              {stats.badges.length > 3 && (
+                <button
+                  onClick={() => setTab("badges")}
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold"
+                  style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)", cursor: "pointer" }}>
+                  +{stats.badges.length - 3}개 더
+                </button>
+              )}
             </div>
           </div>
         );
