@@ -264,6 +264,7 @@ export default function PersonDetailPage() {
     const [posFilter, setPosFilter] = useState("전체");
     const [showAll, setShowAll] = useState(false);
     const [expandedKda, setExpandedKda] = useState<string | null>(null);
+    const [hoveredLockedPos, setHoveredLockedPos] = useState<string | null>(null);
     const POS_LIST = ["탑", "정글", "미드", "원딜", "서포터"];
     const POSITIONS = ["전체", ...POS_LIST];
     const RANK_COLORS = ["#c8a951", "#a0a8b0", "#a05030"];
@@ -327,20 +328,38 @@ export default function PersonDetailPage() {
           {POSITIONS.map(pos => {
             const hasGames = pos === "전체" || (positionGames[pos] || 0) > 0;
             const isActive = posFilter === pos;
+            const showTip = !hasGames && hoveredLockedPos === pos;
             return (
-              <button key={pos}
-                onClick={() => hasGames ? setPosFilter(pos) : undefined}
-                title={!hasGames ? "아직 플레이하지 않은 라인입니다." : undefined}
-                className="px-4 py-2.5 text-sm font-semibold transition-all"
-                style={{
-                  color: !hasGames ? "var(--text-dim)" : isActive ? "var(--accent)" : "var(--text-muted)",
-                  borderBottom: isActive ? "2px solid var(--accent)" : "2px solid transparent",
-                  background: "none",
-                  opacity: hasGames ? 1 : 0.35,
-                  cursor: hasGames ? "pointer" : "not-allowed",
-                }}>
-                {pos}
-              </button>
+              <div key={pos} className="relative">
+                <button
+                  onClick={() => hasGames ? setPosFilter(pos) : undefined}
+                  onMouseEnter={() => !hasGames && setHoveredLockedPos(pos)}
+                  onMouseLeave={() => setHoveredLockedPos(null)}
+                  className="px-4 py-2.5 text-sm font-semibold transition-all"
+                  style={{
+                    color: !hasGames ? "var(--text-dim)" : isActive ? "var(--accent)" : "var(--text-muted)",
+                    borderBottom: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+                    background: "none",
+                    opacity: hasGames ? 1 : 0.35,
+                    cursor: hasGames ? "pointer" : "not-allowed",
+                  }}>
+                  {pos}
+                </button>
+                {showTip && (
+                  <div className="absolute top-full left-1/2 mt-1.5 z-50 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold shadow-xl pointer-events-none"
+                    style={{
+                      transform: "translateX(-50%)",
+                      background: "var(--panel)",
+                      border: "1px solid var(--border)",
+                      color: "var(--text-muted)",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+                    }}>
+                    아직 플레이하지 않은 라인입니다.
+                    <div className="absolute left-1/2 bottom-full -translate-x-1/2"
+                      style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderBottom: "5px solid var(--border)" }} />
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
