@@ -98,7 +98,7 @@ function MembersTab() {
     if (!form.nickname.trim()) return;
     const altNicknames = [form.altNickname1.trim(), form.altNickname2.trim()].filter(Boolean);
     const entry = { nickname:form.nickname, altNicknames, realName:form.realName, tier:form.tier, tierDiv:form.tierDiv, lp:form.lp, roles:form.roles };
-    if (editId) { save(players.map(p => p.id === editId ? { ...entry, id:editId } : p)); setEditId(null); }
+    if (editId) { save(players.map(p => p.id === editId ? { ...p, ...entry, id:editId } : p)); setEditId(null); }
     else { save([...players, { ...entry, id:Date.now().toString() }]); }
     setForm(emptyForm()); setShowForm(false);
   };

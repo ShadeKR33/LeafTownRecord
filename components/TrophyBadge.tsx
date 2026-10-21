@@ -21,11 +21,11 @@ function WorldsTrophyIcon({ size = 13, uid }: { size?: number; uid: string }) {
       {/* 내부 하이라이트 면 */}
       <path d="M9.5,9.5 L7.5,13 L8.5,15.5 L11.5,15.5 L12.5,13 L10.5,9.5 Z" fill="#67e8f9" opacity="0.3" />
       {/* 기둥 */}
-      <rect x="9" y="17" width="2" height="1.5" rx="0.6" fill="#0891b2" />
+      <rect x="9" y="17" width="2" height="2" rx="0.6" fill="#0891b2" />
       {/* 받침 */}
-      <rect x="5" y="18.5" width="10" height="2" rx="1" fill="#0e7490" />
+      <rect x="5" y="19" width="10" height="2" rx="1" fill="#0e7490" />
       {/* 받침 광택 */}
-      <rect x="6" y="19" width="5" height="0.7" rx="0.35" fill="#a5f3fc" opacity="0.5" />
+      <rect x="6" y="19.5" width="5" height="0.7" rx="0.35" fill="#a5f3fc" opacity="0.5" />
       {/* 크리스탈 반짝임 */}
       <line x1="8.2" y1="2.5" x2="9.2" y2="5" stroke="white" strokeWidth="1" opacity="0.75" strokeLinecap="round" />
     </svg>
@@ -53,11 +53,11 @@ function GoldTrophyIcon({ size = 13, uid }: { size?: number; uid: string }) {
       {/* 광택 */}
       <path d="M8.5,7.5 Q9.2,6.8 10.2,7.2" stroke="#fef3c7" strokeWidth="1.1" fill="none" opacity="0.7" strokeLinecap="round" />
       {/* 기둥 */}
-      <rect x="9" y="15.5" width="2" height="2.5" rx="0.6" fill="#b45309" />
+      <rect x="9" y="15.5" width="2" height="3.5" rx="0.6" fill="#b45309" />
       {/* 받침 */}
-      <rect x="6" y="18" width="8" height="2" rx="1" fill="#92400e" />
+      <rect x="6" y="19" width="8" height="2" rx="1" fill="#92400e" />
       {/* 받침 광택 */}
-      <rect x="7" y="18.4" width="4" height="0.7" rx="0.35" fill="#fde68a" opacity="0.45" />
+      <rect x="7" y="19.4" width="4" height="0.7" rx="0.35" fill="#fde68a" opacity="0.45" />
     </svg>
   );
 }
@@ -84,11 +84,11 @@ function SilverTrophyIcon({ size = 13, uid }: { size?: number; uid: string }) {
       {/* 광택 */}
       <path d="M8.2,9.5 Q9,8.8 10,9.2" stroke="white" strokeWidth="1" fill="none" opacity="0.6" strokeLinecap="round" />
       {/* 기둥 */}
-      <rect x="9" y="16" width="2" height="2.5" rx="0.6" fill="#64748b" />
+      <rect x="9" y="16" width="2" height="3" rx="0.6" fill="#64748b" />
       {/* 받침 */}
-      <rect x="6.5" y="18.5" width="7" height="2" rx="1" fill="#475569" />
+      <rect x="6.5" y="19" width="7" height="2" rx="1" fill="#475569" />
       {/* 받침 광택 */}
-      <rect x="7.5" y="18.9" width="3" height="0.7" rx="0.35" fill="#f1f5f9" opacity="0.4" />
+      <rect x="7.5" y="19.4" width="3" height="0.7" rx="0.35" fill="#f1f5f9" opacity="0.4" />
     </svg>
   );
 }
@@ -112,11 +112,11 @@ function BronzeTrophyIcon({ size = 13, uid }: { size?: number; uid: string }) {
       {/* 광택 */}
       <path d="M8.5,5.5 Q9.3,4.8 10.3,5.2" stroke="#fff7ed" strokeWidth="1.1" fill="none" opacity="0.65" strokeLinecap="round" />
       {/* 기둥 */}
-      <rect x="9" y="15" width="2" height="2.5" rx="0.6" fill="#9a3412" />
+      <rect x="9" y="15" width="2" height="4" rx="0.6" fill="#9a3412" />
       {/* 받침 */}
-      <rect x="6.5" y="17.5" width="7" height="2" rx="1" fill="#7c2d12" />
+      <rect x="6.5" y="19" width="7" height="2" rx="1" fill="#7c2d12" />
       {/* 받침 광택 */}
-      <rect x="7.5" y="17.9" width="3" height="0.7" rx="0.35" fill="#fed7aa" opacity="0.4" />
+      <rect x="7.5" y="19.4" width="3" height="0.7" rx="0.35" fill="#fed7aa" opacity="0.4" />
     </svg>
   );
 }
