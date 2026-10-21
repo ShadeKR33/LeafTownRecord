@@ -5,7 +5,7 @@ import { computePlayerStats, loadGameRecords, loadNicknames } from "@/lib/stats"
 import { computeGameAwards } from "@/lib/awards";
 import type { NicknameEntry, PlayerStats, GameRecord } from "@/lib/types";
 
-type Tab = "dday" | "draft" | "players" | "guide" | "scrim";
+type Tab = "dday" | "draft" | "players" | "guide" | "scrim" | "journey";
 
 const TABS: { key: Tab; icon: string; label: string }[] = [
   { key: "dday",    icon: "⏳", label: "디데이"  },
@@ -13,6 +13,7 @@ const TABS: { key: Tab; icon: string; label: string }[] = [
   { key: "players", icon: "🃏", label: "선수단"   },
   { key: "scrim",   icon: "📊", label: "스크림"   },
   { key: "guide",   icon: "📖", label: "가이드"   },
+  { key: "journey", icon: "🗺️", label: "여정"    },
 ];
 
 // ─── D-Day 탭 ────────────────────────────────────────────────────────────────
@@ -1899,6 +1900,202 @@ function GuideTab() {
   );
 }
 
+// ─── 여정 탭 ─────────────────────────────────────────────────────────────────
+
+const JOURNEY_MILESTONES: {
+  date: string;
+  icon: string;
+  title: string;
+  desc: string;
+  done: boolean;
+  color: string;
+  tag?: string;
+}[] = [
+  {
+    date: "2026-10-21",
+    icon: "🏆",
+    title: "제2회 월즈 공식 발표",
+    desc: "나뭇잎 마을 제2회 월드 챔피언십이 여수에서 개최됨을 공식 선언했다. 12명의 닌자가 도전의 문 앞에 섰다.",
+    done: true,
+    color: "#c8a951",
+    tag: "발표",
+  },
+  {
+    date: "미정",
+    icon: "📋",
+    title: "참가 신청 마감",
+    desc: "12명의 닌자가 도전장을 제출했다. 각자의 각오를 품고, 이름을 올렸다.",
+    done: false,
+    color: "#42a5f5",
+    tag: "참가",
+  },
+  {
+    date: "미정",
+    icon: "⚔️",
+    title: "팀 구성 드래프트",
+    desc: "2명의 코치가 10명의 선수를 나누어 두 개의 군단을 완성한다. 이 순간부터 우리는 팀이다.",
+    done: false,
+    color: "#ef5350",
+    tag: "드래프트",
+  },
+  {
+    date: "미정",
+    icon: "🔥",
+    title: "준비 기간 시작",
+    desc: "로스터 확정 이후 실전 준비가 시작된다. 챔피언 폭을 넓히고 전략을 다듬는 시간.",
+    done: false,
+    color: "#ff9800",
+    tag: "스크림",
+  },
+  {
+    date: "2026-12-28",
+    icon: "🌟",
+    title: "월즈 개막 — 결전의 날",
+    desc: "여수의 겨울 바다 아래, 최강의 닌자가 가려진다. 준비한 자만이 이 무대에 설 자격이 있다.",
+    done: false,
+    color: "#00e5ff",
+    tag: "D-Day",
+  },
+];
+
+function JourneyTab() {
+  const WORLDS_DATE = new Date("2026-12-28T00:00:00");
+  const ANNOUNCE_DATE = new Date("2026-10-21T00:00:00");
+  const now = new Date();
+
+  const daysTotal = Math.round((WORLDS_DATE.getTime() - ANNOUNCE_DATE.getTime()) / 86400000);
+  const daysPassed = Math.max(0, Math.round((now.getTime() - ANNOUNCE_DATE.getTime()) / 86400000));
+  const daysLeft = Math.max(0, Math.round((WORLDS_DATE.getTime() - now.getTime()) / 86400000));
+  const progress = Math.min(100, Math.round((daysPassed / daysTotal) * 100));
+  const isPast = now >= WORLDS_DATE;
+
+  return (
+    <div className="space-y-8 pb-8">
+      {/* 상단 여정 요약 카드 */}
+      <div className="rounded-2xl p-6"
+        style={{ background: "linear-gradient(160deg, #1a3a1a, #0d1f0d)", border: "1px solid #2a5c2a" }}>
+        <p className="text-xs tracking-widest font-bold mb-1" style={{ color: "#c8a951" }}>
+          월즈의 여정
+        </p>
+        <h2 className="text-xl font-black mb-4" style={{ color: "#fff" }}>
+          {isPast ? "우리는 해냈다" : "결전을 향해 나아가는 중"}
+        </h2>
+
+        {/* 진행률 바 */}
+        <div className="mb-3">
+          <div className="flex justify-between text-xs mb-1.5" style={{ color: "#6a8060" }}>
+            <span>발표일 · 10월 21일</span>
+            <span>월즈 · 12월 28일</span>
+          </div>
+          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "#0d2a0d" }}>
+            <div className="h-full rounded-full transition-all duration-1000"
+              style={{ width: `${progress}%`, background: "linear-gradient(90deg, #2a7c2a, #c8a951)" }} />
+          </div>
+          <div className="flex justify-between text-xs mt-1.5" style={{ color: "#6a8060" }}>
+            <span>{daysPassed}일 경과</span>
+            <span style={{ color: "#c8a951", fontWeight: 700 }}>{progress}%</span>
+            <span>{daysLeft}일 남음</span>
+          </div>
+        </div>
+
+        {/* 요약 수치 */}
+        <div className="grid grid-cols-3 gap-3 mt-4">
+          {[
+            { label: "준비 기간", value: `${daysTotal}일`, sub: "발표~월즈" },
+            { label: "경과 일수", value: `${daysPassed}일`, sub: "현재까지" },
+            { label: "D-Day", value: isPast ? "완료" : `D-${daysLeft}`, sub: "12월 28일" },
+          ].map(s => (
+            <div key={s.label} className="rounded-xl p-3 text-center"
+              style={{ background: "rgba(0,0,0,0.3)", border: "1px solid #2a5c2a44" }}>
+              <div className="text-xs mb-1" style={{ color: "#6a8060" }}>{s.label}</div>
+              <div className="font-black text-lg" style={{ color: "#c8a951" }}>{s.value}</div>
+              <div className="text-[10px]" style={{ color: "#4a6040" }}>{s.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 타임라인 */}
+      <div>
+        <p className="text-xs font-bold tracking-widest mb-5" style={{ color: "var(--text-dim)" }}>
+          TIMELINE
+        </p>
+
+        <div className="relative">
+          {/* 세로 라인 */}
+          <div className="absolute left-[19px] top-0 bottom-0 w-0.5"
+            style={{ background: "linear-gradient(to bottom, var(--accent), transparent)" }} />
+
+          <div className="space-y-0">
+            {JOURNEY_MILESTONES.map((m, i) => (
+              <div key={i} className="relative flex gap-4 pb-8">
+                {/* 타임라인 도트 */}
+                <div className="relative z-10 flex-shrink-0 mt-1"
+                  style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div className="rounded-full flex items-center justify-center text-lg"
+                    style={{
+                      width: 38,
+                      height: 38,
+                      background: m.done ? m.color + "22" : "var(--panel)",
+                      border: `2px solid ${m.done ? m.color : "var(--border)"}`,
+                      filter: m.done ? `drop-shadow(0 0 6px ${m.color}44)` : "none",
+                    }}>
+                    {m.icon}
+                  </div>
+                </div>
+
+                {/* 카드 */}
+                <div className="flex-1 rounded-xl p-4 transition-all"
+                  style={{
+                    background: m.done ? m.color + "0d" : "var(--panel)",
+                    border: `1px solid ${m.done ? m.color + "44" : "var(--border)"}`,
+                  }}>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="font-black text-sm" style={{ color: m.done ? m.color : "var(--text)" }}>
+                      {m.title}
+                    </span>
+                    {m.tag && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                        style={{ background: m.color + "22", color: m.color, border: `1px solid ${m.color}44` }}>
+                        {m.tag}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>
+                    🗓️ {m.date}
+                  </div>
+                  <p className="text-xs leading-relaxed" style={{ color: m.done ? "var(--text-muted)" : "var(--text-dim)" }}>
+                    {m.desc}
+                  </p>
+                  {m.done && (
+                    <div className="mt-2 text-[10px] font-bold" style={{ color: m.color }}>
+                      ✓ 완료
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 맺음 메시지 */}
+      <div className="rounded-2xl p-6 text-center"
+        style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+        <p className="text-sm leading-loose" style={{ color: "var(--text-muted)" }}>
+          이 페이지를 처음 보는 그날,<br />
+          우리는 아직 시작 전이었다.<br /><br />
+          하지만 언젠가 다시 돌아와 이 여정을 읽을 때,<br />
+          그 모든 준비의 날들이 얼마나 소중했는지를 알게 될 것이다.
+        </p>
+        <p className="text-base font-black mt-4" style={{ color: "var(--accent)" }}>
+          — 나뭇잎 마을의 겨울 🌿
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ─── 스크림 탭 ────────────────────────────────────────────────────────────────
 
 function ScrimTab() {
@@ -1973,6 +2170,7 @@ export default function WorldsPage() {
       {tab === "players" && <PlayersTab />}
       {tab === "guide"   && <GuideTab />}
       {tab === "scrim"   && <ScrimTab />}
+      {tab === "journey" && <JourneyTab />}
     </div>
   );
 }
