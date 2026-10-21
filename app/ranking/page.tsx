@@ -16,7 +16,7 @@ import {
 import type { PlayerStats, NicknameEntry, BadgeGrade, GameRecord, SeasonDef, Badge, LimitedTitle } from "@/lib/types";
 import GuideBanner from "@/components/GuideBanner";
 import { TrophyList } from "@/components/TrophyBadge";
-import { LimitedTitleBadge, useIsDarkTheme } from "@/components/LimitedTitleBadge";
+import { useIsDarkTheme } from "@/components/LimitedTitleBadge";
 import { LIMITED_TITLE_DEFS, getLimitedTitleDef } from "@/lib/limitedTitles";
 
 type RankedPerson = PlayerStats & {
@@ -1317,7 +1317,7 @@ export default function RankingPage() {
                     className="transition-all">
                     <td className="px-4 py-3 font-bold" style={{ color: ranks[i] <= 3 ? "var(--accent)" : "var(--text-muted)" }}>{rankIcon(ranks[i])}</td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-end gap-2">
                         {ranks[i] <= 3 ? (
                           <span style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : "#c2410c", fontWeight: 800 }}>
                             {p.displayName}
@@ -1325,14 +1325,6 @@ export default function RankingPage() {
                         ) : (
                           <span className="font-semibold" style={{ color: "var(--text)" }}>{p.displayName}</span>
                         )}
-
-                        {(() => {
-                          const equippedId = getEquippedLimitedTitle(p.mainNickname);
-                          const equipped = equippedId
-                            ? limitedTitles.find(t => t.id === equippedId && t.holder === p.mainNickname)
-                            : null;
-                          return equipped ? <LimitedTitleBadge key={equipped.id} title={equipped} /> : null;
-                        })()}
                         <TrophyList trophies={getTrophies(p.mainNickname)} />
                       </div>
                     </td>
