@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { computeAggregatedStats, loadGameRecords, loadNicknames, normalizeId, formatWinRate, getSeriesData } from "@/lib/stats";
-import type { NicknameEntry, PlayerStats, BadgeGrade } from "@/lib/types";
+import type { NicknameEntry, PlayerStats, BadgeGrade, GameRecord } from "@/lib/types";
 import { WinRateTrend } from "@/components/WinRateTrend";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
 
@@ -36,6 +36,8 @@ export default function PersonDetailPage() {
   const [entry, setEntry] = useState<NicknameEntry | null>(null);
   const [stats, setStats] = useState<PlayerStats | null>(null);
   const [allNicknames, setAllNicknames] = useState<string[]>([]);
+  const [allRecords, setAllRecords] = useState<GameRecord[]>([]);
+  const [playerNicks, setPlayerNicks] = useState<string[]>([]);
   const [tab, setTab] = useState<TabKey>("overview");
   const [loading, setLoading] = useState(true);
   const [winTrend, setWinTrend] = useState<{ date: string; rate: number; won: boolean }[]>([]);
@@ -65,6 +67,8 @@ export default function PersonDetailPage() {
       }
       const nicks = [...basNicks, ...tagVariants];
       setAllNicknames(nicks);
+      setAllRecords(records);
+      setPlayerNicks(nicks);
 
       const displayName = found.realName?.trim() || found.nickname;
       const aggStats = computeAggregatedStats(displayName, nicks, records, nicknameEntries);
@@ -257,166 +261,118 @@ export default function PersonDetailPage() {
 
   // ── 챔피언 ──
   const ChampionsTab = () => {
-    const entries = Object.entries(stats.championStats)
-      .filter(([n]) => n !== "?")
-      .sort((a, b) => {
-        if (b[1].games !== a[1].games) {
-          return b[1].games - a[1].games;
-        }
-        return b[1].wins - a[1].wins;
-      });
+    const [posFilter, setPosFilter] = useState("전체");
+    const POS_LIST = ["탑", "정글", "미드", "원딜", "서포터"];
+    const POSITIONS = ["전체", ...POS_LIST];
 
-    // 표준 경쟁 순위: 판수 내림차순 -> 판수 같을 경우 승수 내림차순
-    const rankedEntries = entries.map(([name, s]) => {
-      const rank = 1 + entries.filter(([, other]) => {
-        if (other.games !== s.games) {
-          return other.games > s.games;
-        }
-        return other.wins > s.wins;
-      }).length;
-      return { name, s, rank };
-    });
+    const filteredStats = useMemo(() => {
+      const normNicks = new Set(playerNicks.map(n => normalizeId(n)));
+      const champMap: Record<string, { wins: number; losses: number; games: number; kills: number; deaths: number; assists: number; hasKda: boolean }> = {};
 
-    const most3 = rankedEntries.slice(0, 3);
-    const theRest = rankedEntries.slice(3);
+      for (const record of allRecords) {
+        for (const { players, won } of [
+          { players: record.team1, won: record.winTeam === 1 },
+          { players: record.team2, won: record.winTeam === 2 },
+        ]) {
+          players.forEach((player, idx) => {
+            if (!normNicks.has(normalizeId(player.nickname || ""))) return;
+            const pos = POS_LIST[idx] ?? "";
+            if (posFilter !== "전체" && pos !== posFilter) return;
+            const champ = player.champion || "?";
+            if (champ === "?") return;
+            if (!champMap[champ]) champMap[champ] = { wins: 0, losses: 0, games: 0, kills: 0, deaths: 0, assists: 0, hasKda: false };
+            champMap[champ].games++;
+            if (won) champMap[champ].wins++;
+            else champMap[champ].losses++;
+            if (player.kills != null) { champMap[champ].kills += player.kills; champMap[champ].hasKda = true; }
+            if (player.deaths != null) champMap[champ].deaths += player.deaths;
+            if (player.assists != null) champMap[champ].assists += player.assists;
+          });
+        }
+      }
+
+      return Object.entries(champMap)
+        .map(([name, s]) => ({ name, ...s }))
+        .sort((a, b) => b.games - a.games || b.wins - a.wins);
+    }, [posFilter]);
 
     return (
-      <div className="space-y-6">
-        {rankedEntries.length === 0 ? (
+      <div className="space-y-4">
+        {/* 포지션 필터 탭 */}
+        <div className="flex border-b" style={{ borderColor: "var(--border)" }}>
+          {POSITIONS.map(pos => (
+            <button key={pos} onClick={() => setPosFilter(pos)}
+              className="px-4 py-2.5 text-sm font-semibold transition-all"
+              style={{
+                color: posFilter === pos ? "var(--accent)" : "var(--text-muted)",
+                borderBottom: posFilter === pos ? "2px solid var(--accent)" : "2px solid transparent",
+                background: "none",
+              }}>
+              {pos}
+            </button>
+          ))}
+        </div>
+
+        {filteredStats.length === 0 ? (
           <div className="py-10 text-center rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>
-            챔피언 기록 없음
+            {posFilter === "전체" ? "챔피언 기록 없음" : `${posFilter} 포지션 기록 없음`}
           </div>
         ) : (
-          <>
-            {/* 모스트 3 챔피언 */}
-            {most3.length > 0 && (
-              <div>
-                <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>모스트 3 챔피언</div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {most3.map(({ name, s, rank }) => {
-                    const hasKDA = s.kills !== undefined && s.games > 0;
-                    const avgK = hasKDA ? ((s.kills ?? 0) / s.games).toFixed(1) : null;
-                    const avgD = hasKDA ? ((s.deaths ?? 0) / s.games).toFixed(1) : null;
-                    const avgA = hasKDA ? ((s.assists ?? 0) / s.games).toFixed(1) : null;
-                    const kda = hasKDA && (s.deaths ?? 0) > 0
-                      ? (((s.kills ?? 0) + (s.assists ?? 0)) / (s.deaths ?? 1)).toFixed(2)
-                      : hasKDA ? "Perfect" : null;
+          <div className="rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: "var(--panel-alt)", borderBottom: "1px solid var(--border)" }}>
+                  <th className="px-3 py-3 text-center" style={{ color: "var(--text-dim)", width: 40 }}>#</th>
+                  <th className="px-4 py-3 text-left" style={{ color: "var(--text-muted)" }}>챔피언</th>
+                  <th className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>KDA</th>
+                  <th className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>판수</th>
+                  <th className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>승률</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStats.map(({ name, wins, losses, games, kills, deaths, assists, hasKda }, i) => {
+                  const wr = games > 0 ? wins / games : 0;
+                  const kdaNum = hasKda && deaths > 0 ? (kills + assists) / deaths : null;
+                  const kdaStr = hasKda ? (deaths > 0 ? kdaNum!.toFixed(2) : "Perfect") : null;
+                  const wrColor = wr >= 0.6 ? "#22c55e" : wr <= 0.4 ? "var(--loss)" : "#f59e0b";
+                  const avgK = hasKda ? (kills / games).toFixed(1) : null;
+                  const avgD = hasKda ? (deaths / games).toFixed(1) : null;
+                  const avgA = hasKda ? (assists / games).toFixed(1) : null;
+                  const kdaColor = kdaStr === "Perfect" || (kdaNum != null && kdaNum >= 4) ? "var(--win)" : kdaNum != null && kdaNum >= 2 ? "var(--text)" : "var(--loss)";
 
-                    return (
-                      <div key={name} className="p-4 rounded-2xl border relative transition-all hover:scale-[1.02] shadow-sm cursor-pointer"
-                        onClick={() => router.push(`/champion/${encodeURIComponent(name)}`)}
-                        style={{
-                          background: "var(--panel)",
-                          borderColor: rank === 1 ? "#c8a951" : rank === 2 ? "#a0a8b0" : rank === 3 ? "#a05030" : "var(--border)",
-                          borderLeft: `4px solid ${rank === 1 ? "#c8a951" : rank === 2 ? "#a0a8b0" : "#a05030"}`,
-                        }}>
-                        <div className="absolute top-3 right-3 text-xs font-black px-2 py-0.5 rounded-full"
-                          style={{
-                            background: rank === 1 ? "#c8a95122" : rank === 2 ? "#a0a8b022" : "#a0503022",
-                            color: rank === 1 ? "#c8a951" : rank === 2 ? "#a0a8b0" : "#a05030",
-                          }}>
-                          MOST {rank}
-                        </div>
-                        <div className="flex items-center gap-3 mb-3">
+                  return (
+                    <tr key={name}
+                      onClick={() => router.push(`/champion/${encodeURIComponent(name)}`)}
+                      className="transition-all cursor-pointer hover:brightness-95"
+                      style={{ background: i % 2 === 0 ? "var(--panel)" : "var(--panel-alt)", borderBottom: "1px solid var(--border)" }}>
+                      <td className="px-3 py-3.5 text-center text-xs font-bold" style={{ color: "var(--text-dim)" }}>{i + 1}</td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-3">
                           <ChampionPortrait name={name} size={36} />
-                          <div>
-                            <div className="font-bold text-base" style={{ color: "var(--text)" }}>{name}</div>
-                            <div className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-                              {s.games}경기 · {formatWinRate(s.wins, s.games)} 승률
-                            </div>
-                          </div>
+                          <span className="font-semibold" style={{ color: "var(--text)" }}>{name}</span>
                         </div>
-                        
-                        <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t" style={{ borderColor: "var(--border)" }}>
+                      </td>
+                      <td className="px-4 py-3.5 text-center">
+                        {kdaStr ? (
                           <div>
-                            <div style={{ color: "var(--text-dim)" }}>승/패</div>
-                            <div className="font-bold" style={{ color: "var(--text)" }}>
-                              <span style={{ color: "var(--win)" }}>{s.wins}승</span> / <span style={{ color: "var(--loss)" }}>{s.losses}패</span>
-                            </div>
+                            <div className="font-bold" style={{ color: kdaColor }}>{kdaStr}</div>
+                            <div className="text-[10px] mt-0.5" style={{ color: "var(--text-dim)" }}>{avgK} / {avgD} / {avgA}</div>
                           </div>
-                          <div>
-                            <div style={{ color: "var(--text-dim)" }}>KDA</div>
-                            {kda ? (
-                              <div>
-                                <span className="font-bold" style={{ color: kda === "Perfect" || parseFloat(kda) >= 4 ? "var(--win)" : parseFloat(kda) >= 2 ? "var(--text)" : "var(--loss)" }}>
-                                  {kda === "Perfect" ? "Perfect" : `${kda}:1`}
-                                </span>
-                                <span className="text-[10px] ml-1" style={{ color: "var(--text-dim)" }}>({avgK}/{avgD}/{avgA})</span>
-                              </div>
-                            ) : (
-                              <span style={{ color: "var(--text-dim)" }}>-</span>
-                            )}
-                          </div>
+                        ) : <span style={{ color: "var(--text-dim)" }}>-</span>}
+                      </td>
+                      <td className="px-4 py-3.5 text-center font-semibold" style={{ color: "var(--text-muted)" }}>{games}</td>
+                      <td className="px-4 py-3.5 text-center">
+                        <div className="font-bold" style={{ color: wrColor }}>{Math.round(wr * 100)}%</div>
+                        <div className="text-[10px] mt-0.5" style={{ color: "var(--text-dim)" }}>
+                          <span style={{ color: "var(--win)" }}>{wins}승</span>{" / "}<span style={{ color: "var(--loss)" }}>{losses}패</span>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 기타 챔피언 (5열 격자 카드) */}
-            {theRest.length > 0 && (
-              <div>
-                <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>기타 챔피언</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {theRest.map(({ name, s, rank }) => {
-                    const hasKDA = s.kills !== undefined && s.games > 0;
-                    const avgK = hasKDA ? ((s.kills ?? 0) / s.games).toFixed(1) : null;
-                    const avgD = hasKDA ? ((s.deaths ?? 0) / s.games).toFixed(1) : null;
-                    const avgA = hasKDA ? ((s.assists ?? 0) / s.games).toFixed(1) : null;
-                    const kda = hasKDA && (s.deaths ?? 0) > 0
-                      ? (((s.kills ?? 0) + (s.assists ?? 0)) / (s.deaths ?? 1)).toFixed(2)
-                      : hasKDA ? "Perfect" : null;
-
-                    return (
-                      <div key={name} className="p-3 rounded-xl border transition-all hover:scale-[1.02] shadow-sm flex flex-col justify-between cursor-pointer"
-                        onClick={() => router.push(`/champion/${encodeURIComponent(name)}`)}
-                        style={{
-                          background: "var(--panel)",
-                          borderColor: "var(--border)",
-                        }}>
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <ChampionPortrait name={name} size={24} style={{ flexShrink: 0 }} />
-                              <span className="font-bold text-xs truncate" style={{ color: "var(--text)" }}>{name}</span>
-                            </div>
-                            <span className="text-[10px] font-bold" style={{ color: "var(--text-dim)" }}>#{rank}</span>
-                          </div>
-                          <div className="space-y-1 text-[11px] pt-1.5 border-t" style={{ borderColor: "var(--border)" }}>
-                            <div className="flex justify-between">
-                              <span style={{ color: "var(--text-dim)" }}>판수/승률</span>
-                              <span className="font-bold" style={{ color: "var(--text)" }}>{s.games}판 · {formatWinRate(s.wins, s.games)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span style={{ color: "var(--text-dim)" }}>승/패</span>
-                              <span style={{ color: "var(--text-muted)" }}>
-                                <span style={{ color: "var(--win)" }}>{s.wins}승</span> / <span style={{ color: "var(--loss)" }}>{s.losses}패</span>
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-start">
-                              <span style={{ color: "var(--text-dim)" }}>KDA</span>
-                              {kda ? (
-                                <div className="text-right">
-                                  <div className="font-bold" style={{ color: kda === "Perfect" || parseFloat(kda) >= 4 ? "var(--win)" : parseFloat(kda) >= 2 ? "var(--text)" : "var(--loss)" }}>
-                                    {kda === "Perfect" ? "Perfect" : `${kda}:1`}
-                                  </div>
-                                  <div className="text-[9px]" style={{ color: "var(--text-dim)" }}>{avgK}/{avgD}/{avgA}</div>
-                                </div>
-                              ) : (
-                                <span style={{ color: "var(--text-dim)" }}>-</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     );
