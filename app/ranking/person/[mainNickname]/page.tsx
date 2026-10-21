@@ -263,6 +263,7 @@ export default function PersonDetailPage() {
   const ChampionsTab = () => {
     const [posFilter, setPosFilter] = useState("전체");
     const [showAll, setShowAll] = useState(false);
+    const [expandedKda, setExpandedKda] = useState<string | null>(null);
     const POS_LIST = ["탑", "정글", "미드", "원딜", "서포터"];
     const POSITIONS = ["전체", ...POS_LIST];
     const RANK_COLORS = ["#c8a951", "#a0a8b0", "#a05030"];
@@ -385,11 +386,21 @@ export default function PersonDetailPage() {
                             <span className="font-semibold" style={{ color: "var(--text)" }}>{name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3.5 text-center">
+                        <td className="px-4 py-3.5 text-center"
+                          onClick={kdaStr ? (e) => { e.stopPropagation(); setExpandedKda(expandedKda === name ? null : name); } : undefined}
+                          style={{ cursor: kdaStr ? "pointer" : "default" }}>
                           {kdaStr ? (
                             <div>
-                              <div className="font-bold" style={{ color: kdaColor }}>{kdaStr}</div>
-                              <div className="text-[10px] mt-0.5" style={{ color: "var(--text-dim)" }}>{avgK} / {avgD} / {avgA}</div>
+                              <div className="font-bold inline-flex items-center gap-0.5"
+                                style={{ color: kdaColor, borderBottom: `1px dashed ${kdaColor}88` }}>
+                                {kdaStr}
+                                <span style={{ fontSize: 9, color: kdaColor + "bb", lineHeight: 1 }}>
+                                  {expandedKda === name ? "▴" : "▾"}
+                                </span>
+                              </div>
+                              {expandedKda === name && (
+                                <div className="text-[10px] mt-1" style={{ color: "var(--text-dim)" }}>{avgK} / {avgD} / {avgA}</div>
+                              )}
                             </div>
                           ) : <span style={{ color: "var(--text-dim)" }}>-</span>}
                         </td>
