@@ -266,7 +266,7 @@ function sortTrophies(trophies: SeasonTrophy[]) {
 export function TrophyShowcase({ trophies }: { trophies: SeasonTrophy[] }) {
   if (!trophies || trophies.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-3 items-end">
       {sortTrophies(trophies).map((t, i) => (
         <TrophyCard key={`${t.season}-${t.rank}-${i}`} trophy={t} />
       ))}
@@ -279,7 +279,7 @@ export function TrophyList({ trophies, iconOnly = true }: { trophies: SeasonTrop
   if (!trophies || trophies.length === 0) return null;
   const sorted = sortTrophies(trophies);
   return (
-    <span className="inline-flex flex-wrap gap-1 items-center">
+    <span className="inline-flex flex-wrap gap-1 items-end">
       {sorted.map((t, i) => (
         <TrophyBadge key={`${t.season}-${t.rank}-${i}`} trophy={t} iconOnly={iconOnly} />
       ))}

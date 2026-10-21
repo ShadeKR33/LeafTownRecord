@@ -24,6 +24,7 @@ type RankedPerson = PlayerStats & {
   nicknames: string[];
   mainNickname: string;
   hasAlts: boolean;
+  hasEntry: boolean;
 };
 
 // ─── 업적 전체 정의 (모달에서 사용) ────────────────────────────────────────
@@ -727,12 +728,12 @@ export default function RankingPage() {
         const stats = nicks.length > 1
           ? computeAggregatedStats(displayName, nicks, records, rawEntries)
           : { ...computePlayerStats(nicks[0], records, rawEntries), nickname: displayName };
-        result.push({ ...stats, displayName, nicknames: nicks, mainNickname: entry.nickname, hasAlts });
+        result.push({ ...stats, displayName, nicknames: nicks, mainNickname: entry.nickname, hasAlts, hasEntry: true });
       });
 
       standaloneNicknames.forEach((nick) => {
         const stats = computePlayerStats(nick, records, rawEntries);
-        result.push({ ...stats, displayName: nick, nicknames: [nick], mainNickname: nick, hasAlts: false });
+        result.push({ ...stats, displayName: nick, nicknames: [nick], mainNickname: nick, hasAlts: false, hasEntry: false });
       });
 
       result.sort((a, b) => {
@@ -1004,11 +1005,11 @@ export default function RankingPage() {
       const stats = nicks.length > 1
         ? computeAggregatedStats(displayName, nicks, filtered, nicknameEntries)
         : { ...computePlayerStats(nicks[0], filtered, nicknameEntries), nickname: displayName };
-      result.push({ ...stats, displayName, nicknames: nicks, mainNickname: entry.nickname, hasAlts });
+      result.push({ ...stats, displayName, nicknames: nicks, mainNickname: entry.nickname, hasAlts, hasEntry: true });
     });
     standaloneNicknames.forEach(nick => {
       const stats = computePlayerStats(nick, filtered, nicknameEntries);
-      result.push({ ...stats, displayName: nick, nicknames: [nick], mainNickname: nick, hasAlts: false });
+      result.push({ ...stats, displayName: nick, nicknames: [nick], mainNickname: nick, hasAlts: false, hasEntry: false });
     });
 
     result.sort((a, b) => b.score !== a.score ? b.score - a.score : b.winRate !== a.winRate ? b.winRate - a.winRate : b.wins - a.wins);
@@ -1310,7 +1311,7 @@ export default function RankingPage() {
                       e.currentTarget.style.filter = "";
                     }}
                     onClick={() => {
-                      if (p.hasAlts) router.push(`/ranking/person/${encodeURIComponent(p.mainNickname)}`);
+                      if (p.hasEntry) router.push(`/ranking/person/${encodeURIComponent(p.mainNickname)}`);
                       else router.push(`/ranking/${encodeURIComponent(p.nicknames[0])}`);
                     }}
                     className="transition-all">
