@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession, signOut } from "next-auth/react";
 import GuideBanner from "@/components/GuideBanner";
 import { loadNicknames, saveNicknames, loadGameRecords, saveGameRecords, normalizeId } from "@/lib/stats";
-import type { NicknameEntry, SeasonDef } from "@/lib/types";
+import type { NicknameEntry, SeasonDef, SeasonTrophy } from "@/lib/types";
 import { computePlayerStats, computeAggregatedStats, getAllNicknames } from "@/lib/stats";
 import { TrophyBadge } from "@/components/TrophyBadge";
 
@@ -32,7 +32,7 @@ const ROLE_LABELS: Record<Role, string> = { admin:"관리자", editor:"편집자
 const GROUP_ROLE_COLORS: Record<Role, string> = { admin:"#4caf50", editor:"#2196f3", viewer:"#9e9e9e" };
 
 // ── 탭 버튼 ─────────────────────────────────────────────────
-type Tab = "members" | "group" | "season";
+type Tab = "members" | "group" | "season" | "trophy";
 
 export default function ManagePage() {
   const { data: session } = useSession();
@@ -58,6 +58,7 @@ export default function ManagePage() {
         {([
           { id:"members" as Tab, label:"👥 멤버 관리" },
           { id:"season"  as Tab, label:"🏆 시즌 관리" },
+          { id:"trophy"  as Tab, label:"🥇 트로피" },
           { id:"group"   as Tab, label:"🏕️ 그룹 관리" },
         ]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -71,7 +72,7 @@ export default function ManagePage() {
         ))}
       </div>
 
-      {tab === "members" ? <MembersTab /> : tab === "season" ? <SeasonTab /> : <GroupTab />}
+      {tab === "members" ? <MembersTab /> : tab === "season" ? <SeasonTab /> : tab === "trophy" ? <TrophyTab /> : <GroupTab />}
     </div>
   );
 }
@@ -1093,6 +1094,295 @@ function SeasonTab() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════
+// 🥇 트로피 탭
+// ══════════════════════════════════════════════════════════
+function TrophyTab() {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
+
+  const [nicknames, setNicknames] = useState<NicknameEntry[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [saving,  setSaving]      = useState(false);
+  const [msg,     setMsg]         = useState("");
+  const [showForm, setShowForm]   = useState(false);
+
+  const emptyForm = () => ({
+    type: "season" as "season" | "worlds",
+    label: "",
+    rank1: "",
+    rank2: "",
+    rank3: "",
+    winner: "",
+  });
+  const [form, setForm] = useState(emptyForm());
+
+  useEffect(() => {
+    loadNicknames().then(n => { setNicknames(n); setLoading(false); });
+  }, []);
+
+  // 닉네임 엔트리에서 트로피 이벤트 목록 추출
+  const trophyEvents = useMemo(() => {
+    const map = new Map<string, {
+      key: string;
+      label: string;
+      type: "season" | "worlds";
+      holders: { rank: 1 | 2 | 3; nick: string; name: string }[];
+    }>();
+    for (const n of nicknames) {
+      for (const t of n.trophies ?? []) {
+        if (!map.has(t.season)) {
+          map.set(t.season, { key: t.season, label: t.seasonLabel, type: t.type ?? "season", holders: [] });
+        }
+        map.get(t.season)!.holders.push({ rank: t.rank, nick: n.nickname, name: n.realName?.trim() || n.nickname });
+      }
+    }
+    return [...map.values()].sort((a, b) => b.key.localeCompare(a.key));
+  }, [nicknames]);
+
+  const playerOptions = nicknames.map(n => ({ nick: n.nickname, name: n.realName?.trim() || n.nickname }));
+
+  const handleAward = async () => {
+    if (!form.label.trim()) { setMsg("트로피 이름을 입력해주세요."); return; }
+    if (form.type === "worlds" && !form.winner) { setMsg("우승자를 선택해주세요."); return; }
+    if (form.type === "season" && !form.rank1)  { setMsg("1위를 선택해주세요."); return; }
+    setSaving(true); setMsg("");
+    try {
+      const trophyKey = `${form.type}-${Date.now()}`;
+      const res = await fetch("/api/trophies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, trophyKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setMsg(data.error ?? "오류가 발생했습니다."); return; }
+      setMsg("트로피가 수여됐습니다! 🏆");
+      setShowForm(false);
+      setForm(emptyForm());
+      const updated = await loadNicknames();
+      setNicknames(updated);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemove = async (key: string, label: string) => {
+    if (!confirm(`"${label}" 트로피를 삭제하시겠습니까?\n수여된 모든 플레이어에서 제거됩니다.`)) return;
+    setSaving(true);
+    try {
+      await fetch("/api/trophies", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trophyKey: key }),
+      });
+      const updated = await loadNicknames();
+      setNicknames(updated);
+      setMsg("트로피가 삭제됐습니다.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const RANK_LABEL: Record<1 | 2 | 3, string> = { 1: "1위", 2: "2위", 3: "3위" };
+  const RANK_COLOR: Record<1 | 2 | 3, string> = { 1: "#f59e0b", 2: "#94a3b8", 3: "#ea580c" };
+
+  const PlayerSelect = ({ value, onChange, exclude = [], placeholder }: {
+    value: string; onChange: (v: string) => void; exclude?: string[]; placeholder: string;
+  }) => (
+    <select
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold"
+      style={{ background: "var(--panel)", border: "1px solid var(--border)", color: value ? "var(--text)" : "var(--text-muted)" }}
+    >
+      <option value="">{placeholder}</option>
+      {playerOptions
+        .filter(p => !exclude.includes(p.nick) || p.nick === value)
+        .map(p => (
+          <option key={p.nick} value={p.nick}>{p.name}{p.name !== p.nick ? ` (${p.nick})` : ""}</option>
+        ))}
+    </select>
+  );
+
+  return (
+    <div className="space-y-6">
+      {msg && (
+        <div className="px-4 py-2 rounded-lg text-sm font-semibold"
+          style={{ background: "var(--panel)", border: "1px solid var(--accent)", color: "var(--accent)" }}>
+          {msg}
+        </div>
+      )}
+
+      {/* ── 새 트로피 수여 ── */}
+      {isAdmin && (
+        <div className="rounded-xl p-5" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+          {!showForm ? (
+            <button onClick={() => { setShowForm(true); setMsg(""); }}
+              className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:brightness-90"
+              style={{ background: "var(--accent)", color: "#fff" }}>
+              + 트로피 수여
+            </button>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-sm font-bold" style={{ color: "var(--text)" }}>새 트로피 수여</div>
+
+              {/* 타입 선택 */}
+              <div className="flex gap-2">
+                {(["worlds", "season"] as const).map(t => (
+                  <button key={t} onClick={() => setForm(f => ({ ...f, type: t }))}
+                    className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                    style={{
+                      background: form.type === t ? (t === "worlds" ? "rgba(0,229,255,0.18)" : "rgba(251,191,36,0.18)") : "var(--hover)",
+                      border: `1.5px solid ${form.type === t ? (t === "worlds" ? "#00b4d8" : "#fbbf24") : "var(--border)"}`,
+                      color: form.type === t ? (t === "worlds" ? "#005f73" : "#92400e") : "var(--text-muted)",
+                    }}>
+                    {t === "worlds" ? "🌐 월즈 트로피" : "🏆 시즌 트로피"}
+                  </button>
+                ))}
+              </div>
+
+              {/* 트로피 이름 */}
+              <div>
+                <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>
+                  트로피 이름 <span style={{ color: "var(--loss)" }}>*</span>
+                </label>
+                <input
+                  value={form.label}
+                  onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+                  placeholder={form.type === "worlds" ? "예: 2026 월즈" : "예: 2026년 1시즌"}
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  style={{ background: "var(--panel)", border: "1px solid var(--border)", color: "var(--text)" }}
+                />
+              </div>
+
+              {/* 플레이어 선택 */}
+              {form.type === "worlds" ? (
+                <div>
+                  <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>
+                    우승자 <span style={{ color: "var(--loss)" }}>*</span>
+                  </label>
+                  <PlayerSelect
+                    value={form.winner}
+                    onChange={v => setForm(f => ({ ...f, winner: v }))}
+                    placeholder="우승자 선택"
+                    exclude={[]}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>
+                    순위별 선수 <span style={{ color: "var(--loss)" }}>*</span> 1위는 필수
+                  </label>
+                  {(["rank1", "rank2", "rank3"] as const).map((key, idx) => {
+                    const rank = (idx + 1) as 1 | 2 | 3;
+                    const others = (["rank1", "rank2", "rank3"] as const)
+                      .filter(k => k !== key)
+                      .map(k => form[k])
+                      .filter(Boolean);
+                    return (
+                      <div key={key} className="flex items-center gap-2">
+                        <span className="text-xs font-bold w-6 text-center" style={{ color: RANK_COLOR[rank] }}>
+                          {RANK_LABEL[rank]}
+                        </span>
+                        <PlayerSelect
+                          value={form[key]}
+                          onChange={v => setForm(f => ({ ...f, [key]: v }))}
+                          placeholder={`${RANK_LABEL[rank]} 선택${rank > 1 ? " (선택)" : ""}`}
+                          exclude={others}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {msg && <p className="text-xs font-semibold" style={{ color: "var(--loss)" }}>{msg}</p>}
+
+              <div className="flex gap-2">
+                <button onClick={handleAward} disabled={saving}
+                  className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all hover:brightness-90"
+                  style={{ background: "var(--accent)", color: "#fff", opacity: saving ? 0.6 : 1 }}>
+                  {saving ? "처리 중…" : "수여 확정"}
+                </button>
+                <button onClick={() => { setShowForm(false); setForm(emptyForm()); setMsg(""); }}
+                  className="px-4 py-2.5 rounded-xl font-bold text-sm"
+                  style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 수여된 트로피 목록 ── */}
+      <div className="space-y-3">
+        <div className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--text-dim)" }}>
+          수여된 트로피 ({trophyEvents.length})
+        </div>
+
+        {loading ? (
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>불러오는 중…</p>
+        ) : trophyEvents.length === 0 ? (
+          <div className="py-10 text-center rounded-xl" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+            <p className="text-3xl mb-2">🏆</p>
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>아직 수여된 트로피가 없습니다.</p>
+          </div>
+        ) : (
+          trophyEvents.map(ev => {
+            const isWorlds = ev.type === "worlds";
+            const borderColor = isWorlds ? "#00b4d8" : "#fbbf24";
+            const bgColor = isWorlds ? "rgba(0,229,255,0.07)" : "rgba(251,191,36,0.07)";
+            const sorted = [...ev.holders].sort((a, b) => a.rank - b.rank);
+
+            return (
+              <div key={ev.key} className="rounded-xl p-4"
+                style={{ background: bgColor, border: `1.5px solid ${borderColor}` }}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* 트로피 배지 샘플 */}
+                    <TrophyBadge
+                      trophy={{ season: ev.key, seasonLabel: ev.label, rank: 1, type: isWorlds ? "worlds" : undefined }}
+                      iconOnly
+                    />
+                    <span className="font-bold text-sm" style={{ color: "var(--text)" }}>{ev.label}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                      style={{ background: isWorlds ? "rgba(0,229,255,0.15)" : "rgba(251,191,36,0.15)", color: isWorlds ? "#005f73" : "#92400e" }}>
+                      {isWorlds ? "월즈" : "시즌"}
+                    </span>
+                  </div>
+                  {isAdmin && (
+                    <button onClick={() => handleRemove(ev.key, ev.label)} disabled={saving}
+                      className="text-xs px-2.5 py-1 rounded-lg font-semibold shrink-0"
+                      style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid #ef444433" }}>
+                      삭제
+                    </button>
+                  )}
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {sorted.map(h => (
+                    <div key={h.nick} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm"
+                      style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+                      <span className="font-bold text-xs" style={{ color: RANK_COLOR[h.rank] }}>
+                        {isWorlds ? "우승" : RANK_LABEL[h.rank]}
+                      </span>
+                      <span style={{ color: "var(--text)" }}>{h.name}</span>
+                      {h.name !== h.nick && (
+                        <span className="text-xs" style={{ color: "var(--text-dim)" }}>({h.nick})</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
