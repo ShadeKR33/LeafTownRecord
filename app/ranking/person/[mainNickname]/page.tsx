@@ -330,6 +330,7 @@ export default function PersonDetailPage() {
             return (
               <button key={pos}
                 onClick={() => hasGames ? setPosFilter(pos) : undefined}
+                title={!hasGames ? "아직 플레이하지 않은 라인입니다." : undefined}
                 className="px-4 py-2.5 text-sm font-semibold transition-all"
                 style={{
                   color: !hasGames ? "var(--text-dim)" : isActive ? "var(--accent)" : "var(--text-muted)",
