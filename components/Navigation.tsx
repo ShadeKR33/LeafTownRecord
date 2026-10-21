@@ -4,8 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { Trophy, Swords, CalendarDays, Gamepad2, Shuffle, Globe, Settings } from "lucide-react";
-import type { LucideProps } from "lucide-react";
 
 // ── 테마 정의 ──────────────────────────────────────────────────
 type ThemeId = "leaf" | "rain" | "aka" | "sand" | "cloud" | "hideout" | "myoboku" | "anbu" | "orochimaru";
@@ -22,15 +20,14 @@ const ALL_THEMES: { id: ThemeId; name: string; icon: string; title: string; subt
   { id: "orochimaru", name: "비밀 실험실", icon: "🧪", title: "오로치마루 비밀실험실", subtitle: "(금단의 연구소)",     accentColor: "#a855f7" },
 ];
 
-type NavIcon = React.ComponentType<LucideProps>;
-const navItems: { href: string; label: string; Icon: NavIcon }[] = [
-  { href: "/ranking",  label: "랭킹",       Icon: Trophy       },
-  { href: "/champion", label: "챔피언 분석", Icon: Swords       },
-  { href: "/calendar", label: "달력",        Icon: CalendarDays },
-  { href: "/analysis", label: "경기등록",     Icon: Gamepad2     },
-  { href: "/team",     label: "팀편성",      Icon: Shuffle      },
-  { href: "/worlds",   label: "월즈",         Icon: Globe        },
-  { href: "/manage",   label: "마을 관리",   Icon: Settings     },
+const navItems = [
+  { href: "/ranking",  label: "랭킹",       icon: "🏆" },
+  { href: "/champion", label: "챔피언 분석", icon: "⚔️" },
+  { href: "/calendar", label: "달력",        icon: "📅" },
+  { href: "/analysis", label: "경기등록",     icon: "🎮" },
+  { href: "/team",     label: "팀편성",      icon: "🎲" },
+  { href: "/worlds",   label: "월즈",         icon: "🌍" },
+  { href: "/manage",   label: "마을 관리",   icon: "🏕️" },
 ];
 
 // ── 비 마을 빗줄기 ──────────────────────────────────────────────
@@ -2176,7 +2173,7 @@ export default function Navigation() {
                     borderBottom: isActive ? "2px solid var(--accent)" : "2px solid transparent",
                     background: isActive ? "var(--hover)" : "transparent",
                   }}>
-                  <item.Icon size={15} strokeWidth={isActive ? 2.2 : 1.8} />
+                  <span>{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
               );
