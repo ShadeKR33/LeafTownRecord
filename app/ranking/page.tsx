@@ -675,8 +675,8 @@ export default function RankingPage() {
     Promise.all([
       loadGameRecords(),
       loadNicknames(),
-      fetch("/api/seasons").then(r => r.json()).catch(() => [] as SeasonDef[]),
-      fetch("/api/limited-titles").then(r => r.json()).catch(() => [] as LimitedTitle[]),
+      fetch("/api/seasons", { cache: "no-store" }).then(r => r.json()).catch(() => [] as SeasonDef[]),
+      fetch("/api/limited-titles", { cache: "no-store" }).then(r => r.json()).catch(() => [] as LimitedTitle[]),
     ]).then(([records, rawEntries, seasonData, titlesData]: [GameRecord[], NicknameEntry[], SeasonDef[], LimitedTitle[]]) => {
       setAllRecords(records);
       setNicknameEntries(rawEntries);
@@ -1325,7 +1325,6 @@ export default function RankingPage() {
                           <span className="font-semibold" style={{ color: "var(--text)" }}>{p.displayName}</span>
                         )}
 
-                        <TrophyList trophies={getTrophies(p.mainNickname)} />
                         {(() => {
                           const equippedId = getEquippedLimitedTitle(p.mainNickname);
                           const equipped = equippedId
@@ -1333,6 +1332,7 @@ export default function RankingPage() {
                             : null;
                           return equipped ? <LimitedTitleBadge key={equipped.id} title={equipped} /> : null;
                         })()}
+                        <TrophyList trophies={getTrophies(p.mainNickname)} />
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center"><StreakBadge streak={p.currentStreak} /></td>

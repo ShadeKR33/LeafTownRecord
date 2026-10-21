@@ -741,7 +741,7 @@ export function computeAggregatedStats(displayName: string, nicknames: string[],
 // ─── 유틸 ─────────────────────────────────────────────────────────────
 export async function loadGameRecords(): Promise<GameRecord[]> {
   try {
-    const res = await fetch("/api/db/records");
+    const res = await fetch("/api/db/records", { cache: "no-store" });
     if (!res.ok) throw new Error("Failed to load records");
     const data = await res.json();
     return data.records || [];
@@ -765,7 +765,7 @@ export async function saveGameRecords(records: GameRecord[]): Promise<void> {
 
 export async function loadNicknames(): Promise<any[]> {
   try {
-    const res = await fetch("/api/db/nicknames");
+    const res = await fetch("/api/db/nicknames", { cache: "no-store" });
     if (!res.ok) throw new Error("Failed to load nicknames");
     const data = await res.json();
     return data.nicknames || [];
