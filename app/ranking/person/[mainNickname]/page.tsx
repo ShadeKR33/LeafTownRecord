@@ -131,7 +131,7 @@ export default function PersonDetailPage() {
   const TABS: { key: TabKey; label: string }[] = [
     { key: "overview",   label: "개요" },
     { key: "champions",  label: "챔피언" },
-    { key: "positions",  label: "포지션" },
+    { key: "positions",  label: "경기 분석" },
     { key: "badges",     label: `업적 (${stats.badges.length})` },
   ];
 
@@ -470,12 +470,13 @@ export default function PersonDetailPage() {
 
   // ── 포지션 + 대인전적 통합 ──
   const PositionsTab = () => {
-    const [selectedPos, setSelectedPos] = useState<string | null>(null);
-
     // 많이 한 포지션 순서로 정렬
     const posEntries = POSITION_ORDER.map(pos => ({ pos, s: stats.positionStats?.[pos] }))
       .filter((e): e is { pos: string; s: NonNullable<typeof e.s> } => !!e.s)
       .sort((a, b) => b.s.games - a.s.games);
+
+    // 기본 선택: 가장 많이 플레이한 포지션
+    const [selectedPos, setSelectedPos] = useState<string | null>(() => posEntries[0]?.pos ?? null);
     const totalGames = posEntries.reduce((sum, { s }) => sum + s.games, 0);
 
     const detail = useMemo(() => {
@@ -587,6 +588,14 @@ export default function PersonDetailPage() {
     const selStats = selectedPos ? stats.positionStats?.[selectedPos] : null;
     const selColor = selectedPos ? (ROLE_COLORS[selectedPos] || "var(--accent)") : "var(--accent)";
 
+    // 팀원 호흡 포지션별 접기 상태 (기본 전체 접힘)
+    const [openWithPos, setOpenWithPos] = useState<Set<string>>(new Set());
+    const toggleWithPos = (pos: string) => setOpenWithPos(prev => {
+      const next = new Set(prev);
+      if (next.has(pos)) next.delete(pos); else next.add(pos);
+      return next;
+    });
+
     const StatBar = ({ label, myVal, enmVal, fmt }: { label: string; myVal: number | null; enmVal: number | null; fmt: (v: number) => string }) => {
       if (myVal == null && enmVal == null) return null;
       const my = myVal ?? 0; const enm = enmVal ?? 0;
@@ -594,69 +603,70 @@ export default function PersonDetailPage() {
       const myPct = (my / total) * 100;
       const iWin = my >= enm;
       return (
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-base font-black tabular-nums" style={{ color: iWin ? "var(--win)" : "var(--text-muted)" }}>{myVal != null ? fmt(my) : "—"}</span>
-            <span className="text-xs font-bold tracking-widest uppercase" style={{ color: "var(--text-dim)", letterSpacing: "0.12em" }}>{label}</span>
-            <span className="text-base font-black tabular-nums" style={{ color: !iWin ? "var(--loss)" : "var(--text-muted)" }}>{enmVal != null ? fmt(enm) : "—"}</span>
+        <div className="py-2" style={{ borderBottom: "1px solid var(--border)" }}>
+          <div className="flex items-center mb-2">
+            <span className="text-lg font-black tabular-nums w-24" style={{ color: iWin ? "var(--win)" : "var(--text-muted)" }}>{myVal != null ? fmt(my) : "—"}</span>
+            <span className="flex-1 text-center text-xs font-bold" style={{ color: "var(--text-dim)", letterSpacing: "0.1em" }}>{label}</span>
+            <span className="text-lg font-black tabular-nums w-24 text-right" style={{ color: !iWin ? "var(--loss)" : "var(--text-muted)" }}>{enmVal != null ? fmt(enm) : "—"}</span>
           </div>
-          <div className="flex h-1.5 rounded-full overflow-hidden">
-            <div style={{ width: `${myPct}%`, background: iWin ? "var(--win)" : "var(--text-dim)", transition: "width 0.6s cubic-bezier(.4,0,.2,1)" }} />
-            <div style={{ width: `${100 - myPct}%`, background: !iWin ? "var(--loss)" : "var(--hover)", transition: "width 0.6s cubic-bezier(.4,0,.2,1)" }} />
+          <div className="flex h-1 rounded-full overflow-hidden gap-px">
+            <div style={{ width: `${myPct}%`, background: iWin ? "var(--win)" : "color-mix(in srgb, var(--text-dim) 60%, transparent)", transition: "width 0.5s ease", borderRadius: "999px 0 0 999px" }} />
+            <div style={{ width: `${100 - myPct}%`, background: !iWin ? "var(--loss)" : "color-mix(in srgb, var(--hover) 80%, transparent)", transition: "width 0.5s ease", borderRadius: "0 999px 999px 0" }} />
           </div>
         </div>
       );
     };
 
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
         {posEntries.length === 0 ? (
-          <div className="py-10 text-center rounded-2xl border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>포지션 기록 없음</div>
+          <div className="py-10 text-center" style={{ color: "var(--text-muted)" }}>포지션 기록 없음</div>
         ) : (
           <>
             {/* 분포 bar */}
-            <div className="p-4 rounded-2xl border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
-              <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>포지션 분포 · 전체 {totalGames}경기</div>
-              <div className="flex h-5 rounded-full overflow-hidden gap-px">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs font-semibold" style={{ color: "var(--text-dim)" }}>포지션 분포</span>
+                <span className="text-xs" style={{ color: "var(--text-dim)" }}>총 {totalGames}경기</span>
+              </div>
+              <div className="flex h-4 rounded-full overflow-hidden gap-px">
                 {posEntries.map(({ pos, s }) => {
                   const pct = totalGames > 0 ? (s.games / totalGames) * 100 : 0;
-                  return <div key={pos} title={`${pos} ${Math.round(pct)}%`} style={{ width: `${pct}%`, background: ROLE_COLORS[pos] || "var(--accent)", minWidth: 3, transition: "width 0.6s ease" }} />;
+                  return <div key={pos} title={`${pos} ${Math.round(pct)}%`} style={{ width: `${pct}%`, background: ROLE_COLORS[pos] || "var(--accent)", minWidth: 3 }} />;
                 })}
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
                 {posEntries.map(({ pos, s }) => {
                   const pct = totalGames > 0 ? Math.round((s.games / totalGames) * 100) : 0;
                   const c = ROLE_COLORS[pos] || "var(--accent)";
                   return (
-                    <div key={pos} className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full" style={{ background: c }} />
-                      <span className="text-xs" style={{ color: "var(--text-muted)" }}>{pos}</span>
-                      <span className="text-xs font-black" style={{ color: c }}>{pct}%</span>
+                    <div key={pos} className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full" style={{ background: c }} />
+                      <span className="text-xs" style={{ color: "var(--text-dim)" }}>{pos} <span className="font-bold" style={{ color: c }}>{pct}%</span></span>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* 포지션 선택 pills */}
-            <div className="flex gap-2 flex-wrap">
+            {/* 포지션 탭 (언더라인 스타일) */}
+            <div className="flex overflow-x-auto" style={{ borderBottom: "1px solid var(--border)" }}>
               {posEntries.map(({ pos, s }) => {
                 const c = ROLE_COLORS[pos] || "var(--accent)";
                 const isSel = selectedPos === pos;
                 const wr = s.games > 0 ? Math.round((s.wins / s.games) * 100) : 0;
                 return (
                   <button key={pos} onClick={() => setSelectedPos(isSel ? null : pos)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all"
-                    style={{
-                      background: isSel ? c + "18" : "var(--panel)",
-                      border: `1.5px solid ${isSel ? c : "var(--border)"}`,
-                      color: isSel ? c : "var(--text-muted)",
-                      cursor: "pointer",
-                      boxShadow: isSel ? `0 0 16px ${c}30` : "none",
-                    }}>
-                    <span>{pos}</span>
-                    <span className="font-black" style={{ color: isSel ? c : "var(--text-dim)" }}>{wr}%</span>
-                    <span className="text-xs font-normal" style={{ color: "var(--text-dim)" }}>{s.games}판</span>
+                    className="flex-shrink-0 flex flex-col items-center px-5 py-3 transition-all relative"
+                    style={{ background: "none", cursor: "pointer", borderBottom: `2px solid ${isSel ? c : "transparent"}`, marginBottom: -1 }}>
+                    <div className="flex items-center gap-1">
+                      <span className="text-sm font-bold" style={{ color: isSel ? c : "var(--text-muted)" }}>{pos}</span>
+                      <span className="text-xs" style={{ color: isSel ? c + "aa" : "var(--text-dim)" }}>{isSel ? "▴" : "▾"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs font-black tabular-nums" style={{ color: isSel ? c : "var(--text-dim)" }}>{wr}%</span>
+                      <span className="text-xs" style={{ color: "var(--text-dim)", fontSize: 10 }}>{s.games}판</span>
+                    </div>
                   </button>
                 );
               })}
@@ -666,98 +676,81 @@ export default function PersonDetailPage() {
             {selectedPos && detail && selStats && (() => {
               const wr = selStats.games > 0 ? selStats.wins / selStats.games : 0;
               const wrColor = wr >= 0.6 ? "var(--win)" : wr <= 0.4 ? "var(--loss)" : "var(--text)";
-              const posLabel = { 탑: "TOP", 정글: "JGL", 미드: "MID", 원딜: "BOT", 서포터: "SUP" }[selectedPos] || selectedPos;
 
               return (
-                <div className="space-y-4">
-                  {/* 포지션 요약 헤더 */}
-                  <div className="p-5 rounded-2xl relative overflow-hidden"
-                    style={{
-                      background: `linear-gradient(var(--panel), var(--panel)) padding-box, linear-gradient(135deg, ${selColor}, ${selColor}66) border-box`,
-                      border: "1.5px solid transparent",
-                    }}>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-6xl font-black select-none pointer-events-none"
-                      style={{ color: selColor, opacity: 0.08, letterSpacing: "-0.04em" }}>{posLabel}</div>
-                    <div className="relative">
-                      <div className="text-xs font-bold mb-1" style={{ color: selColor, letterSpacing: "0.1em", textTransform: "uppercase" }}>{selectedPos} 포지션</div>
-                      <div className="text-3xl font-black" style={{ color: wrColor }}>{Math.round(wr * 100)}%</div>
-                      <div className="text-xs mt-1 flex items-center gap-2" style={{ color: "var(--text-dim)" }}>
+                <div>
+                  {/* 포지션 요약 — 인라인 헤더 */}
+                  <div className="flex items-end justify-between pb-4" style={{ borderBottom: "1px solid var(--border)" }}>
+                    <div>
+                      <div className="text-xs font-bold mb-1 uppercase tracking-widest" style={{ color: selColor }}>{selectedPos}</div>
+                      <div className="text-4xl font-black leading-none" style={{ color: wrColor }}>{Math.round(wr * 100)}%</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold mb-0.5">
                         <span style={{ color: "var(--win)" }}>{selStats.wins}승</span>
-                        <span>·</span>
+                        <span style={{ color: "var(--text-dim)" }}> · </span>
                         <span style={{ color: "var(--loss)" }}>{selStats.losses}패</span>
-                        <span>·</span>
-                        <span>총 {selStats.games}경기</span>
                       </div>
+                      <div className="text-xs" style={{ color: "var(--text-dim)" }}>총 {selStats.games}경기</div>
                     </div>
                   </div>
 
                   {/* 지표 비교 */}
                   {(detail.myKda != null || detail.myDpm != null || detail.myAvgCs != null) && (
-                    <div className="p-5 rounded-2xl border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
-                      <div className="flex items-center justify-between mb-5">
+                    <div className="py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+                      <div className="flex items-center justify-between mb-3">
                         <span className="text-sm font-black" style={{ color: selColor }}>나</span>
-                        <span className="text-xs font-bold" style={{ color: "var(--text-dim)", letterSpacing: "0.08em" }}>지표 비교</span>
+                        <span className="text-xs font-bold tracking-wider" style={{ color: "var(--text-dim)" }}>지표 비교</span>
                         <span className="text-sm font-black" style={{ color: "var(--text-muted)" }}>상대 평균</span>
                       </div>
-                      <div className="space-y-5">
-                        <StatBar label="KDA" myVal={detail.myKda} enmVal={detail.enmKda}
-                          fmt={v => v >= 99 ? "Perfect" : v.toFixed(2)} />
-                        <StatBar label="DPM" myVal={detail.myDpm} enmVal={detail.enmDpm}
-                          fmt={v => Math.round(v).toLocaleString()} />
-                        <StatBar label="CS / G" myVal={detail.myAvgCs} enmVal={detail.enmAvgCs}
-                          fmt={v => v.toFixed(1)} />
-                      </div>
+                      <StatBar label="KDA" myVal={detail.myKda} enmVal={detail.enmKda} fmt={v => v >= 99 ? "Perfect" : v.toFixed(2)} />
+                      <StatBar label="DPM" myVal={detail.myDpm} enmVal={detail.enmDpm} fmt={v => Math.round(v).toLocaleString()} />
+                      <StatBar label="CS / G" myVal={detail.myAvgCs} enmVal={detail.enmAvgCs} fmt={v => v.toFixed(1)} />
                     </div>
                   )}
 
                   {/* 상대 라이너 */}
                   {detail.vsEntries.length > 0 && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="w-1 h-4 rounded-full" style={{ background: selColor }} />
+                    <div className="py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+                      <div className="flex items-center gap-2 mb-4">
                         <span className="text-sm font-black" style={{ color: "var(--text)" }}>상대 {selectedPos}</span>
                         <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                          style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>시리즈 기준</span>
+                          style={{ background: "var(--hover)", color: "var(--text-dim)" }}>시리즈 기준</span>
                       </div>
-                      <div className="space-y-2">
-                        {detail.vsEntries.map(({ name, wins, losses, total, wr: vr, history }) => {
+                      <div>
+                        {detail.vsEntries.map(({ name, wins, losses, total, wr: vr, history }, idx) => {
                           const rel = total >= 3 ? (vr >= 0.7 ? { text: "천적", emoji: "🦁", color: "#22c55e" } : vr <= 0.3 ? { text: "약점", emoji: "😰", color: "var(--loss)" } : null) : null;
                           const vrColor = vr >= 0.6 ? "var(--win)" : vr <= 0.4 ? "var(--loss)" : "var(--text-muted)";
                           const barColor = vr >= 0.6 ? "var(--win)" : vr <= 0.4 ? "var(--loss)" : "var(--accent)";
                           return (
-                            <div key={name} className="p-3.5 rounded-xl border transition-all"
-                              style={{ background: "var(--panel)", borderColor: rel ? rel.color + "44" : "var(--border)" }}>
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-bold" style={{ color: "var(--text)" }}>{name}</span>
-                                    {rel && (
-                                      <span className="text-xs px-2 py-0.5 rounded-full font-bold"
-                                        style={{ background: rel.color + "20", color: rel.color, border: `1px solid ${rel.color}44` }}>
-                                        {rel.emoji} {rel.text}
-                                      </span>
-                                    )}
-                                    {total < 3 && <span className="text-xs" style={{ color: "var(--text-dim)" }}>표본 부족</span>}
-                                  </div>
-                                  <div className="flex items-center gap-1.5 mt-0.5 text-xs">
-                                    <span style={{ color: "var(--win)" }}>{wins}승</span>
-                                    <span style={{ color: "var(--border)" }}>·</span>
-                                    <span style={{ color: "var(--loss)" }}>{losses}패</span>
-                                    <span style={{ color: "var(--border)" }}>·</span>
-                                    <span style={{ color: "var(--text-dim)" }}>{total}전</span>
-                                    {history.length > 0 && (
-                                      <div className="flex gap-0.5 ml-1">
-                                        {history.slice(-6).map((w, i) => (
-                                          <div key={i} className="w-1.5 h-1.5 rounded-sm" style={{ background: w ? "var(--win)" : "var(--loss)" }} />
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
+                            <div key={name} className="py-3" style={{ borderTop: idx > 0 ? "1px solid var(--border)" : "none" }}>
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                                  <span className="font-bold" style={{ color: "var(--text)" }}>{name}</span>
+                                  {rel && (
+                                    <span className="text-xs px-1.5 py-0.5 rounded-full font-bold"
+                                      style={{ background: rel.color + "18", color: rel.color }}>
+                                      {rel.emoji} {rel.text}
+                                    </span>
+                                  )}
+                                  {total < 3 && <span className="text-xs" style={{ color: "var(--text-dim)" }}>표본 부족</span>}
                                 </div>
-                                <div className="text-xl font-black tabular-nums flex-shrink-0" style={{ color: vrColor }}>{Math.round(vr * 100)}%</div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {history.length > 0 && (
+                                    <div className="flex gap-0.5">
+                                      {history.slice(-7).map((w, i) => (
+                                        <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: w ? "var(--win)" : "var(--loss)" }} />
+                                      ))}
+                                    </div>
+                                  )}
+                                  <div className="text-xs tabular-nums" style={{ color: "var(--text-dim)" }}>
+                                    <span style={{ color: "var(--win)" }}>{wins}승</span>·<span style={{ color: "var(--loss)" }}>{losses}패</span>
+                                  </div>
+                                  <span className="text-base font-black tabular-nums w-10 text-right" style={{ color: vrColor }}>{Math.round(vr * 100)}%</span>
+                                </div>
                               </div>
-                              <div className="mt-2.5 h-1 rounded-full overflow-hidden" style={{ background: "var(--hover)" }}>
-                                <div className="h-full rounded-full" style={{ width: `${vr * 100}%`, background: barColor, transition: "width 0.5s cubic-bezier(.4,0,.2,1)" }} />
+                              <div className="h-0.5 rounded-full overflow-hidden" style={{ background: "var(--hover)" }}>
+                                <div className="h-full rounded-full" style={{ width: `${vr * 100}%`, background: barColor, transition: "width 0.4s ease" }} />
                               </div>
                             </div>
                           );
@@ -766,39 +759,54 @@ export default function PersonDetailPage() {
                     </div>
                   )}
 
-                  {/* 팀원 호흡 — 컴팩트 테이블 */}
+                  {/* 팀원 호흡 — 포지션별 접기/펼치기 */}
                   {Object.keys(detail.withByPos).length > 0 && (
-                    <div>
+                    <div className="py-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-1 h-4 rounded-full" style={{ background: selColor }} />
                         <span className="text-sm font-black" style={{ color: "var(--text)" }}>팀원 호흡</span>
                         <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                          style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>시리즈 기준</span>
+                          style={{ background: "var(--hover)", color: "var(--text-dim)" }}>시리즈 기준</span>
                       </div>
-                      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
-                        {POSITION_ORDER.filter(p => p !== selectedPos && detail.withByPos[p]).map((pos, posIdx2) => {
+                      <div>
+                        {POSITION_ORDER.filter(p => p !== selectedPos && detail.withByPos[p]).map((pos, posI) => {
                           const pc = ROLE_COLORS[pos] || "var(--accent)";
                           const players = detail.withByPos[pos];
+                          const isOpen = openWithPos.has(pos);
                           return (
-                            <React.Fragment key={pos}>
-                              {posIdx2 > 0 && <div style={{ height: 1, background: "var(--border)" }} />}
-                              <div className="flex">
-                                <div className="flex-shrink-0 w-14 flex items-center justify-center"
-                                  style={{ background: pc + "12", borderRight: `1px solid ${pc}22` }}>
-                                  <span className="text-xs font-black" style={{ color: pc }}>{pos}</span>
+                            <div key={pos} style={{ borderTop: posI > 0 ? "1px solid var(--border)" : "none" }}>
+                              {/* 포지션 헤더 (클릭으로 접기/펼치기) */}
+                              <button
+                                onClick={() => toggleWithPos(pos)}
+                                className="w-full flex items-center justify-between py-3 transition-all"
+                                style={{ background: "none", cursor: "pointer" }}>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: pc }} />
+                                  <span className="text-sm font-bold" style={{ color: pc }}>{pos}</span>
+                                  <span className="text-xs" style={{ color: "var(--text-dim)" }}>
+                                    {players.length}명
+                                  </span>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  {players.map((p2, p2Idx) => {
+                                <div className="flex items-center gap-2">
+                                  {/* 미리보기: 가장 많이 함께한 사람 */}
+                                  {!isOpen && players[0] && (
+                                    <span className="text-xs" style={{ color: "var(--text-dim)" }}>
+                                      {players[0].name} <span style={{ color: players[0].wr >= 0.6 ? "var(--win)" : players[0].wr <= 0.4 ? "var(--loss)" : "var(--text-muted)" }}>{Math.round(players[0].wr * 100)}%</span>
+                                      {players.length > 1 && <span style={{ color: "var(--text-dim)" }}> 외 {players.length - 1}</span>}
+                                    </span>
+                                  )}
+                                  <span className="text-xs font-bold" style={{ color: "var(--text-dim)" }}>{isOpen ? "▴" : "▾"}</span>
+                                </div>
+                              </button>
+                              {/* 펼쳐진 선수 목록 */}
+                              {isOpen && (
+                                <div className="pb-2 pl-3">
+                                  {players.map((p2, p2i) => {
                                     const syn = p2.total >= 2 ? (p2.wr >= 0.7 ? { text: "찰떡", emoji: "🤜", color: "#22c55e" } : p2.wr <= 0.3 ? { text: "불화", emoji: "😬", color: "var(--loss)" } : null) : null;
                                     const wColor = p2.wr >= 0.6 ? "var(--win)" : p2.wr <= 0.4 ? "var(--loss)" : "var(--text-muted)";
                                     return (
-                                      <div key={p2.name}
-                                        className="flex items-center gap-2 px-3 py-2.5"
-                                        style={{
-                                          background: "var(--panel)",
-                                          borderTop: p2Idx > 0 ? "1px solid var(--border)" : "none",
-                                        }}>
-                                        <span className="font-semibold text-sm flex-1 min-w-0 truncate" style={{ color: "var(--text)" }}>{p2.name}</span>
+                                      <div key={p2.name} className="flex items-center gap-2 py-2"
+                                        style={{ borderTop: p2i > 0 ? "1px solid var(--border)" : "none" }}>
+                                        <span className="font-semibold text-sm flex-1 min-w-0" style={{ color: "var(--text)" }}>{p2.name}</span>
                                         {syn && (
                                           <span className="text-xs px-1.5 py-0.5 rounded-full font-bold flex-shrink-0"
                                             style={{ background: syn.color + "18", color: syn.color }}>
@@ -813,8 +821,8 @@ export default function PersonDetailPage() {
                                     );
                                   })}
                                 </div>
-                              </div>
-                            </React.Fragment>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
@@ -822,7 +830,7 @@ export default function PersonDetailPage() {
                   )}
 
                   {detail.vsEntries.length === 0 && Object.keys(detail.withByPos).length === 0 && (
-                    <div className="py-8 text-center rounded-xl" style={{ background: "var(--panel)", border: "1px solid var(--border)", color: "var(--text-dim)" }}>
+                    <div className="py-8 text-center" style={{ color: "var(--text-dim)" }}>
                       {selectedPos} 포지션 상세 기록 없음
                     </div>
                   )}
