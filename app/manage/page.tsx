@@ -10,8 +10,7 @@ import { TrophyBadge } from "@/components/TrophyBadge";
 
 // ── 멤버 관리 타입/상수 ─────────────────────────────────────
 type NicknameForm = Omit<NicknameEntry, "id" | "altNicknames"> & {
-  altNickname1: string;
-  altNickname2: string;
+  altNicknames: string[];
 };
 const TIERS = ["아이언","브론즈","실버","골드","플래티넘","에메랄드","다이아몬드","마스터","그랜드마스터","챌린저"];
 const ALL_ROLES = ["탑","정글","미드","원딜","서포터"];
@@ -22,7 +21,7 @@ const TIER_COLORS: Record<string, string> = {
 const ROLE_COLORS: Record<string, string> = {
   탑:"#e06060", 정글:"#50a050", 미드:"#5090d0", 원딜:"#c0a030", 서포터:"#9060c0",
 };
-const emptyForm = (): NicknameForm => ({ nickname:"", altNickname1:"", altNickname2:"", realName:"", tier:"골드", tierDiv:"4", lp:"", roles:[] });
+const emptyForm = (): NicknameForm => ({ nickname:"", altNicknames:[], realName:"", tier:"골드", tierDiv:"4", lp:"", roles:[] });
 
 // ── 그룹 관리 타입 ───────────────────────────────────────────
 type Role = "admin" | "editor" | "viewer";
@@ -96,7 +95,7 @@ function MembersTab() {
 
   const handleSubmit = () => {
     if (!form.nickname.trim()) return;
-    const altNicknames = [form.altNickname1.trim(), form.altNickname2.trim()].filter(Boolean);
+    const altNicknames = form.altNicknames.map(s => s.trim()).filter(Boolean);
     const entry = { nickname:form.nickname, altNicknames, realName:form.realName, tier:form.tier, tierDiv:form.tierDiv, lp:form.lp, roles:form.roles };
     if (editId) { save(players.map(p => p.id === editId ? { ...p, ...entry, id:editId } : p)); setEditId(null); }
     else { save([...players, { ...entry, id:Date.now().toString() }]); }
@@ -104,7 +103,7 @@ function MembersTab() {
   };
 
   const startEdit = (p: NicknameEntry) => {
-    setForm({ nickname:p.nickname, altNickname1:p.altNicknames?.[0]||"", altNickname2:p.altNicknames?.[1]||"", realName:p.realName, tier:p.tier, tierDiv:p.tierDiv||"4", lp:p.lp||"", roles:p.roles||[] });
+    setForm({ nickname:p.nickname, altNicknames:p.altNicknames||[], realName:p.realName, tier:p.tier, tierDiv:p.tierDiv||"4", lp:p.lp||"", roles:p.roles||[] });
     setEditId(p.id); setShowForm(true);
   };
 
@@ -122,7 +121,12 @@ function MembersTab() {
         team1: r.team1.map(p => { if (normalizeId(p.nickname||"")=== normalizedOld){count++;return{...p,nickname:trimmedNew};} return p; }),
         team2: r.team2.map(p => { if (normalizeId(p.nickname||"")=== normalizedOld){count++;return{...p,nickname:trimmedNew};} return p; }),
       }));
-      const updatedPlayers = players.map(p => p.id===playerId ? {...p,nickname:trimmedNew} : p);
+      const updatedPlayers = players.map(p => {
+        if (p.id !== playerId) return p;
+        const existingAlts = p.altNicknames || [];
+        const newAlts = existingAlts.includes(oldNickname) ? existingAlts : [...existingAlts, oldNickname];
+        return { ...p, nickname: trimmedNew, altNicknames: newAlts };
+      });
       await saveGameRecords(updatedRecords); await saveNicknames(updatedPlayers);
       setPlayers(updatedPlayers); setRenameResult({ count }); setRenameModal(null);
     } catch(e){ console.error(e); } finally { setRenaming(false); }
@@ -226,15 +230,34 @@ function MembersTab() {
                     </div>
                   )}
                 </div>
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color:"var(--text-muted)" }}>부계정 1 <span style={{ color:"var(--text-dim)" }}>(선택)</span></label>
-                  <input className="w-full px-3 py-2 rounded text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
-                    value={form.altNickname1} onChange={e => setForm({...form,altNickname1:e.target.value})} placeholder="부계정 닉네임" />
-                </div>
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color:"var(--text-muted)" }}>부계정 2 <span style={{ color:"var(--text-dim)" }}>(선택)</span></label>
-                  <input className="w-full px-3 py-2 rounded text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
-                    value={form.altNickname2} onChange={e => setForm({...form,altNickname2:e.target.value})} placeholder="부계정 닉네임" />
+                <div className="col-span-2 md:col-span-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs" style={{ color:"var(--text-muted)" }}>부계정 / 구 닉네임 <span style={{ color:"var(--text-dim)" }}>(선택, 개수 제한 없음)</span></label>
+                    <button type="button" onClick={() => setForm(prev => ({ ...prev, altNicknames:[...prev.altNicknames,""] }))}
+                      className="text-xs px-2 py-0.5 rounded"
+                      style={{ background:"var(--accent)"+"22", color:"var(--accent)", border:"1px solid var(--accent)"+"44" }}>
+                      + 추가
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {form.altNicknames.length === 0 && (
+                      <div className="text-xs px-3 py-2 rounded" style={{ color:"var(--text-dim)", background:"var(--hover)", border:"1px solid var(--border)" }}>
+                        닉네임 변경 시 자동으로 추가됩니다. 부계정도 직접 추가할 수 있어요.
+                      </div>
+                    )}
+                    {form.altNicknames.map((alt, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <input className="flex-1 px-3 py-2 rounded text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
+                          value={alt} onChange={e => setForm(prev => { const a=[...prev.altNicknames]; a[idx]=e.target.value; return {...prev,altNicknames:a}; })}
+                          placeholder={`부계정 또는 구 닉네임 ${idx+1}`} />
+                        <button type="button" onClick={() => setForm(prev => ({ ...prev, altNicknames:prev.altNicknames.filter((_,i)=>i!==idx) }))}
+                          className="px-2.5 py-1.5 rounded text-xs"
+                          style={{ background:"var(--hover)", color:"var(--loss)", border:"1px solid var(--border)" }}>
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="col-span-2 md:col-span-3">
                   <label className="text-xs mb-2 block" style={{ color:"var(--text-muted)" }}>주력 포지션 (복수 선택 가능)</label>
