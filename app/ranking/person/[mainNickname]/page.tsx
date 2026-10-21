@@ -262,8 +262,29 @@ export default function PersonDetailPage() {
   // ── 챔피언 ──
   const ChampionsTab = () => {
     const [posFilter, setPosFilter] = useState("전체");
+    const [showAll, setShowAll] = useState(false);
     const POS_LIST = ["탑", "정글", "미드", "원딜", "서포터"];
     const POSITIONS = ["전체", ...POS_LIST];
+    const RANK_COLORS = ["#c8a951", "#a0a8b0", "#a05030"];
+
+    // posFilter 바뀌면 더 보기 접기
+    useEffect(() => { setShowAll(false); }, [posFilter]);
+
+    // 포지션별 경기 수 (탭 활성화 여부 판단)
+    const positionGames = useMemo(() => {
+      const normNicks = new Set(playerNicks.map(n => normalizeId(n)));
+      const counts: Record<string, number> = {};
+      for (const record of allRecords) {
+        for (const players of [record.team1, record.team2]) {
+          players.forEach((player, idx) => {
+            if (!normNicks.has(normalizeId(player.nickname || ""))) return;
+            const pos = POS_LIST[idx] ?? "";
+            if (pos) counts[pos] = (counts[pos] || 0) + 1;
+          });
+        }
+      }
+      return counts;
+    }, []);
 
     const filteredStats = useMemo(() => {
       const normNicks = new Set(playerNicks.map(n => normalizeId(n)));
@@ -296,21 +317,30 @@ export default function PersonDetailPage() {
         .sort((a, b) => b.games - a.games || b.wins - a.wins);
     }, [posFilter]);
 
+    const displayStats = showAll ? filteredStats : filteredStats.slice(0, 10);
+
     return (
       <div className="space-y-4">
         {/* 포지션 필터 탭 */}
         <div className="flex border-b" style={{ borderColor: "var(--border)" }}>
-          {POSITIONS.map(pos => (
-            <button key={pos} onClick={() => setPosFilter(pos)}
-              className="px-4 py-2.5 text-sm font-semibold transition-all"
-              style={{
-                color: posFilter === pos ? "var(--accent)" : "var(--text-muted)",
-                borderBottom: posFilter === pos ? "2px solid var(--accent)" : "2px solid transparent",
-                background: "none",
-              }}>
-              {pos}
-            </button>
-          ))}
+          {POSITIONS.map(pos => {
+            const hasGames = pos === "전체" || (positionGames[pos] || 0) > 0;
+            const isActive = posFilter === pos;
+            return (
+              <button key={pos}
+                onClick={() => hasGames ? setPosFilter(pos) : undefined}
+                className="px-4 py-2.5 text-sm font-semibold transition-all"
+                style={{
+                  color: !hasGames ? "var(--text-dim)" : isActive ? "var(--accent)" : "var(--text-muted)",
+                  borderBottom: isActive ? "2px solid var(--accent)" : "2px solid transparent",
+                  background: "none",
+                  opacity: hasGames ? 1 : 0.35,
+                  cursor: hasGames ? "pointer" : "not-allowed",
+                }}>
+                {pos}
+              </button>
+            );
+          })}
         </div>
 
         {filteredStats.length === 0 ? (
@@ -318,61 +348,72 @@ export default function PersonDetailPage() {
             {posFilter === "전체" ? "챔피언 기록 없음" : `${posFilter} 포지션 기록 없음`}
           </div>
         ) : (
-          <div className="rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr style={{ background: "var(--panel-alt)", borderBottom: "1px solid var(--border)" }}>
-                  <th className="px-3 py-3 text-center" style={{ color: "var(--text-dim)", width: 40 }}>#</th>
-                  <th className="px-4 py-3 text-left" style={{ color: "var(--text-muted)" }}>챔피언</th>
-                  <th className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>KDA</th>
-                  <th className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>판수</th>
-                  <th className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>승률</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStats.map(({ name, wins, losses, games, kills, deaths, assists, hasKda }, i) => {
-                  const wr = games > 0 ? wins / games : 0;
-                  const kdaNum = hasKda && deaths > 0 ? (kills + assists) / deaths : null;
-                  const kdaStr = hasKda ? (deaths > 0 ? kdaNum!.toFixed(2) : "Perfect") : null;
-                  const wrColor = wr >= 0.6 ? "#22c55e" : wr <= 0.4 ? "var(--loss)" : "#f59e0b";
-                  const avgK = hasKda ? (kills / games).toFixed(1) : null;
-                  const avgD = hasKda ? (deaths / games).toFixed(1) : null;
-                  const avgA = hasKda ? (assists / games).toFixed(1) : null;
-                  const kdaColor = kdaStr === "Perfect" || (kdaNum != null && kdaNum >= 4) ? "var(--win)" : kdaNum != null && kdaNum >= 2 ? "var(--text)" : "var(--loss)";
+          <>
+            <div className="rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ background: "var(--panel-alt)", borderBottom: "1px solid var(--border)" }}>
+                    <th className="px-3 py-3 text-center" style={{ color: "var(--text-dim)", width: 40 }}>#</th>
+                    <th className="px-4 py-3 text-left" style={{ color: "var(--text-muted)" }}>챔피언</th>
+                    <th className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>KDA</th>
+                    <th className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>판수</th>
+                    <th className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>승률</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayStats.map(({ name, wins, losses, games, kills, deaths, assists, hasKda }, i) => {
+                    const wr = games > 0 ? wins / games : 0;
+                    const kdaNum = hasKda && deaths > 0 ? (kills + assists) / deaths : null;
+                    const kdaStr = hasKda ? (deaths > 0 ? kdaNum!.toFixed(2) : "Perfect") : null;
+                    const wrColor = wr >= 0.6 ? "#22c55e" : wr <= 0.4 ? "var(--loss)" : "#f59e0b";
+                    const avgK = hasKda ? (kills / games).toFixed(1) : null;
+                    const avgD = hasKda ? (deaths / games).toFixed(1) : null;
+                    const avgA = hasKda ? (assists / games).toFixed(1) : null;
+                    const kdaColor = kdaStr === "Perfect" || (kdaNum != null && kdaNum >= 4) ? "var(--win)" : kdaNum != null && kdaNum >= 2 ? "var(--text)" : "var(--loss)";
+                    const rankColor = i < 3 ? RANK_COLORS[i] : null;
+                    const rowBg = rankColor ? rankColor + "14" : i % 2 === 0 ? "var(--panel)" : "var(--panel-alt)";
 
-                  return (
-                    <tr key={name}
-                      onClick={() => router.push(`/champion/${encodeURIComponent(name)}`)}
-                      className="transition-all cursor-pointer hover:brightness-95"
-                      style={{ background: i % 2 === 0 ? "var(--panel)" : "var(--panel-alt)", borderBottom: "1px solid var(--border)" }}>
-                      <td className="px-3 py-3.5 text-center text-xs font-bold" style={{ color: "var(--text-dim)" }}>{i + 1}</td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <ChampionPortrait name={name} size={36} />
-                          <span className="font-semibold" style={{ color: "var(--text)" }}>{name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-center">
-                        {kdaStr ? (
-                          <div>
-                            <div className="font-bold" style={{ color: kdaColor }}>{kdaStr}</div>
-                            <div className="text-[10px] mt-0.5" style={{ color: "var(--text-dim)" }}>{avgK} / {avgD} / {avgA}</div>
+                    return (
+                      <tr key={name}
+                        onClick={() => router.push(`/champion/${encodeURIComponent(name)}`)}
+                        className="transition-all cursor-pointer hover:brightness-95"
+                        style={{ background: rowBg, borderBottom: "1px solid var(--border)", borderLeft: rankColor ? `3px solid ${rankColor}` : "3px solid transparent" }}>
+                        <td className="px-3 py-3.5 text-center text-xs font-black" style={{ color: rankColor ?? "var(--text-dim)" }}>{i + 1}</td>
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <ChampionPortrait name={name} size={36} />
+                            <span className="font-semibold" style={{ color: "var(--text)" }}>{name}</span>
                           </div>
-                        ) : <span style={{ color: "var(--text-dim)" }}>-</span>}
-                      </td>
-                      <td className="px-4 py-3.5 text-center font-semibold" style={{ color: "var(--text-muted)" }}>{games}</td>
-                      <td className="px-4 py-3.5 text-center">
-                        <div className="font-bold" style={{ color: wrColor }}>{Math.round(wr * 100)}%</div>
-                        <div className="text-[10px] mt-0.5" style={{ color: "var(--text-dim)" }}>
-                          <span style={{ color: "var(--win)" }}>{wins}승</span>{" / "}<span style={{ color: "var(--loss)" }}>{losses}패</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          {kdaStr ? (
+                            <div>
+                              <div className="font-bold" style={{ color: kdaColor }}>{kdaStr}</div>
+                              <div className="text-[10px] mt-0.5" style={{ color: "var(--text-dim)" }}>{avgK} / {avgD} / {avgA}</div>
+                            </div>
+                          ) : <span style={{ color: "var(--text-dim)" }}>-</span>}
+                        </td>
+                        <td className="px-4 py-3.5 text-center font-semibold" style={{ color: "var(--text-muted)" }}>{games}</td>
+                        <td className="px-4 py-3.5 text-center">
+                          <div className="font-bold" style={{ color: wrColor }}>{Math.round(wr * 100)}%</div>
+                          <div className="text-[10px] mt-0.5" style={{ color: "var(--text-dim)" }}>
+                            <span style={{ color: "var(--win)" }}>{wins}승</span>{" / "}<span style={{ color: "var(--loss)" }}>{losses}패</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {filteredStats.length > 10 && (
+              <button onClick={() => setShowAll(v => !v)}
+                className="w-full py-2.5 text-sm font-semibold rounded-lg border transition-all hover:brightness-95"
+                style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)", cursor: "pointer" }}>
+                {showAll ? "접기 ▲" : `더 보기 (${filteredStats.length - 10}개 더) ▼`}
+              </button>
+            )}
+          </>
         )}
       </div>
     );
