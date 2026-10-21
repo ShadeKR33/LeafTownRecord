@@ -1117,7 +1117,7 @@ function TrophyTab() {
     rank1: "",
     rank2: "",
     rank3: "",
-    winner: "",
+    members: ["", "", "", "", ""] as string[],
   });
   const [form, setForm] = useState(emptyForm());
 
@@ -1148,7 +1148,7 @@ function TrophyTab() {
 
   const handleAward = async () => {
     if (!form.label.trim()) { setMsg("트로피 이름을 입력해주세요."); return; }
-    if (form.type === "worlds" && !form.winner) { setMsg("우승자를 선택해주세요."); return; }
+    if (form.type === "worlds" && !form.members.some(Boolean)) { setMsg("팀원을 최소 1명 선택해주세요."); return; }
     if (form.type === "season" && !form.rank1)  { setMsg("1위를 선택해주세요."); return; }
     setSaving(true); setMsg("");
     try {
@@ -1156,7 +1156,15 @@ function TrophyTab() {
       const res = await fetch("/api/trophies", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, trophyKey }),
+        body: JSON.stringify({
+          trophyKey,
+          label: form.label,
+          type: form.type,
+          rank1: form.rank1,
+          rank2: form.rank2,
+          rank3: form.rank3,
+          members: form.members.filter(Boolean),
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setMsg(data.error ?? "오류가 발생했습니다."); return; }
@@ -1263,14 +1271,30 @@ function TrophyTab() {
               {form.type === "worlds" ? (
                 <div>
                   <label className="text-xs font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>
-                    우승자 <span style={{ color: "var(--loss)" }}>*</span>
+                    팀원 (최대 5명) <span style={{ color: "var(--loss)" }}>*</span> 최소 1명 필수
                   </label>
-                  <PlayerSelect
-                    value={form.winner}
-                    onChange={v => setForm(f => ({ ...f, winner: v }))}
-                    placeholder="우승자 선택"
-                    exclude={[]}
-                  />
+                  <div className="space-y-2">
+                    {form.members.map((member, idx) => {
+                      const otherMembers = form.members.filter((_, i) => i !== idx).filter(Boolean);
+                      return (
+                        <div key={idx} className="flex items-center gap-2">
+                          <span className="text-xs font-bold w-8 text-center shrink-0" style={{ color: "var(--text-muted)" }}>
+                            {idx + 1}
+                          </span>
+                          <PlayerSelect
+                            value={member}
+                            onChange={v => setForm(f => {
+                              const next = [...f.members];
+                              next[idx] = v;
+                              return { ...f, members: next };
+                            })}
+                            placeholder={`팀원 ${idx + 1}${idx === 0 ? " (필수)" : " (선택)"}`}
+                            exclude={otherMembers}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2">
