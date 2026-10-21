@@ -154,12 +154,17 @@ export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadge
   const label = isWorlds
     ? `${trophy.seasonLabel} 우승`
     : `${trophy.seasonLabel} ${trophy.rank}위`;
-  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [hovered, setHovered] = useState(false);
 
   const iconSize = iconOnly ? 20 : size;
 
   return (
-    <span className="inline-flex items-center">
+    <span
+      className="inline-flex items-center"
+      style={{ position: "relative" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <span
         className="inline-flex items-center gap-0.5 cursor-default select-none"
         style={iconOnly ? {
@@ -179,11 +184,6 @@ export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadge
           lineHeight: 1.6,
           whiteSpace: "nowrap",
         }}
-        onMouseEnter={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          setPos({ x: r.left + r.width / 2, y: r.top });
-        }}
-        onMouseLeave={() => setPos(null)}
       >
         <TrophyIcon trophy={trophy} size={iconSize} uid={uid} />
         {!iconOnly && (
@@ -193,13 +193,14 @@ export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadge
         )}
       </span>
 
-      {pos && (
+      {hovered && (
         <span
-          className="fixed pointer-events-none z-[9999]"
+          className="pointer-events-none z-[9999]"
           style={{
-            left: pos.x,
-            top: pos.y - 8,
-            transform: "translate(-50%, -100%)",
+            position: "absolute",
+            bottom: "calc(100% + 8px)",
+            left: "50%",
+            transform: "translateX(-50%)",
             background: "var(--panel)",
             border: "1px solid var(--border)",
             borderRadius: "8px",
@@ -213,8 +214,11 @@ export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadge
         >
           {label}
           <span
-            className="absolute left-1/2 -translate-x-1/2 top-full"
             style={{
+              position: "absolute",
+              top: "100%",
+              left: "50%",
+              transform: "translateX(-50%)",
               width: 0, height: 0,
               borderLeft: "5px solid transparent",
               borderRight: "5px solid transparent",
