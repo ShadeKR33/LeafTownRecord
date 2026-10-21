@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { LimitedTitle } from "@/lib/types";
-import { getLimitedTitleDef } from "@/lib/limitedTitles";
+import { getLimitedTitleDef, type LimitedTitleDef } from "@/lib/limitedTitles";
 
 interface LimitedTitleBadgeProps {
   title: LimitedTitle;
@@ -19,7 +19,6 @@ export function useIsDarkTheme() {
       setIsDark(val === "1");
     };
     check();
-    // html 클래스 변경 감지 (드롭다운 테마 변경 포함)
     const observer = new MutationObserver(check);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     window.addEventListener("themechange", check);
@@ -32,22 +31,48 @@ export function useIsDarkTheme() {
   return isDark;
 }
 
+// 이미지가 있으면 <img>, 없으면 이모지 fallback
+export function LimitedTitleIcon({
+  def,
+  size = 22,
+  isDark = false,
+  className,
+}: {
+  def: LimitedTitleDef;
+  size?: number;
+  isDark?: boolean;
+  className?: string;
+}) {
+  if (def.image) {
+    return (
+      <img
+        src={`/images/achievements/${def.image}`}
+        alt={def.name}
+        width={size}
+        height={size}
+        className={className}
+        style={{ objectFit: "contain", flexShrink: 0 }}
+      />
+    );
+  }
+  const emoji = isDark && def.darkIcon ? def.darkIcon : def.icon;
+  return <span style={{ fontSize: size * 0.85, lineHeight: 1 }}>{emoji}</span>;
+}
+
 export function LimitedTitleBadge({ title }: LimitedTitleBadgeProps) {
   const def = getLimitedTitleDef(title.id);
   const isDark = useIsDarkTheme();
   if (!def) return null;
 
-  const icon = isDark && def.darkIcon ? def.darkIcon : def.icon;
-
   return (
     <span
-      className="inline-flex items-center gap-1 select-none"
+      className="inline-flex items-center gap-1.5 select-none"
       style={{
         background: `linear-gradient(var(--panel), var(--panel)) padding-box,
                      linear-gradient(135deg, ${def.color}, ${def.accentColor}) border-box`,
         border: "1px solid transparent",
         borderRadius: "6px",
-        padding: "1px 7px",
+        padding: "2px 7px 2px 4px",
         fontSize: "11px",
         fontWeight: 800,
         color: def.color,
@@ -55,7 +80,8 @@ export function LimitedTitleBadge({ title }: LimitedTitleBadgeProps) {
         whiteSpace: "nowrap",
       }}
     >
-      {icon} {def.name}
+      <LimitedTitleIcon def={def} size={18} isDark={isDark} />
+      {def.name}
     </span>
   );
 }

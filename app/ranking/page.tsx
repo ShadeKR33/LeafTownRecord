@@ -16,7 +16,7 @@ import {
 import type { PlayerStats, NicknameEntry, BadgeGrade, GameRecord, SeasonDef, Badge, LimitedTitle } from "@/lib/types";
 import GuideBanner from "@/components/GuideBanner";
 import { TrophyList } from "@/components/TrophyBadge";
-import { useIsDarkTheme } from "@/components/LimitedTitleBadge";
+import { useIsDarkTheme, LimitedTitleIcon } from "@/components/LimitedTitleBadge";
 import { LIMITED_TITLE_DEFS, getLimitedTitleDef } from "@/lib/limitedTitles";
 
 type RankedPerson = PlayerStats & {
@@ -484,10 +484,9 @@ function BadgeModal({
                           ? `linear-gradient(var(--panel-alt), var(--panel-alt)) padding-box, linear-gradient(135deg, ${def.color}, ${def.accentColor}) border-box`
                           : "var(--border)",
                         border: isMine ? "1.5px solid transparent" : "none",
-                        fontSize: 22,
                         filter: !isClaimed ? "grayscale(0.3)" : isMine ? "none" : "grayscale(0.6)",
                       }}>
-                      {isDark && def.darkIcon ? def.darkIcon : def.icon}
+                      <LimitedTitleIcon def={def} size={28} isDark={isDark} />
                     </div>
 
                     {/* 이름 + 조건 */}
@@ -1377,9 +1376,7 @@ export default function RankingPage() {
                                   ["--lp-c1" as any]: `${equippedDef.color}66`,
                                   ["--lp-c2" as any]: `${equippedDef.accentColor}33`,
                                 }}>
-                                <span style={{ fontSize: 13, lineHeight: 1 }}>
-                                  {isDark && equippedDef.darkIcon ? equippedDef.darkIcon : equippedDef.icon}
-                                </span>
+                                <LimitedTitleIcon def={equippedDef} size={16} isDark={isDark} />
                               </div>
                             </div>
                           );
@@ -1507,7 +1504,7 @@ export default function RankingPage() {
               }}
             >
               <div className="flex items-center gap-1.5 mb-1.5">
-                <span style={{ fontSize: 18 }}>{isDark && def.darkIcon ? def.darkIcon : def.icon}</span>
+                <LimitedTitleIcon def={def} size={22} isDark={isDark} />
                 <span className="font-black text-sm" style={{ color: def.color }}>{def.name}</span>
                 <span className="ml-auto px-1.5 py-0.5 rounded font-bold"
                   style={{ background: `${def.color}22`, color: def.color, fontSize: 10, border: `1px solid ${def.color}44` }}>
