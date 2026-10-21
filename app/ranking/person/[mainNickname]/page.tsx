@@ -27,7 +27,7 @@ const GRADE_STYLE: Record<BadgeGrade, { label: string; color: string; bg: string
   신화: { label: "신화", color: "#00e5ff", bg: "#00e5ff22" },
 };
 
-type TabKey = "overview" | "champions" | "positions" | "vs" | "with" | "badges";
+type TabKey = "overview" | "champions" | "positions" | "relations" | "badges";
 
 
 
@@ -132,8 +132,7 @@ export default function PersonDetailPage() {
     { key: "overview",   label: "개요" },
     { key: "champions",  label: "챔피언" },
     { key: "positions",  label: "포지션" },
-    { key: "vs",         label: "상대전적" },
-    { key: "with",       label: "시너지" },
+    { key: "relations",  label: "대인전적" },
     { key: "badges",     label: `업적 (${stats.badges.length})` },
   ];
 
@@ -485,127 +484,193 @@ export default function PersonDetailPage() {
   const PositionsTab = () => {
     const entries = POSITION_ORDER.map(pos => ({ pos, s: stats.positionStats?.[pos] }))
       .filter((e): e is { pos: string; s: NonNullable<typeof e.s> } => !!e.s);
+    const totalGames = entries.reduce((sum, { s }) => sum + s.games, 0);
+
     return (
       <div className="space-y-3">
-        {entries.length === 0
-          ? <div className="py-10 text-center rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>포지션 기록 없음</div>
-          : entries.map(({ pos, s }) => {
-            const wr = s.games > 0 ? s.wins / s.games : 0;
-            const color = ROLE_COLORS[pos] || "var(--accent)";
-            return (
-              <div key={pos} className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs px-2 py-0.5 rounded font-bold" style={{ background: color + "22", color, border: `1px solid ${color}44` }}>{pos}</span>
-                    <span className="text-sm" style={{ color: "var(--text-muted)" }}>{s.games}경기</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      <span style={{ color: "var(--win)" }}>{s.wins}승</span> / <span style={{ color: "var(--loss)" }}>{s.losses}패</span>
-                    </span>
-                    <span className="font-bold" style={{ color }}>{Math.round(wr * 100)}%</span>
-                  </div>
-                </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--hover)" }}>
-                  <div className="h-full rounded-full transition-all" style={{ width: `${wr * 100}%`, background: color }} />
-                </div>
+        {entries.length === 0 ? (
+          <div className="py-10 text-center rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>포지션 기록 없음</div>
+        ) : (
+          <>
+            {/* 전체 포지션 분포 stacked bar */}
+            <div className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
+              <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>포지션 분포 · 전체 {totalGames}경기</div>
+              <div className="flex h-6 rounded-full overflow-hidden gap-px">
+                {entries.map(({ pos, s }) => {
+                  const pct = totalGames > 0 ? (s.games / totalGames) * 100 : 0;
+                  const color = ROLE_COLORS[pos] || "var(--accent)";
+                  return (
+                    <div key={pos} title={`${pos}: ${Math.round(pct)}% (${s.games}경기)`}
+                      style={{ width: `${pct}%`, background: color, minWidth: pct > 0 ? 3 : 0, transition: "width 0.6s ease" }} />
+                  );
+                })}
               </div>
-            );
-          })}
+              <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3">
+                {entries.map(({ pos, s }) => {
+                  const pct = totalGames > 0 ? (s.games / totalGames) * 100 : 0;
+                  const color = ROLE_COLORS[pos] || "var(--accent)";
+                  return (
+                    <div key={pos} className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                      <span className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>{pos}</span>
+                      <span className="text-xs font-black" style={{ color }}>{Math.round(pct)}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 각 포지션 상세 카드 */}
+            {entries.map(({ pos, s }) => {
+              const wr = s.games > 0 ? s.wins / s.games : 0;
+              const pct = totalGames > 0 ? (s.games / totalGames) * 100 : 0;
+              const color = ROLE_COLORS[pos] || "var(--accent)";
+              const wrColor = wr >= 0.6 ? "var(--win)" : wr <= 0.4 ? "var(--loss)" : "var(--text)";
+              return (
+                <div key={pos} className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold px-2.5 py-1 rounded-lg" style={{ background: color + "22", color, border: `1px solid ${color}44` }}>{pos}</span>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-xl font-black" style={{ color }}>{Math.round(pct)}%</span>
+                        <span className="text-xs" style={{ color: "var(--text-dim)" }}>{s.games}경기</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-black" style={{ color: wrColor }}>{Math.round(wr * 100)}%</div>
+                      <div className="text-xs" style={{ color: "var(--text-dim)" }}>
+                        <span style={{ color: "var(--win)" }}>{s.wins}승</span>{" / "}<span style={{ color: "var(--loss)" }}>{s.losses}패</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--hover)" }}>
+                    <div className="h-full rounded-full transition-all" style={{ width: `${wr * 100}%`, background: color }} />
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
     );
   };
 
-  // ── 상대전적 ──
-  const VsTab = () => {
-    const entries = Object.entries(stats.vsStats).sort((a, b) => {
-      const ra = a[1].wins + a[1].losses > 0 ? a[1].wins / (a[1].wins + a[1].losses) : 0;
-      const rb = b[1].wins + b[1].losses > 0 ? b[1].wins / (b[1].wins + b[1].losses) : 0;
-      return rb - ra;
-    });
-    return (
-      <div>
-        <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>상대방이 적팀에 있을 때 내 전적 (높을수록 상대방에 강함)</p>
-        <div className="rounded-lg overflow-x-auto border" style={{ borderColor: "var(--border)" }}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: "var(--panel)", borderBottom: "1px solid var(--border)" }}>
-                {["상대방", "경기", "승/패", "상대 승률"].map(h => (
-                  <th key={h} className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {entries.length === 0
-                ? <tr><td colSpan={4} className="py-10 text-center" style={{ color: "var(--text-muted)" }}>상대전적 없음</td></tr>
-                : entries.map(([opp, s], i) => {
-                  const total = s.wins + s.losses;
-                  const wr = total > 0 ? s.wins / total : 0;
-                  const rel = total >= 3 ? (wr >= 0.7 ? "🦁 천적" : wr <= 0.3 ? "😰 약점" : "") : "";
-                  return (
-                    <tr key={opp} style={{ background: i % 2 === 0 ? "var(--panel)" : "var(--panel-alt)", borderBottom: "1px solid var(--border)" }}>
-                      <td className="px-4 py-3 text-center font-semibold" style={{ color: "var(--text)" }}>{opp} {rel && <span className="text-xs">{rel}</span>}</td>
-                      <td className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>{total}</td>
-                      <td className="px-4 py-3 text-center text-xs">
-                        <span style={{ color: "var(--win)" }}>{s.wins}승</span> / <span style={{ color: "var(--loss)" }}>{s.losses}패</span>
-                      </td>
-                      <td className="px-4 py-3 text-center font-semibold"
-                        style={{ color: wr >= 0.6 ? "var(--win)" : wr <= 0.4 ? "var(--loss)" : "var(--accent)" }}>
-                        {Math.round(wr * 100)}%
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
+  // ── 대인전적 (상대전적 + 시너지 통합) ──
+  const RelationsTab = () => {
+    const [mode, setMode] = useState<"vs" | "with">("vs");
+    const [sort, setSort] = useState<"games" | "wr">("games");
 
-  // ── 시너지 ──
-  const WithTab = () => {
-    const entries = Object.entries(stats.withStats).sort((a, b) => {
-      const ra = a[1].wins + a[1].losses > 0 ? a[1].wins / (a[1].wins + a[1].losses) : 0;
-      const rb = b[1].wins + b[1].losses > 0 ? b[1].wins / (b[1].wins + b[1].losses) : 0;
-      return rb - ra;
-    });
+    const raw = mode === "vs" ? stats.vsStats : stats.withStats;
+    const entries = Object.entries(raw)
+      .map(([name, s]) => {
+        const total = s.wins + s.losses;
+        const wr = total > 0 ? s.wins / total : 0;
+        return { name, wins: s.wins, losses: s.losses, total, wr };
+      })
+      .sort((a, b) => sort === "games" ? b.total - a.total || b.wr - a.wr : b.wr - a.wr || b.total - a.total);
+
+    const getRelTag = (wr: number, total: number) => {
+      if (total < 3) return null;
+      if (mode === "vs") {
+        if (wr >= 0.7) return { text: "천적", emoji: "🦁", color: "#22c55e" };
+        if (wr <= 0.3) return { text: "약점", emoji: "😰", color: "var(--loss)" };
+      } else {
+        if (wr >= 0.7) return { text: "찰떡", emoji: "🤜", color: "#22c55e" };
+        if (wr <= 0.3) return { text: "불화", emoji: "😬", color: "var(--loss)" };
+      }
+      return null;
+    };
+
     return (
-      <div>
-        <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>같은 팀일 때 전적 (높을수록 찰떡 시너지)</p>
-        <div className="rounded-lg overflow-x-auto border" style={{ borderColor: "var(--border)" }}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: "var(--panel)", borderBottom: "1px solid var(--border)" }}>
-                {["파트너", "경기", "승/패", "함께 승률"].map(h => (
-                  <th key={h} className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {entries.length === 0
-                ? <tr><td colSpan={4} className="py-10 text-center" style={{ color: "var(--text-muted)" }}>시너지 기록 없음</td></tr>
-                : entries.map(([partner, s], i) => {
-                  const total = s.wins + s.losses;
-                  const wr = total > 0 ? s.wins / total : 0;
-                  const rel = total >= 3 ? (wr >= 0.7 ? "🤜 찰떡" : wr <= 0.3 ? "😬 불화" : "") : "";
-                  return (
-                    <tr key={partner} style={{ background: i % 2 === 0 ? "var(--panel)" : "var(--panel-alt)", borderBottom: "1px solid var(--border)" }}>
-                      <td className="px-4 py-3 text-center font-semibold" style={{ color: "var(--text)" }}>{partner} {rel && <span className="text-xs">{rel}</span>}</td>
-                      <td className="px-4 py-3 text-center" style={{ color: "var(--text-muted)" }}>{total}</td>
-                      <td className="px-4 py-3 text-center text-xs">
-                        <span style={{ color: "var(--win)" }}>{s.wins}승</span> / <span style={{ color: "var(--loss)" }}>{s.losses}패</span>
-                      </td>
-                      <td className="px-4 py-3 text-center font-semibold"
-                        style={{ color: wr >= 0.6 ? "var(--win)" : wr <= 0.4 ? "var(--loss)" : "var(--accent)" }}>
-                        {Math.round(wr * 100)}%
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
+      <div className="space-y-4">
+        {/* 모드 토글 + 정렬 */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex gap-0 p-1 rounded-xl" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+            {([{ key: "vs" as const, label: "상대전적" }, { key: "with" as const, label: "시너지" }]).map(({ key, label }) => (
+              <button key={key} onClick={() => setMode(key)}
+                className="px-4 py-1.5 rounded-lg text-sm font-bold transition-all"
+                style={{
+                  background: mode === key ? "var(--accent)" : "transparent",
+                  color: mode === key ? "#fff" : "var(--text-muted)",
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            {([{ key: "games" as const, label: "경기순" }, { key: "wr" as const, label: "승률순" }]).map(({ key, label }) => (
+              <button key={key} onClick={() => setSort(key)}
+                className="text-xs px-2.5 py-1 rounded-full font-semibold transition-all"
+                style={{
+                  background: sort === key ? "var(--accent)" + "22" : "var(--hover)",
+                  color: sort === key ? "var(--accent)" : "var(--text-muted)",
+                  border: `1px solid ${sort === key ? "var(--accent)" + "44" : "var(--border)"}`,
+                  cursor: "pointer",
+                }}>
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
+
+        <p className="text-xs" style={{ color: "var(--text-dim)" }}>
+          {mode === "vs" ? "상대방이 적팀에 있을 때 내 전적 — 높을수록 상대에게 강함" : "같은 팀일 때 전적 — 높을수록 찰떡 시너지"}
+        </p>
+
+        {/* 카드 목록 */}
+        {entries.length === 0 ? (
+          <div className="py-10 text-center rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>
+            기록 없음
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {entries.map(({ name, wins, losses, total, wr }) => {
+              const rel = getRelTag(wr, total);
+              const isLowData = total < 3;
+              const wrColor = wr >= 0.6 ? "var(--win)" : wr <= 0.4 ? "var(--loss)" : "var(--text-muted)";
+              const barColor = wr >= 0.6 ? "var(--win)" : wr <= 0.4 ? "var(--loss)" : "var(--accent)";
+
+              return (
+                <div key={name} className="p-4 rounded-xl border transition-all"
+                  style={{
+                    background: "var(--panel)",
+                    borderColor: rel ? rel.color + "55" : "var(--border)",
+                    opacity: isLowData ? 0.65 : 1,
+                  }}>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-base" style={{ color: "var(--text)" }}>{name}</span>
+                        {rel && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                            style={{ background: rel.color + "22", color: rel.color, border: `1px solid ${rel.color}44` }}>
+                            {rel.emoji} {rel.text}
+                          </span>
+                        )}
+                        {isLowData && (
+                          <span className="text-xs" style={{ color: "var(--text-dim)" }}>표본 부족</span>
+                        )}
+                      </div>
+                      <div className="text-xs mt-0.5 flex items-center gap-1.5">
+                        <span style={{ color: "var(--win)" }}>{wins}승</span>
+                        <span style={{ color: "var(--border)" }}>·</span>
+                        <span style={{ color: "var(--loss)" }}>{losses}패</span>
+                        <span style={{ color: "var(--border)" }}>|</span>
+                        <span style={{ color: "var(--text-dim)" }}>총 {total}경기</span>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-2xl font-black tabular-nums" style={{ color: wrColor }}>{Math.round(wr * 100)}%</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 h-1.5 rounded-full overflow-hidden" style={{ background: "var(--hover)" }}>
+                    <div className="h-full rounded-full" style={{ width: `${wr * 100}%`, background: barColor, transition: "width 0.4s ease" }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
@@ -845,12 +910,11 @@ export default function PersonDetailPage() {
       </div>
 
       {/* 탭 컨텐츠 */}
-      {tab === "overview"  && <OverviewTab />}
-      {tab === "champions" && <ChampionsTab />}
-      {tab === "positions" && <PositionsTab />}
-      {tab === "vs"        && <VsTab />}
-      {tab === "with"      && <WithTab />}
-      {tab === "badges"    && <BadgesTab />}
+      {tab === "overview"   && <OverviewTab />}
+      {tab === "champions"  && <ChampionsTab />}
+      {tab === "positions"  && <PositionsTab />}
+      {tab === "relations"  && <RelationsTab />}
+      {tab === "badges"     && <BadgesTab />}
     </div>
   );
 }
