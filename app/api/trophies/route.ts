@@ -13,14 +13,14 @@ export async function POST(req: Request) {
   if (!user?.groupId) return Response.json({ error: "No group" }, { status: 400 });
   if (user.role !== "admin") return Response.json({ error: "Forbidden" }, { status: 403 });
 
-  const { trophyKey, label, type, rank1, rank2, rank3, winner } = await req.json() as {
+  const { trophyKey, label, type, rank1, rank2, rank3, members } = await req.json() as {
     trophyKey: string;
     label: string;
     type: "worlds" | "season";
     rank1?: string;
     rank2?: string;
     rank3?: string;
-    winner?: string;
+    members?: string[];  // 월즈: 팀원 최대 5명
   };
 
   const nicknames = await kv.get<NicknameEntry[]>(nicknamesKey(user.groupId)).then(v => v ?? []);
@@ -33,8 +33,8 @@ export async function POST(req: Request) {
 
   // 새 트로피 부여
   const awards: Array<{ nick: string; rank: 1 | 2 | 3; trophyType?: "worlds" | "season" }> =
-    type === "worlds" && winner
-      ? [{ nick: winner, rank: 1, trophyType: "worlds" }]
+    type === "worlds"
+      ? (members ?? []).filter(Boolean).map(nick => ({ nick, rank: 1 as const, trophyType: "worlds" as const }))
       : [
           ...(rank1 ? [{ nick: rank1, rank: 1 as const }] : []),
           ...(rank2 ? [{ nick: rank2, rank: 2 as const }] : []),
