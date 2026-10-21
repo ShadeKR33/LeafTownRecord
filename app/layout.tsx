@@ -1,7 +1,21 @@
 import type { Metadata } from "next";
+import { Noto_Sans_KR, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import { SessionProvider } from "next-auth/react";
+
+const notoSansKR = Noto_Sans_KR({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "900"],
+  variable: "--font-noto",
+  display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-grotesk",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "나뭇잎 마을 내전 기록소 (상급닌자 제1시험)",
@@ -14,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className="h-full">
+    <html lang="ko" className={`h-full ${notoSansKR.variable} ${spaceGrotesk.variable}`}>
       {/* 테마 클래스를 hydration 전에 즉시 적용 — 테마 깜빡임 방지 */}
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
