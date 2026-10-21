@@ -249,17 +249,21 @@ function TrophyCard({ trophy }: { trophy: SeasonTrophy }) {
   );
 }
 
+function sortTrophies(trophies: SeasonTrophy[]) {
+  return [...trophies].sort((a, b) => {
+    const typeRank = (t: SeasonTrophy) => t.type === "worlds" ? 0 : t.rank;
+    const tr = typeRank(a) - typeRank(b);
+    if (tr !== 0) return tr;
+    return b.season.localeCompare(a.season);
+  });
+}
+
 // ── TrophyShowcase: 큰 트로피 카드 목록 (개요 탭용) ─────────────────────────
 export function TrophyShowcase({ trophies }: { trophies: SeasonTrophy[] }) {
   if (!trophies || trophies.length === 0) return null;
-  const sorted = [...trophies].sort((a, b) => {
-    if (a.type === "worlds" && b.type !== "worlds") return -1;
-    if (b.type === "worlds" && a.type !== "worlds") return 1;
-    return b.season.localeCompare(a.season);
-  });
   return (
     <div className="flex flex-wrap gap-3">
-      {sorted.map((t, i) => (
+      {sortTrophies(trophies).map((t, i) => (
         <TrophyCard key={`${t.season}-${t.rank}-${i}`} trophy={t} />
       ))}
     </div>
@@ -269,11 +273,7 @@ export function TrophyShowcase({ trophies }: { trophies: SeasonTrophy[] }) {
 // ── TrophyList: 작은 배지 목록 ──────────────────────────────────────────────
 export function TrophyList({ trophies, iconOnly = true }: { trophies: SeasonTrophy[]; iconOnly?: boolean }) {
   if (!trophies || trophies.length === 0) return null;
-  const sorted = [...trophies].sort((a, b) => {
-    if (a.type === "worlds" && b.type !== "worlds") return -1;
-    if (b.type === "worlds" && a.type !== "worlds") return 1;
-    return b.season.localeCompare(a.season);
-  });
+  const sorted = sortTrophies(trophies);
   return (
     <span className="inline-flex flex-wrap gap-1 items-center">
       {sorted.map((t, i) => (
