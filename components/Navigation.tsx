@@ -24,7 +24,7 @@ const navItems = [
   { href: "/ranking",  label: "랭킹",       icon: "🏆" },
   { href: "/champion", label: "챔피언 분석", icon: "⚔️" },
   { href: "/calendar", label: "달력",        icon: "📅" },
-  { href: "/analysis", label: "AI분석",      icon: "🤖" },
+  { href: "/analysis", label: "경기등록",     icon: "🤖" },
   { href: "/team",     label: "팀편성",      icon: "🎲" },
   { href: "/worlds",   label: "Worlds",      icon: "🌍" },
   { href: "/manage",   label: "마을 관리",   icon: "🏕️" },
