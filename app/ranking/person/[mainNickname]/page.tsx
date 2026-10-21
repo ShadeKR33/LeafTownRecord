@@ -6,6 +6,7 @@ import { computeAggregatedStats, loadGameRecords, loadNicknames, normalizeId, fo
 import type { NicknameEntry, PlayerStats, BadgeGrade, GameRecord } from "@/lib/types";
 import { WinRateTrend } from "@/components/WinRateTrend";
 import { ChampionPortrait } from "@/components/ChampionPortrait";
+import { TrophyShowcase } from "@/components/TrophyBadge";
 
 const POSITION_ORDER = ["탑", "정글", "미드", "원딜", "서포터"];
 const ROLE_COLORS: Record<string, string> = {
@@ -196,20 +197,10 @@ export default function PersonDetailPage() {
         </div>
       </div>
 
-      {stats.topChampions.length > 0 && (
+      {(entry.trophies?.length ?? 0) > 0 && (
         <div className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
-          <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>모스트 챔피언</div>
-          <div className="flex gap-3 flex-wrap">
-            {stats.topChampions.map((c, i) => (
-              <div key={c.name} className="flex items-center gap-2 px-3 py-2 rounded" style={{ background: "var(--panel-alt)" }}>
-                <span className="text-sm font-bold" style={{ color: "var(--accent)" }}>#{i + 1}</span>
-                <div>
-                  <div className="font-semibold text-sm" style={{ color: "var(--text)" }}>{c.name}</div>
-                  <div className="text-xs" style={{ color: "var(--text-muted)" }}>{c.games}경기 · {formatWinRate(c.wins, c.games)} 승률</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>트로피</div>
+          <TrophyShowcase trophies={entry.trophies!} />
         </div>
       )}
 
