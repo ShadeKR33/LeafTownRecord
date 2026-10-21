@@ -155,8 +155,6 @@ export default function PersonDetailPage() {
 
     return (
       <div className="space-y-4">
-        <WinRateTrend data={winTrend} />
-
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: "전체 승률", value: formatWinRate(stats.wins, stats.totalGames), sub: `${stats.wins}승 ${stats.losses}패`, color: "var(--accent)" },
@@ -211,19 +209,40 @@ export default function PersonDetailPage() {
         </div>
       )}
 
-      {stats.badges.length > 0 && (
-        <div className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
-          <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>보유 업적</div>
-          <div className="flex flex-wrap gap-2">
-            {stats.badges.map(b => (
-              <div key={b.id} title={b.description} className="px-3 py-1.5 rounded-full text-xs font-semibold"
-                style={{ background: b.color + "22", color: b.color, border: `1px solid ${b.color}44` }}>
-                {b.icon} {b.name}
+      <WinRateTrend data={winTrend} />
+
+      {stats.badges.length > 0 && (() => {
+        const gradeRank: Record<string, number> = { 신화: 0, 전설: 1, 영웅: 2, 희귀: 3, 일반: 4 };
+        const top3 = [...stats.badges]
+          .sort((a, b) => (gradeRank[a.grade] ?? 5) - (gradeRank[b.grade] ?? 5))
+          .slice(0, 3);
+        return (
+          <div className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
+                보유 업적 ({stats.badges.length}개)
               </div>
-            ))}
+              <button
+                onClick={() => setTab("badges")}
+                className="text-xs font-semibold"
+                style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}>
+                더보기 →
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {top3.map(b => {
+                const gc = GRADE_STYLE[b.grade].color;
+                return (
+                  <div key={b.id} title={b.description} className="px-3 py-1.5 rounded-full text-xs font-semibold"
+                    style={{ background: gc + "22", color: gc, border: `1px solid ${gc}44` }}>
+                    {b.icon} {b.name}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
     );
   };
