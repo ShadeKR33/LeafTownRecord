@@ -1948,7 +1948,7 @@ export default function WorldsPage() {
           🌍 WORLDS
         </h1>
         <p className="text-xs font-semibold tracking-widest" style={{ color: "var(--text-dim)" }}>
-          THE 2ND KONOHA WORLDS · 2026 WINTER · BUSAN
+          THE 2ND KONOHA WORLDS · 2026 WINTER · YEOSU
         </p>
       </div>
 
