@@ -14,20 +14,20 @@ function WorldsTrophyIcon({ size = 13, uid }: { size?: number; uid: string }) {
           <stop offset="100%" stopColor="#0e7490" />
         </linearGradient>
       </defs>
-      {/* 크리스탈 첨탑 */}
-      <polygon points="10,1 12.5,5.5 10,7.5 7.5,5.5" fill="#cffafe" />
-      {/* 컵 몸체 — 육각형 패싯 */}
-      <path d="M7.5,7.5 L5,11.5 L6.5,16 L13.5,16 L15,11.5 L12.5,7.5 Z" fill={`url(#${uid}wg)`} />
+      {/* 크리스탈 첨탑 — 폭 넓힘 */}
+      <polygon points="10,0.5 14,5.5 10,8 6,5.5" fill="#cffafe" />
+      {/* 컵 몸체 — 더 넓은 육각형 패싯 */}
+      <path d="M6,8 L3.5,12.5 L5,17 L15,17 L16.5,12.5 L14,8 Z" fill={`url(#${uid}wg)`} />
       {/* 내부 하이라이트 면 */}
-      <path d="M9.5,8.5 L8,11.5 L9,14.5 L11,14.5 L12,11.5 L10.5,8.5 Z" fill="#67e8f9" opacity="0.3" />
+      <path d="M9.5,9.5 L7.5,13 L8.5,15.5 L11.5,15.5 L12.5,13 L10.5,9.5 Z" fill="#67e8f9" opacity="0.3" />
       {/* 기둥 */}
-      <rect x="9" y="16" width="2" height="2.5" rx="0.6" fill="#0891b2" />
+      <rect x="9" y="17" width="2" height="1.5" rx="0.6" fill="#0891b2" />
       {/* 받침 */}
-      <rect x="6.5" y="18.5" width="7" height="2" rx="1" fill="#0e7490" />
+      <rect x="5" y="18.5" width="10" height="2" rx="1" fill="#0e7490" />
       {/* 받침 광택 */}
-      <rect x="7.5" y="19" width="3.5" height="0.7" rx="0.35" fill="#a5f3fc" opacity="0.5" />
+      <rect x="6" y="19" width="5" height="0.7" rx="0.35" fill="#a5f3fc" opacity="0.5" />
       {/* 크리스탈 반짝임 */}
-      <line x1="8.8" y1="2.5" x2="9.5" y2="4.5" stroke="white" strokeWidth="0.9" opacity="0.75" strokeLinecap="round" />
+      <line x1="8.2" y1="2.5" x2="9.2" y2="5" stroke="white" strokeWidth="1" opacity="0.75" strokeLinecap="round" />
     </svg>
   );
 }
@@ -133,7 +133,7 @@ const WORLDS_STYLE = { bg: "rgba(0,229,255,0.13)", border: "#00e5ff", color: "#0
 function TrophyIcon({
   trophy, size = 13, uid,
 }: { trophy: SeasonTrophy; size?: number; uid: string }) {
-  if (trophy.type === "worlds") return <WorldsTrophyIcon size={size} uid={uid} />;
+  if (trophy.type === "worlds") return <WorldsTrophyIcon size={Math.round(size * 1.15)} uid={uid} />;
   if (trophy.rank === 1)        return <GoldTrophyIcon   size={size} uid={uid} />;
   if (trophy.rank === 2)        return <SilverTrophyIcon size={size} uid={uid} />;
   return                               <BronzeTrophyIcon size={size} uid={uid} />;
