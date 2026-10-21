@@ -215,25 +215,6 @@ export default function PlayerDetailPage() {
         </div>
       </div>
 
-      {/* 최다 플레이 챔피언 */}
-      {stats.topChampions.length > 0 && (
-        <div className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
-          <div className="text-xs font-semibold mb-3" style={{ color: "var(--text-muted)" }}>모스트 챔피언</div>
-          <div className="flex gap-3 flex-wrap">
-            {stats.topChampions.map((c, i) => (
-              <div key={c.name} className="flex items-center gap-2 px-3 py-2 rounded" style={{ background: "var(--panel-alt)" }}>
-                <span className="text-sm font-bold" style={{ color: "var(--accent)" }}>#{i + 1}</span>
-                <div>
-                  <div className="font-semibold text-sm" style={{ color: "var(--text)" }}>{c.name}</div>
-                  <div className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    {c.games}경기 · {formatWinRate(c.wins, c.games)} 승률
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* 뱃지 미리보기 (커리어 기준) */}
       {(careerStats?.badges.length ?? 0) > 0 && (
