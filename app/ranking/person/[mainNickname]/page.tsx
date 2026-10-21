@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { computeAggregatedStats, loadGameRecords, loadNicknames, normalizeId, formatWinRate, getSeriesData } from "@/lib/stats";
 import type { NicknameEntry, PlayerStats, BadgeGrade, GameRecord, LimitedTitle } from "@/lib/types";
@@ -214,40 +214,59 @@ export default function PersonDetailPage() {
 
       <WinRateTrend data={winTrend} />
 
-      {stats.badges.length > 0 && (() => {
+      {(() => {
+        const myLimitedInOverview = limitedTitles.filter(t => t.holder === entry.nickname);
         const gradeRank: Record<string, number> = { 신화: 0, 전설: 1, 영웅: 2, 희귀: 3, 일반: 4 };
-        const top3 = [...stats.badges]
-          .sort((a, b) => (gradeRank[a.grade] ?? 5) - (gradeRank[b.grade] ?? 5))
-          .slice(0, 3);
+        const sortedBadges = [...stats.badges].sort((a, b) => (gradeRank[a.grade] ?? 5) - (gradeRank[b.grade] ?? 5));
+        const totalCount = myLimitedInOverview.length + stats.badges.length;
+        if (totalCount === 0) return null;
+        // 미리보기: 리미티드 먼저, 이후 일반 순서로 최대 3개
+        const previewItems: { key: string; node: React.ReactNode }[] = [];
+        for (const t of myLimitedInOverview) {
+          if (previewItems.length >= 3) break;
+          const def = getLimitedTitleDef(t.id);
+          if (!def) continue;
+          previewItems.push({
+            key: "lt_" + t.id,
+            node: (
+              <div title={def.description} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold"
+                style={{
+                  background: `linear-gradient(var(--panel-alt), var(--panel-alt)) padding-box, linear-gradient(135deg, ${def.color}, ${def.accentColor}) border-box`,
+                  border: "1px solid transparent",
+                  color: def.color,
+                }}>
+                <LimitedTitleIcon def={def} size={14} isDark={isDark} />
+                {def.name}
+              </div>
+            ),
+          });
+        }
+        for (const b of sortedBadges) {
+          if (previewItems.length >= 3) break;
+          const gc = GRADE_STYLE[b.grade].color;
+          previewItems.push({
+            key: b.id,
+            node: (
+              <div title={b.description} className="px-3 py-1.5 rounded-full text-xs font-semibold"
+                style={{ background: gc + "22", color: gc, border: `1px solid ${gc}44` }}>
+                {b.icon} {b.name}
+              </div>
+            ),
+          });
+        }
         return (
           <div className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
             <div className="flex items-center justify-between mb-3">
-              <div className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>
-                보유 업적 ({stats.badges.length}개)
-              </div>
-              <button
-                onClick={() => setTab("badges")}
-                className="text-xs font-semibold"
-                style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}>
-                더보기 →
-              </button>
+              <div className="text-xs font-semibold" style={{ color: "var(--text-muted)" }}>보유 업적 ({totalCount}개)</div>
+              <button onClick={() => setTab("badges")} className="text-xs font-semibold"
+                style={{ color: "var(--accent)", background: "none", border: "none", cursor: "pointer" }}>더보기 →</button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {top3.map(b => {
-                const gc = GRADE_STYLE[b.grade].color;
-                return (
-                  <div key={b.id} title={b.description} className="px-3 py-1.5 rounded-full text-xs font-semibold"
-                    style={{ background: gc + "22", color: gc, border: `1px solid ${gc}44` }}>
-                    {b.icon} {b.name}
-                  </div>
-                );
-              })}
-              {stats.badges.length > 3 && (
-                <button
-                  onClick={() => setTab("badges")}
-                  className="px-3 py-1.5 rounded-full text-xs font-semibold"
+              {previewItems.map(({ key, node }) => <React.Fragment key={key}>{node}</React.Fragment>)}
+              {totalCount > 3 && (
+                <button onClick={() => setTab("badges")} className="px-3 py-1.5 rounded-full text-xs font-semibold"
                   style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)", cursor: "pointer" }}>
-                  +{stats.badges.length - 3}개 더
+                  +{totalCount - 3}개 더
                 </button>
               )}
             </div>
@@ -453,8 +472,10 @@ export default function PersonDetailPage() {
   const PositionsTab = () => {
     const [selectedPos, setSelectedPos] = useState<string | null>(null);
 
+    // 많이 한 포지션 순서로 정렬
     const posEntries = POSITION_ORDER.map(pos => ({ pos, s: stats.positionStats?.[pos] }))
-      .filter((e): e is { pos: string; s: NonNullable<typeof e.s> } => !!e.s);
+      .filter((e): e is { pos: string; s: NonNullable<typeof e.s> } => !!e.s)
+      .sort((a, b) => b.s.games - a.s.games);
     const totalGames = posEntries.reduce((sum, { s }) => sum + s.games, 0);
 
     const detail = useMemo(() => {
@@ -463,28 +484,25 @@ export default function PersonDetailPage() {
       if (posIdx === -1) return null;
       const normNicks = new Set(playerNicks.map(n => normalizeId(n)));
 
+      // KDA/DPM/CS는 게임 단위 집계
       let myK = 0, myD = 0, myA = 0, myDmg = 0, myDur = 0, myCs = 0;
       let myHasKda = false, myHasDmg = false, myHasCs = false;
       let enmK = 0, enmD = 0, enmA = 0, enmDmg = 0, enmDur = 0, enmCs = 0;
       let enmHasKda = false, enmHasDmg = false, enmHasCs = false;
-      const vsMap: Record<string, { wins: number; losses: number; history: boolean[] }> = {};
-      const withMap: Record<string, { wins: number; losses: number; pos: string }> = {};
 
       for (const record of allRecords) {
         const dur = record.gameDuration || 0;
-        for (const { myTeam, enemyTeam, won } of [
-          { myTeam: record.team1, enemyTeam: record.team2, won: record.winTeam === 1 },
-          { myTeam: record.team2, enemyTeam: record.team1, won: record.winTeam === 2 },
+        for (const { myTeam, enemyTeam } of [
+          { myTeam: record.team1, enemyTeam: record.team2 },
+          { myTeam: record.team2, enemyTeam: record.team1 },
         ]) {
           const me = myTeam[posIdx];
           if (!me || !normNicks.has(normalizeId(me.nickname || ""))) continue;
-
           if (me.kills != null)   { myK += me.kills;   myHasKda = true; }
           if (me.deaths != null)  myD += me.deaths;
           if (me.assists != null) myA += me.assists;
           if (me.damageDealt != null && dur > 0) { myDmg += me.damageDealt; myDur += dur; myHasDmg = true; }
           if (me.cs != null) { myCs += me.cs; myHasCs = true; }
-
           const enemy = enemyTeam[posIdx];
           if (enemy) {
             if (enemy.kills != null)   { enmK += enemy.kills;   enmHasKda = true; }
@@ -492,27 +510,61 @@ export default function PersonDetailPage() {
             if (enemy.assists != null) enmA += enemy.assists;
             if (enemy.damageDealt != null && dur > 0) { enmDmg += enemy.damageDealt; enmDur += dur; enmHasDmg = true; }
             if (enemy.cs != null) { enmCs += enemy.cs; enmHasCs = true; }
-            const eName = (enemy.nickname || "?").split("#")[0];
-            if (!vsMap[eName]) vsMap[eName] = { wins: 0, losses: 0, history: [] };
-            if (won) vsMap[eName].wins++; else vsMap[eName].losses++;
-            vsMap[eName].history.push(won);
           }
+        }
+      }
 
+      // 상대/시너지는 시리즈 단위 집계
+      const vsMap: Record<string, { wins: number; losses: number; history: boolean[] }> = {};
+      const withMap: Record<string, { wins: number; losses: number; pos: string }> = {};
+
+      const seriesData = getSeriesData(allRecords);
+      for (const series of seriesData) {
+        if (!series.isComplete) continue;
+        let myTeamNum: 1 | 2 | null = null;
+        for (const record of series.records) {
+          const t1p = record.team1[posIdx];
+          const t2p = record.team2[posIdx];
+          if (t1p && normNicks.has(normalizeId(t1p.nickname || ""))) { myTeamNum = 1; break; }
+          if (t2p && normNicks.has(normalizeId(t2p.nickname || ""))) { myTeamNum = 2; break; }
+        }
+        if (!myTeamNum) continue;
+        const seriesWon = series.winTeam === myTeamNum;
+        const enemySet = new Set<string>();
+        const tmPosMap: Record<string, Set<string>> = {};
+        for (const record of series.records) {
+          const myTeam = myTeamNum === 1 ? record.team1 : record.team2;
+          const enemyTeam = myTeamNum === 1 ? record.team2 : record.team1;
+          const me = myTeam[posIdx];
+          if (!me || !normNicks.has(normalizeId(me.nickname || ""))) continue;
+          const enemy = enemyTeam[posIdx];
+          if (enemy?.nickname) enemySet.add(enemy.nickname.split("#")[0]);
           for (let i = 0; i < myTeam.length; i++) {
             if (i === posIdx) continue;
             const tm = myTeam[i];
             if (!tm?.nickname) continue;
-            const tName = tm.nickname.split("#")[0];
-            if (!withMap[tName]) withMap[tName] = { wins: 0, losses: 0, pos: POSITION_ORDER[i] || "" };
-            if (won) withMap[tName].wins++; else withMap[tName].losses++;
+            const tPos = POSITION_ORDER[i] || "";
+            if (!tmPosMap[tPos]) tmPosMap[tPos] = new Set();
+            tmPosMap[tPos].add(tm.nickname.split("#")[0]);
+          }
+        }
+        for (const eName of enemySet) {
+          if (!vsMap[eName]) vsMap[eName] = { wins: 0, losses: 0, history: [] };
+          if (seriesWon) vsMap[eName].wins++; else vsMap[eName].losses++;
+          vsMap[eName].history.push(seriesWon);
+        }
+        for (const [tPos, names] of Object.entries(tmPosMap)) {
+          for (const name of names) {
+            if (!withMap[name]) withMap[name] = { wins: 0, losses: 0, pos: tPos };
+            if (seriesWon) withMap[name].wins++; else withMap[name].losses++;
           }
         }
       }
 
       const gameCount = (stats.positionStats?.[selectedPos]?.games) || 1;
-      const myKda  = myHasKda  ? (myD  > 0 ? (myK  + myA)  / myD  : 99) : null;
-      const myDpm  = myHasDmg  && myDur  > 0 ? myDmg  / myDur  : null;
-      const myAvgCs = myHasCs  ? myCs  / gameCount : null;
+      const myKda   = myHasKda  ? (myD  > 0 ? (myK  + myA)  / myD  : 99) : null;
+      const myDpm   = myHasDmg  && myDur  > 0 ? myDmg  / myDur  : null;
+      const myAvgCs = myHasCs   ? myCs  / gameCount : null;
       const enmKda  = enmHasKda ? (enmD > 0 ? (enmK + enmA) / enmD : 99) : null;
       const enmDpm  = enmHasDmg && enmDur > 0 ? enmDmg / enmDur : null;
       const enmAvgCs = enmHasCs ? enmCs / gameCount : null;
@@ -664,7 +716,8 @@ export default function PersonDetailPage() {
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-1 h-4 rounded-full" style={{ background: selColor }} />
                         <span className="text-sm font-black" style={{ color: "var(--text)" }}>상대 {selectedPos}</span>
-                        <span className="text-xs" style={{ color: "var(--text-dim)" }}>맞붙은 기록</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                          style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>시리즈 기준</span>
                       </div>
                       <div className="space-y-2">
                         {detail.vsEntries.map(({ name, wins, losses, total, wr: vr, history }) => {
@@ -713,54 +766,58 @@ export default function PersonDetailPage() {
                     </div>
                   )}
 
-                  {/* 팀원 호흡 */}
+                  {/* 팀원 호흡 — 컴팩트 테이블 */}
                   {Object.keys(detail.withByPos).length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                         <div className="w-1 h-4 rounded-full" style={{ background: selColor }} />
                         <span className="text-sm font-black" style={{ color: "var(--text)" }}>팀원 호흡</span>
-                        <span className="text-xs" style={{ color: "var(--text-dim)" }}>함께했을 때 기록</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                          style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>시리즈 기준</span>
                       </div>
-                      {POSITION_ORDER.filter(p => p !== selectedPos && detail.withByPos[p]).map(pos => {
-                        const pc = ROLE_COLORS[pos] || "var(--accent)";
-                        return (
-                          <div key={pos} className="mb-3">
-                            <div className="flex items-center gap-1.5 mb-2">
-                              <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: pc + "20", color: pc, border: `1px solid ${pc}33` }}>{pos}</span>
-                            </div>
-                            <div className="space-y-1.5 pl-2">
-                              {detail.withByPos[pos].map(({ name, wins, losses, total, wr: wRate }) => {
-                                const syn = total >= 3 ? (wRate >= 0.7 ? { text: "찰떡", emoji: "🤜", color: "#22c55e" } : wRate <= 0.3 ? { text: "불화", emoji: "😬", color: "var(--loss)" } : null) : null;
-                                const wColor = wRate >= 0.6 ? "var(--win)" : wRate <= 0.4 ? "var(--loss)" : "var(--text-muted)";
-                                return (
-                                  <div key={name} className="px-3.5 py-2.5 rounded-xl border flex items-center gap-3 transition-all"
-                                    style={{ background: "var(--panel)", borderColor: syn ? syn.color + "44" : "var(--border)" }}>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-semibold" style={{ color: "var(--text)" }}>{name}</span>
+                      <div className="rounded-2xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
+                        {POSITION_ORDER.filter(p => p !== selectedPos && detail.withByPos[p]).map((pos, posIdx2) => {
+                          const pc = ROLE_COLORS[pos] || "var(--accent)";
+                          const players = detail.withByPos[pos];
+                          return (
+                            <React.Fragment key={pos}>
+                              {posIdx2 > 0 && <div style={{ height: 1, background: "var(--border)" }} />}
+                              <div className="flex">
+                                <div className="flex-shrink-0 w-14 flex items-center justify-center"
+                                  style={{ background: pc + "12", borderRight: `1px solid ${pc}22` }}>
+                                  <span className="text-xs font-black" style={{ color: pc }}>{pos}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  {players.map((p2, p2Idx) => {
+                                    const syn = p2.total >= 2 ? (p2.wr >= 0.7 ? { text: "찰떡", emoji: "🤜", color: "#22c55e" } : p2.wr <= 0.3 ? { text: "불화", emoji: "😬", color: "var(--loss)" } : null) : null;
+                                    const wColor = p2.wr >= 0.6 ? "var(--win)" : p2.wr <= 0.4 ? "var(--loss)" : "var(--text-muted)";
+                                    return (
+                                      <div key={p2.name}
+                                        className="flex items-center gap-2 px-3 py-2.5"
+                                        style={{
+                                          background: "var(--panel)",
+                                          borderTop: p2Idx > 0 ? "1px solid var(--border)" : "none",
+                                        }}>
+                                        <span className="font-semibold text-sm flex-1 min-w-0 truncate" style={{ color: "var(--text)" }}>{p2.name}</span>
                                         {syn && (
-                                          <span className="text-xs px-1.5 py-0.5 rounded-full font-bold"
-                                            style={{ background: syn.color + "20", color: syn.color, border: `1px solid ${syn.color}33` }}>
+                                          <span className="text-xs px-1.5 py-0.5 rounded-full font-bold flex-shrink-0"
+                                            style={{ background: syn.color + "18", color: syn.color }}>
                                             {syn.emoji} {syn.text}
                                           </span>
                                         )}
+                                        <span className="text-xs flex-shrink-0 tabular-nums" style={{ color: "var(--text-dim)" }}>
+                                          <span style={{ color: "var(--win)" }}>{p2.wins}승</span>·<span style={{ color: "var(--loss)" }}>{p2.losses}패</span>
+                                        </span>
+                                        <span className="font-black text-sm flex-shrink-0 w-9 text-right tabular-nums" style={{ color: wColor }}>{Math.round(p2.wr * 100)}%</span>
                                       </div>
-                                      <div className="text-xs mt-0.5 flex items-center gap-1" style={{ color: "var(--text-dim)" }}>
-                                        <span style={{ color: "var(--win)" }}>{wins}승</span>
-                                        <span>·</span>
-                                        <span style={{ color: "var(--loss)" }}>{losses}패</span>
-                                        <span>·</span>
-                                        <span>{total}전</span>
-                                      </div>
-                                    </div>
-                                    <div className="text-lg font-black flex-shrink-0" style={{ color: wColor }}>{Math.round(wRate * 100)}%</div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </React.Fragment>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
 
