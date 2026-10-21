@@ -15,7 +15,7 @@ export interface PlayerGameData {
 export interface GameRecord {
   id: string;
   date: string;       // "YYYY-MM-DD"
-  gameFormat: "3판2선" | "5판3선";
+  gameFormat: "3판2선" | "5판3선" | "밸런스";
   gameNumber: number; // 시리즈 내 몇 번째 경기
   team1: PlayerGameData[];
   team2: PlayerGameData[];

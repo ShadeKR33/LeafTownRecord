@@ -37,7 +37,7 @@ export function getSeriesData(records: GameRecord[]) {
   Object.values(seriesMap).forEach(series => {
     const t1Wins = series.records.filter(r => r.winTeam === 1).length;
     const t2Wins = series.records.filter(r => r.winTeam === 2).length;
-    const needed = series.format === "3판2선" ? 2 : 3;
+    const needed = series.format === "3판2선" ? 2 : series.format === "5판3선" ? 3 : Infinity;
 
     if (t1Wins >= needed) {
       series.isComplete = true;
@@ -192,7 +192,8 @@ export function computePlayerStats(nickname: string, records: GameRecord[], nick
   const wins = playerSeries.filter((s) => s.won).length;
   const losses = playerSeries.filter((s) => !s.won).length;
   const totalGames = wins + losses; // 시리즈 참여 횟수
-  const score = wins * 3 - losses;
+  const balanceGames = playerGames.filter(g => g.record.category === "밸런스판").length;
+  const score = wins * 3 - losses + balanceGames * 2;
 
   let currentStreak = 0;
   if (playerSeries.length > 0) {

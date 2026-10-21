@@ -33,7 +33,7 @@ interface AnalysisResult {
 
 const LINEUP_POSITIONS = ["탑", "정글", "미드", "원딜", "서포터"] as const;
 
-type GameFormat = "3판2선" | "5판3선";
+type GameFormat = "3판2선" | "5판3선" | "밸런스";
 
 interface DraftResult {
   gameNumber: number;
@@ -262,6 +262,7 @@ export default function AnalysisPage() {
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [gameTitle, setGameTitle] = useState("");
   const [gameCategory, setGameCategory] = useState("내전");
+  const [balanceGameCount, setBalanceGameCount] = useState(1);
   const [records, setRecords] = useState<GameRecord[]>([]);
   const [dbNicknames, setDbNicknames] = useState<NicknameEntry[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -280,6 +281,7 @@ export default function AnalysisPage() {
         if (s.gameFormat) setGameFormat(s.gameFormat);
         if (s.gameTitle !== undefined) setGameTitle(s.gameTitle);
         if (s.gameCategory) setGameCategory(s.gameCategory);
+        if (s.balanceGameCount) setBalanceGameCount(s.balanceGameCount);
         if (Array.isArray(s.rosterA)) setRosterA(s.rosterA);
         if (Array.isArray(s.rosterB)) setRosterB(s.rosterB);
         if (Array.isArray(s.draftResults) && s.draftResults.length > 0) {
@@ -298,8 +300,9 @@ export default function AnalysisPage() {
   const [rosterB, setRosterB] = useState<string[]>(["", "", "", "", ""]);
   const rosterFilled = rosterA.every(n => n.trim()) && rosterB.every(n => n.trim());
   
-  const maxGames = gameFormat === "3판2선" ? 3 : 5;
-  const winsNeeded = gameFormat === "3판2선" ? 2 : 3;
+  const isBalance = gameCategory === "밸런스판";
+  const maxGames = isBalance ? balanceGameCount : gameFormat === "3판2선" ? 3 : 5;
+  const winsNeeded = isBalance ? Infinity : gameFormat === "3판2선" ? 2 : 3;
 
   // 세트장 사진 업로드용 배열 상태 (인덱스 0 ~ maxGames-1)
   const [images, setImages] = useState<(string | null)[]>(Array(maxGames).fill(null));
@@ -344,14 +347,14 @@ export default function AnalysisPage() {
     if (initialLoading) return;
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-        analysisMode, selectedDate, gameFormat, gameTitle, gameCategory,
+        analysisMode, selectedDate, gameFormat, gameTitle, gameCategory, balanceGameCount,
         rosterA, rosterB,
         draftResults,
         canonicalTeam1Nicks: [...canonicalTeam1Nicks],
         roflReviews,
       }));
     } catch {}
-  }, [initialLoading, analysisMode, selectedDate, gameFormat, gameTitle, gameCategory, rosterA, rosterB, draftResults, canonicalTeam1Nicks, roflReviews]);
+  }, [initialLoading, analysisMode, selectedDate, gameFormat, gameTitle, gameCategory, balanceGameCount, rosterA, rosterB, draftResults, canonicalTeam1Nicks, roflReviews]);
 
   // 닉네임 보정 헬퍼
   const correctNickname = (name: string, nicknamesList: NicknameEntry[]): string => {
@@ -623,7 +626,7 @@ export default function AnalysisPage() {
         return {
           id: Date.now().toString() + "_" + draft.gameNumber,
           date: selectedDate,
-          gameFormat,
+          gameFormat: (isBalance ? "밸런스" : gameFormat) as GameFormat,
           gameNumber: draft.gameNumber,
           team1: normalized.team1,
           team2: normalized.team2,
@@ -686,7 +689,7 @@ export default function AnalysisPage() {
       });
     return {
       date: selectedDate,
-      format: gameFormat,
+      format: (isBalance ? "밸런스" : gameFormat) as GameFormat,
       gameNumber,
       winTeam: result.winTeam,
       durationSeconds: result.gameDurationSeconds,
@@ -941,7 +944,7 @@ export default function AnalysisPage() {
               <div className="mb-4">
                 <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>🏷️ 경기 유형</label>
                 <div className="flex gap-2 flex-wrap">
-                  {(["내전", "스크림", "밸런스판", "본 게임"] as const).map(cat => (
+                  {(["내전", "스크림", "밸런스판", "월즈"] as const).map(cat => (
                     <button key={cat}
                       onClick={() => setGameCategory(cat)}
                       className="px-4 py-1.5 rounded-full text-xs font-bold transition-all"
@@ -966,33 +969,63 @@ export default function AnalysisPage() {
                     style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }} />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>🎮 시리즈 형식</label>
-                  <div className="flex gap-2">
-                    {(["3판2선", "5판3선"] as GameFormat[]).map(fmt => (
-                      <button key={fmt}
-                        onClick={() => {
-                          const newMax = fmt === "3판2선" ? 3 : 5;
-                          setGameFormat(fmt);
-                          setImages(Array(newMax).fill(null));
-                          setImageFiles(Array(newMax).fill(null));
-                          setStatsImages(Array(newMax).fill(null));
-                          setStatsImageFiles(Array(newMax).fill(null));
-                          setDraftResults([]);
-                          setSuccessSaved(false);
-                          setRoflFiles(Array(newMax).fill(null));
-                          setRoflReviews([]);
-                          setRoflParsedResults([]);
-                        }}
-                        className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
-                        style={{
-                          background: gameFormat === fmt ? "var(--accent)" : "var(--panel-alt)",
-                          color: gameFormat === fmt ? "var(--panel-alt)" : "var(--text-muted)",
-                          border: `1px solid ${gameFormat === fmt ? "var(--accent)" : "var(--border)"}`,
-                        }}>
-                        {fmt}
-                      </button>
-                    ))}
-                  </div>
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>
+                    {isBalance ? "🔢 판수" : "🎮 시리즈 형식"}
+                  </label>
+                  {isBalance ? (
+                    <div className="flex gap-2 flex-wrap">
+                      {[1, 2, 3, 4, 5, 6, 7].map(n => (
+                        <button key={n}
+                          onClick={() => {
+                            setBalanceGameCount(n);
+                            setImages(Array(n).fill(null));
+                            setImageFiles(Array(n).fill(null));
+                            setStatsImages(Array(n).fill(null));
+                            setStatsImageFiles(Array(n).fill(null));
+                            setDraftResults([]);
+                            setSuccessSaved(false);
+                            setRoflFiles(Array(n).fill(null));
+                            setRoflReviews([]);
+                            setRoflParsedResults([]);
+                          }}
+                          className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
+                          style={{
+                            background: balanceGameCount === n ? "var(--accent)" : "var(--panel-alt)",
+                            color: balanceGameCount === n ? "var(--panel-alt)" : "var(--text-muted)",
+                            border: `1px solid ${balanceGameCount === n ? "var(--accent)" : "var(--border)"}`,
+                          }}>
+                          {n}판
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      {(["3판2선", "5판3선"] as GameFormat[]).map(fmt => (
+                        <button key={fmt}
+                          onClick={() => {
+                            const newMax = fmt === "3판2선" ? 3 : 5;
+                            setGameFormat(fmt);
+                            setImages(Array(newMax).fill(null));
+                            setImageFiles(Array(newMax).fill(null));
+                            setStatsImages(Array(newMax).fill(null));
+                            setStatsImageFiles(Array(newMax).fill(null));
+                            setDraftResults([]);
+                            setSuccessSaved(false);
+                            setRoflFiles(Array(newMax).fill(null));
+                            setRoflReviews([]);
+                            setRoflParsedResults([]);
+                          }}
+                          className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
+                          style={{
+                            background: gameFormat === fmt ? "var(--accent)" : "var(--panel-alt)",
+                            color: gameFormat === fmt ? "var(--panel-alt)" : "var(--text-muted)",
+                            border: `1px solid ${gameFormat === fmt ? "var(--accent)" : "var(--border)"}`,
+                          }}>
+                          {fmt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div className="text-xs pb-0.5" style={{ color: "#527852" }}>
                   * 실제 진행 세트 수만큼만 올리시면 됩니다
