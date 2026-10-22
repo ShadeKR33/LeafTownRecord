@@ -38,6 +38,7 @@ export function getSeriesData(records: GameRecord[]) {
     const t1Wins = series.records.filter(r => r.winTeam === 1).length;
     const t2Wins = series.records.filter(r => r.winTeam === 2).length;
     const needed = series.format === "3판2선" ? 2 : series.format === "5판3선" ? 3 : Infinity;
+    const isBalance = series.records.some(r => r.category === "밸런스판");
 
     if (t1Wins >= needed) {
       series.isComplete = true;
@@ -45,6 +46,10 @@ export function getSeriesData(records: GameRecord[]) {
     } else if (t2Wins >= needed) {
       series.isComplete = true;
       series.winTeam = 2;
+    } else if (isBalance && series.records.length > 0) {
+      // 밸런스판은 판 수/승패 무관하게 완료 처리
+      series.isComplete = true;
+      series.winTeam = t1Wins >= t2Wins ? 1 : 2;
     }
   });
 
