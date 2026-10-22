@@ -498,7 +498,7 @@ export default function CalendarPage() {
       {/* ─── 월 선택 드롭다운 ─── */}
       {(() => {
         const monthGameCounts = displayMonths.reduce<Record<string, number>>((acc, m) => {
-          acc[m] = records.filter(r => r.date.startsWith(m)).length;
+          acc[m] = new Set(records.filter(r => r.date.startsWith(m)).map(r => r.date)).size;
           return acc;
         }, {});
         const label = selectedMonth.replace("-", "년 ") + "월";
