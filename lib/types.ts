@@ -95,7 +95,8 @@ export interface PlayerStats {
   losses: number;
   totalGames: number;
   winRate: number;          // 0~1
-  score: number;            // wins*3 - losses*1
+  score: number;            // wins*3 - losses + balanceBonus
+  balanceBonus: number;     // 밸런스판 시리즈 수 × 2
   currentStreak: number;    // 양수=연승, 음수=연패
   maxWinStreak: number;
   maxLoseStreak: number;

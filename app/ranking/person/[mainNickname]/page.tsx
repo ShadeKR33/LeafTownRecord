@@ -171,7 +171,7 @@ export default function PersonDetailPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: "전체 승률", value: formatWinRate(stats.wins, stats.totalGames), sub: `${stats.wins}승 ${stats.losses}패`, color: "var(--accent)" },
-            { label: "점수", value: `${displayScore >= 0 ? "+" : ""}${displayScore}`, sub: "승 +3 / 패 -1", color: stats.score >= 0 ? "var(--win)" : "var(--loss)" },
+            { label: "점수", value: `${displayScore >= 0 ? "+" : ""}${displayScore}`, sub: stats.balanceBonus > 0 ? `승 +3 / 패 -1 / 밸런스 +${stats.balanceBonus}` : "승 +3 / 패 -1", color: stats.score >= 0 ? "var(--win)" : "var(--loss)" },
             { label: "총 경기", value: `${stats.totalGames}`, sub: "경기", color: "var(--text-muted)" },
             getKdaCard(),
           ].map(c => (
