@@ -582,6 +582,36 @@ export default function CalendarPage() {
                   이 날의 경기 기록이 없습니다
                 </div>
               ) : (
+                <>
+                {/* 시리즈 점수 변동 요약 */}
+                {(() => {
+                  const isBalance = dayRecords.some(r => r.category === "밸런스판");
+                  const t1w = dayRecords.filter(r => r.winTeam === 1).length;
+                  const t2w = dayRecords.filter(r => r.winTeam === 2).length;
+                  const winner = t1w > t2w ? 1 : t2w > t1w ? 2 : null;
+                  return (
+                    <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg flex-wrap" style={{ background: "var(--hover)", border: "1px solid var(--border)" }}>
+                      <span className="text-xs font-semibold" style={{ color: "var(--text-dim)" }}>점수 변동</span>
+                      {isBalance ? (
+                        <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(109,40,217,0.15)", color: "#7c3aed", border: "1px solid #7c3aed55" }}>
+                          밸런스판 · 전원 +2
+                        </span>
+                      ) : winner ? (
+                        <>
+                          <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(34,197,94,0.12)", color: "var(--win)", border: "1px solid var(--border-green)" }}>
+                            팀{winner} +3
+                          </span>
+                          <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--loss)", border: "1px solid #ef444444" }}>
+                            팀{winner === 1 ? 2 : 1} -1
+                          </span>
+                          <span className="text-xs" style={{ color: "var(--text-dim)" }}>({t1w}:{t2w})</span>
+                        </>
+                      ) : (
+                        <span className="text-xs" style={{ color: "var(--text-dim)" }}>진행 중 ({t1w}:{t2w})</span>
+                      )}
+                    </div>
+                  );
+                })()}
                 <div className="space-y-4">
                   {dayRecords
                     .sort((a, b) => a.gameNumber - b.gameNumber)
@@ -615,6 +645,7 @@ export default function CalendarPage() {
                       </div>
                     ))}
                 </div>
+                </>
               )}
             </div>
           )}
@@ -646,8 +677,26 @@ export default function CalendarPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                        {recs[0]?.gameFormat} · 팀1: {recs[0]?.team1.filter((p) => p.nickname).map((p) => p.nickname).join(", ")}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                          {recs[0]?.gameFormat} · 팀1: {recs[0]?.team1.filter((p) => p.nickname).map((p) => p.nickname).join(", ")}
+                        </span>
+                        {(() => {
+                          const isBalance = recs.some(r => r.category === "밸런스판");
+                          const t1w = recs.filter(r => r.winTeam === 1).length;
+                          const t2w = recs.filter(r => r.winTeam === 2).length;
+                          const winner = t1w > t2w ? 1 : t2w > t1w ? 2 : null;
+                          if (isBalance) return (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(109,40,217,0.15)", color: "#7c3aed", border: "1px solid #7c3aed55" }}>밸런스 +2</span>
+                          );
+                          if (winner) return (
+                            <>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(34,197,94,0.12)", color: "var(--win)", border: "1px solid var(--border-green)" }}>팀{winner} +3</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--loss)", border: "1px solid #ef444444" }}>팀{winner === 1 ? 2 : 1} -1</span>
+                            </>
+                          );
+                          return null;
+                        })()}
                       </div>
                     </button>
                   ))}
