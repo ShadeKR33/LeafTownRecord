@@ -518,7 +518,9 @@ export default function CalendarPage() {
                       className="w-full text-left px-4 py-3 rounded-lg border transition-all hover:brightness-125"
                       style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold" style={{ color: "var(--text)" }}>{date}</span>
+                        <span className="font-semibold" style={{ color: "var(--text)" }}>
+                          {recs[0]?.title ? <>{recs[0].title} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({date})</span></> : date}
+                        </span>
                         <div className="flex items-center gap-2">
                           <span className="text-xs" style={{ color: "var(--win)" }}>
                             {recs.filter((r) => r.winTeam === 1).length + recs.filter((r) => r.winTeam === 2).length}경기
