@@ -121,22 +121,80 @@ function BronzeTrophyIcon({ size = 13, uid }: { size?: number; uid: string }) {
   );
 }
 
+// ── FINAL MVP 트로피: 보라 크리스탈 크라운 ────────────────────────────────────
+function FinalMvpTrophyIcon({ size = 13, uid }: { size?: number; uid: string }) {
+  return (
+    <svg viewBox="0 0 20 22" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id={`${uid}mvpSp`} x1="10" y1="0" x2="10" y2="22" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stopColor="#ddd6fe" />
+          <stop offset="25%"  stopColor="#7c3aed" />
+          <stop offset="65%"  stopColor="#4338ca" />
+          <stop offset="100%" stopColor="#2e1f6e" />
+        </linearGradient>
+        <linearGradient id={`${uid}mvpBs`} x1="10" y1="16" x2="10" y2="22" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stopColor="#2e1f6e" />
+          <stop offset="100%" stopColor="#0a081e" />
+        </linearGradient>
+        <linearGradient id={`${uid}mvpRg`} x1="0" y1="0" x2="20" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%"   stopColor="#c4b5fd" stopOpacity="0" />
+          <stop offset="30%"  stopColor="#c4b5fd" stopOpacity="0.95" />
+          <stop offset="70%"  stopColor="#a78bfa" stopOpacity="0.95" />
+          <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* 육각 받침 */}
+      <path d="M3.5 21 L16.5 21 L18.5 18 L16.5 15.5 L3.5 15.5 L1.5 18 Z" fill={`url(#${uid}mvpBs)`} />
+      <path d="M3.5 21 L16.5 21 L18.5 18" stroke="#7c3aed" strokeWidth="0.6" fill="none" strokeLinecap="round" opacity="0.8" />
+      <line x1="10" y1="15.5" x2="10" y2="21" stroke="#7c3aed" strokeWidth="0.3" opacity="0.4" />
+      <line x1="7"  y1="15.5" x2="3.5" y2="21" stroke="#4c1d95" strokeWidth="0.2" opacity="0.3" />
+      <line x1="13" y1="15.5" x2="16.5" y2="21" stroke="#4c1d95" strokeWidth="0.2" opacity="0.3" />
+      {/* 왼쪽 파편 */}
+      <path d="M7 4.5 L4.2 8.5 L4.5 13.5 L7 15.5 L7.5 9 Z" fill="#a5b4fc" opacity="0.72" />
+      <path d="M7 4.5 L5.5 7 L7.5 9 Z" fill="white" opacity="0.35" />
+      {/* 오른쪽 파편 */}
+      <path d="M13 4.5 L15.8 8.5 L15.5 13.5 L13 15.5 L12.5 9 Z" fill="#c7d2fe" opacity="0.68" />
+      <path d="M13 4.5 L14.5 7 L12.5 9 Z" fill="white" opacity="0.3" />
+      {/* 메인 스파이어 */}
+      <path d="M10 0.5 L13.5 5 L14 12 L12 15.5 L8 15.5 L6 12 L6.5 5 Z" fill={`url(#${uid}mvpSp)`} />
+      {/* 왼쪽 면 하이라이트 */}
+      <path d="M10 0.5 L6.5 5 L6 12 L10 9 Z" fill="#ddd6fe" opacity="0.2" />
+      {/* 상단 패싯 */}
+      <path d="M10 0.5 L12.5 4.5 L10 6 L7.5 4.5 Z" fill="#e9d5ff" opacity="0.5" />
+      {/* 반짝임 (WorldsTrophyIcon 동일 스타일) */}
+      <line x1="8.2" y1="2.5" x2="9" y2="5" stroke="white" strokeWidth="0.9" opacity="0.7" strokeLinecap="round" />
+      {/* 첨탑 끝 */}
+      <circle cx="10" cy="0.7" r="0.55" fill="white" opacity="0.95" />
+      {/* 왕관 아이콘 */}
+      <path d="M7.5 11 L8.1 8 L9.2 9.9 L10 7.5 L10.8 9.9 L11.9 8 L12.5 11 Z" fill="white" opacity="0.82" />
+      <rect x="7.5" y="10.8" width="5" height="0.75" rx="0.2" fill="white" opacity="0.45" />
+      {/* 오빗 링 */}
+      <ellipse cx="10" cy="12.8" rx="5.8" ry="1.1" fill="none" stroke={`url(#${uid}mvpRg)`} strokeWidth="0.65" />
+      {/* 스파클 */}
+      <path d="M3 3.5 L3.3 4.8 L3 6.1 L2.7 4.8 Z M1.7 4.8 L3 5.1 L4.3 4.8 L3 4.5 Z" fill="#a78bfa" opacity="0.9" />
+      <path d="M17 7 L17.3 8.2 L17 9.4 L16.7 8.2 Z M15.8 8.2 L17 8.5 L18.2 8.2 L17 7.9 Z" fill="#818cf8" opacity="0.85" />
+    </svg>
+  );
+}
+
 // ── 스타일 정의 ──────────────────────────────────────────────────────────────
 const RANK_STYLE: Record<1 | 2 | 3, { bg: string; border: string; color: string }> = {
   1: { bg: "rgba(251,191,36,0.18)",  border: "#fbbf24", color: "#92400e" },
   2: { bg: "rgba(148,163,184,0.18)", border: "#94a3b8", color: "#334155" },
   3: { bg: "rgba(180,83,9,0.15)",    border: "#c2410c", color: "#7c2d12" },
 };
-const WORLDS_STYLE = { bg: "rgba(0,229,255,0.13)", border: "#00e5ff", color: "#006080" };
+const WORLDS_STYLE = { bg: "rgba(0,229,255,0.13)",   border: "#00e5ff", color: "#006080" };
+const MVP_STYLE    = { bg: "rgba(109,40,217,0.18)",  border: "#7c3aed", color: "#4c1d95" };
 
 // ── TrophyIcon 디스패처 ──────────────────────────────────────────────────────
 function TrophyIcon({
   trophy, size = 13, uid,
 }: { trophy: SeasonTrophy; size?: number; uid: string }) {
-  if (trophy.type === "worlds") return <WorldsTrophyIcon size={Math.round(size * 1.15)} uid={uid} />;
-  if (trophy.rank === 1)        return <GoldTrophyIcon   size={size} uid={uid} />;
-  if (trophy.rank === 2)        return <SilverTrophyIcon size={size} uid={uid} />;
-  return                               <BronzeTrophyIcon size={size} uid={uid} />;
+  if (trophy.type === "worlds-mvp") return <FinalMvpTrophyIcon size={Math.round(size * 1.15)} uid={uid} />;
+  if (trophy.type === "worlds")     return <WorldsTrophyIcon   size={Math.round(size * 1.15)} uid={uid} />;
+  if (trophy.rank === 1)            return <GoldTrophyIcon     size={size} uid={uid} />;
+  if (trophy.rank === 2)            return <SilverTrophyIcon   size={size} uid={uid} />;
+  return                                   <BronzeTrophyIcon   size={size} uid={uid} />;
 }
 
 // ── TrophyBadge: 배지 + 호버 툴팁 ───────────────────────────────────────────
@@ -149,9 +207,12 @@ interface TrophyBadgeProps {
 export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadgeProps) {
   const rawUid = useId();
   const uid = rawUid.replace(/:/g, "");
+  const isMvp    = trophy.type === "worlds-mvp";
   const isWorlds = trophy.type === "worlds";
-  const s = isWorlds ? WORLDS_STYLE : RANK_STYLE[trophy.rank];
-  const label = isWorlds
+  const s = isMvp ? MVP_STYLE : isWorlds ? WORLDS_STYLE : RANK_STYLE[trophy.rank];
+  const label = isMvp
+    ? `${trophy.seasonLabel} FINAL MVP`
+    : isWorlds
     ? `${trophy.seasonLabel} 우승`
     : `${trophy.seasonLabel} ${trophy.rank}위`;
   const [hovered, setHovered] = useState(false);
@@ -188,7 +249,7 @@ export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadge
         <TrophyIcon trophy={trophy} size={iconSize} uid={uid} />
         {!iconOnly && (
           <span style={{ marginLeft: 3 }}>
-            {isWorlds ? "월즈" : `${trophy.rank}위`}
+            {isMvp ? "MVP" : isWorlds ? "월즈" : `${trophy.rank}위`}
           </span>
         )}
       </span>
@@ -235,9 +296,12 @@ export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadge
 function TrophyCard({ trophy }: { trophy: SeasonTrophy }) {
   const rawUid = useId();
   const uid = rawUid.replace(/:/g, "");
+  const isMvp    = trophy.type === "worlds-mvp";
   const isWorlds = trophy.type === "worlds";
-  const s = isWorlds ? WORLDS_STYLE : RANK_STYLE[trophy.rank];
-  const label = isWorlds
+  const s = isMvp ? MVP_STYLE : isWorlds ? WORLDS_STYLE : RANK_STYLE[trophy.rank];
+  const label = isMvp
+    ? `${trophy.seasonLabel} FINAL MVP`
+    : isWorlds
     ? `${trophy.seasonLabel} 우승`
     : `${trophy.seasonLabel} ${trophy.rank}위`;
   return (
@@ -255,8 +319,12 @@ function TrophyCard({ trophy }: { trophy: SeasonTrophy }) {
 
 function sortTrophies(trophies: SeasonTrophy[]) {
   return [...trophies].sort((a, b) => {
-    const typeRank = (t: SeasonTrophy) => t.type === "worlds" ? 0 : t.rank;
-    const tr = typeRank(a) - typeRank(b);
+    const typeOrder = (t: SeasonTrophy) => {
+      if (t.type === "worlds-mvp") return -1;
+      if (t.type === "worlds")     return 0;
+      return t.rank;
+    };
+    const tr = typeOrder(a) - typeOrder(b);
     if (tr !== 0) return tr;
     return b.season.localeCompare(a.season);
   });

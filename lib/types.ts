@@ -52,7 +52,7 @@ export interface SeasonTrophy {
   season: string;       // "2025-Q1" | "2025-WORLDS"
   seasonLabel: string;  // "2025년 1분기" | "2025 월즈"
   rank: 1 | 2 | 3;
-  type?: "season" | "worlds";  // default: "season"
+  type?: "season" | "worlds" | "worlds-mvp";  // default: "season"
 }
 
 export interface SeasonDef {
