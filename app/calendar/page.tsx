@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { loadGameRecords, saveGameRecords, loadNicknames } from "@/lib/stats";
-import type { GameRecord, PlayerGameData, NapuSeriesRating } from "@/lib/types";
+import type { GameRecord, PlayerGameData } from "@/lib/types";
 import GuideBanner from "@/components/GuideBanner";
 import MatchStatsChart from "@/components/MatchStatsChart";
 
@@ -63,10 +63,6 @@ export default function CalendarPage() {
   });
 
   const [durationStr, setDurationStr] = useState("");
-  const [napuRating, setNapuRating] = useState<NapuSeriesRating | null>(null);
-  const [showNapu, setShowNapu] = useState(false);
-  const [napuLoading, setNapuLoading] = useState(false);
-  const [napuGenerating, setNapuGenerating] = useState(false);
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
 
   // 닉네임 자동완성용
@@ -87,32 +83,6 @@ export default function CalendarPage() {
     saveGameRecords(data);
   };
 
-  // 날짜 선택 시 나푸평점 조회
-  useEffect(() => {
-    if (!selectedDate) { setNapuRating(null); return; }
-    setNapuLoading(true);
-    fetch(`/api/napu-rating?date=${selectedDate}`)
-      .then(r => r.json())
-      .then((data: NapuSeriesRating | null) => setNapuRating(data ?? null))
-      .catch(() => setNapuRating(null))
-      .finally(() => setNapuLoading(false));
-  }, [selectedDate]);
-
-  const generateNapuRating = async () => {
-    if (!selectedDate) return;
-    setNapuGenerating(true);
-    try {
-      const res = await fetch("/api/napu-rating", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: selectedDate }),
-      });
-      const data = await res.json() as NapuSeriesRating & { error?: string };
-      if (data.error) alert(data.error);
-      else setNapuRating(data);
-    } catch { alert("평점 생성 중 오류가 발생했습니다"); }
-    finally { setNapuGenerating(false); }
-  };
 
   // ─── 폼 유틸 ────────────────────────────────────────────────────────
   const updateTeamPlayer = (team: 1 | 2, idx: number, field: keyof PlayerGameData, value: string | number) => {
@@ -444,18 +414,6 @@ export default function CalendarPage() {
                 </h3>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setShowNapu(true)}
-                    className="px-3 py-1 rounded text-xs font-bold flex items-center gap-1"
-                    style={{
-                      background: napuRating
-                        ? "linear-gradient(var(--panel-alt), var(--panel-alt)) padding-box, linear-gradient(135deg, #22c55e, #3b82f6) border-box"
-                        : "var(--hover)",
-                      border: napuRating ? "1px solid transparent" : "1px solid var(--border)",
-                      color: napuRating ? "var(--accent)" : "var(--text-muted)",
-                    }}>
-                    🍃 나푸평점{napuRating ? " ✓" : napuLoading ? " ..." : ""}
-                  </button>
-                  <button
                     onClick={() => setSelectedDate(null)}
                     className="px-3 py-1 rounded text-xs font-semibold"
                     style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
@@ -550,219 +508,7 @@ export default function CalendarPage() {
         </>
       )}
 
-      {/* ── 나푸평점 모달 ──────────────────────────────────────────── */}
-      {showNapu && selectedDate && (
-        <NapuRatingModal
-          date={selectedDate}
-          rating={napuRating}
-          generating={napuGenerating}
-          canGenerate={!isViewer}
-          onGenerate={generateNapuRating}
-          onClose={() => setShowNapu(false)}
-        />
-      )}
     </div>
   );
 }
 
-// ── 나푸평점 모달 컴포넌트 ──────────────────────────────────────────────────
-const SCORE_COLOR_T1 = "#e05050";
-const SCORE_COLOR_T2 = "#4f8ef7";
-const POS_EMOJI: Record<string, string> = {
-  탑: "⚔️", 정글: "🌿", 미드: "⚡", 원딜: "🎯", 서포터: "🛡️",
-};
-
-function scoreStyle(score: number, teamColor: string) {
-  const alpha = score >= 8 ? "ff" : score >= 6 ? "dd" : "99";
-  return {
-    background: teamColor + "22",
-    border: `1.5px solid ${teamColor}${alpha}`,
-    color: teamColor,
-    fontWeight: 800,
-    fontSize: 15,
-    borderRadius: 6,
-    padding: "3px 10px",
-    minWidth: 48,
-    textAlign: "center" as const,
-    letterSpacing: "0.02em",
-    opacity: score < 5 ? 0.7 : 1,
-  };
-}
-
-function NapuRatingModal({ date, rating, generating, canGenerate, onGenerate, onClose }: {
-  date: string;
-  rating: NapuSeriesRating | null;
-  generating: boolean;
-  canGenerate: boolean;
-  onGenerate: () => void;
-  onClose: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  const normNick = (s: string) => s.toLowerCase().replace(/\s+/g, "");
-  const getScore = (nick: string) =>
-    rating?.ratings.find(r => r.nickname === nick)?.score
-    ?? rating?.ratings.find(r => normNick(r.nickname) === normNick(nick))?.score
-    ?? null;
-
-  const copyToClipboard = () => {
-    if (!rating) return;
-    const winner = rating.team1Wins > rating.team2Wins ? "팀1 우승" : "팀2 우승";
-    const lines: string[] = [
-      `🍃 나뭇잎 마을 나푸평점`,
-      `📅 ${date}  |  팀1 ${rating.team1Wins} : ${rating.team2Wins} 팀2  (${winner})`,
-      ``,
-      `🔴 팀 1`,
-    ];
-    rating.team1Players.forEach(p => {
-      const s = getScore(p);
-      lines.push(`  ${p}  ${s !== null ? s.toFixed(1) : "—"}`);
-    });
-    lines.push(``);
-    lines.push(`🔵 팀 2`);
-    rating.team2Players.forEach(p => {
-      const s = getScore(p);
-      lines.push(`  ${p}  ${s !== null ? s.toFixed(1) : "—"}`);
-    });
-    lines.push(``);
-    lines.push(`📊 평가기준: KDA > 딜기여도 > CS > 받은피해 > 승패`);
-    navigator.clipboard.writeText(lines.join("\n")).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  const maxRows = rating
-    ? Math.max(rating.team1Players.length, rating.team2Players.length)
-    : 0;
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.82)" }}
-      onClick={onClose}
-    >
-      <div
-        className="w-full mx-4 rounded-2xl flex flex-col overflow-hidden"
-        style={{ maxWidth: 480, background: "var(--panel)", border: "1px solid var(--border)", boxShadow: "0 24px 64px rgba(0,0,0,0.5)" }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div className="px-6 pt-5 pb-3 flex items-center justify-between"
-          style={{ borderBottom: "1px solid var(--border)" }}>
-          <div>
-            <div className="font-black text-base tracking-tight" style={{ color: "var(--text)" }}>
-              🍃 나뭇잎 마을 나푸평점
-            </div>
-            <div className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{date}</div>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full"
-            style={{ background: "var(--hover)", color: "var(--text-muted)", fontSize: 16 }}>✕</button>
-        </div>
-
-        {/* 시리즈 결과 */}
-        {rating && (
-          <div className="flex items-center justify-center gap-6 py-4 px-6"
-            style={{ borderBottom: "1px solid var(--hover)" }}>
-            <span className="font-black text-base" style={{ color: SCORE_COLOR_T1 }}>팀 1</span>
-            <div className="flex items-center gap-3">
-              <span className="text-3xl font-black" style={{ color: rating.team1Wins > rating.team2Wins ? SCORE_COLOR_T1 : "var(--text-muted)" }}>
-                {rating.team1Wins}
-              </span>
-              <span style={{ color: "var(--text-dim)", fontWeight: 700, fontSize: 18 }}>─</span>
-              <span className="text-3xl font-black" style={{ color: rating.team2Wins > rating.team1Wins ? SCORE_COLOR_T2 : "var(--text-muted)" }}>
-                {rating.team2Wins}
-              </span>
-            </div>
-            <span className="font-black text-base" style={{ color: SCORE_COLOR_T2 }}>팀 2</span>
-          </div>
-        )}
-
-        {/* 플레이어 평점 */}
-        <div className="px-4 py-3 flex flex-col gap-1.5">
-          {rating ? (
-            Array.from({ length: maxRows }).map((_, i) => {
-              const p1 = rating.team1Players[i];
-              const p2 = rating.team2Players[i];
-              const s1 = p1 ? getScore(p1) : null;
-              const s2 = p2 ? getScore(p2) : null;
-              return (
-                <div key={i} className="flex items-center gap-2">
-                  {/* 팀1 플레이어 */}
-                  <div className="flex items-center gap-2 flex-1 justify-end">
-                    <span className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{p1 ?? ""}</span>
-                    {s1 !== null && <div style={scoreStyle(s1, SCORE_COLOR_T1)}>{s1.toFixed(1)}</div>}
-                    {p1 && s1 === null && <div style={{ ...scoreStyle(0, SCORE_COLOR_T1), opacity: 0.3 }}>—</div>}
-                  </div>
-
-                  {/* 중앙 구분선 */}
-                  <div className="w-6 flex-shrink-0 text-center text-sm" style={{ color: "var(--text-dim)" }}>│</div>
-
-                  {/* 팀2 플레이어 */}
-                  <div className="flex items-center gap-2 flex-1">
-                    {s2 !== null && <div style={scoreStyle(s2, SCORE_COLOR_T2)}>{s2.toFixed(1)}</div>}
-                    {p2 && s2 === null && <div style={{ ...scoreStyle(0, SCORE_COLOR_T2), opacity: 0.3 }}>—</div>}
-                    <span className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{p2 ?? ""}</span>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="py-6 text-center" style={{ color: "var(--text-muted)" }}>
-              {canGenerate ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="text-sm">이 시리즈의 나푸평점이 아직 생성되지 않았습니다.</div>
-                  <div className="text-xs" style={{ color: "var(--text-dim)" }}>
-                    KDA, 딜량, CS 등 스탯이 입력된 경우에만 생성 가능합니다.
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm">평점이 아직 생성되지 않았습니다.</div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* 푸터 */}
-        <div className="px-5 py-4 flex items-center justify-between gap-2"
-          style={{ borderTop: "1px solid var(--border)" }}>
-          <div className="text-xs" style={{ color: "var(--text-dim)" }}>
-            {rating
-              ? `생성: ${new Date(rating.generatedAt).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}`
-              : "AI 자동 분석 · 스탯 기반"}
-          </div>
-          <div className="flex items-center gap-2">
-            {rating && (
-              <button
-                onClick={copyToClipboard}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold"
-                style={{
-                  background: copied ? "#22c55e22" : "var(--hover)",
-                  color: copied ? "#22c55e" : "var(--text-muted)",
-                  border: `1px solid ${copied ? "#22c55e66" : "var(--border)"}`,
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}>
-                {copied ? "✓ 복사됨" : "📋 복사"}
-              </button>
-            )}
-            {canGenerate && (
-              <button
-                onClick={onGenerate}
-                disabled={generating}
-                className="px-4 py-1.5 rounded-lg text-xs font-bold"
-                style={{
-                  background: generating ? "var(--hover)" : "var(--accent)",
-                  color: generating ? "var(--text-muted)" : "#fff",
-                  border: "none",
-                  opacity: generating ? 0.7 : 1,
-                  cursor: generating ? "not-allowed" : "pointer",
-                }}>
-                {generating ? "⏳ 분석 중..." : rating ? "🔄 재생성" : "✨ AI 평점 생성"}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

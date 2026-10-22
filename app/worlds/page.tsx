@@ -119,13 +119,13 @@ function DDayTab() {
 type DraftTeam = "blue" | "red";
 const DRAFT_STORAGE_KEY = "worlds_draft_v2";
 const TEAM_COLOR: Record<DraftTeam, string> = { blue: "#3b82f6", red: "#ef4444" };
-const WORLDS_COACHES = ["용욱", "문강"];
+const WORLDS_COACHES = ["승주", "문강"];
 const WORLDS_PAIRS = [
-  { pos: "탑",   icon: "⚔️",  p1: "서연", p2: "효근" },
+  { pos: "탑",   icon: "⚔️",  p1: "효근", p2: "한준" },
   { pos: "정글", icon: "🌲",  p1: "우빈", p2: "민수" },
-  { pos: "미드", icon: "✨",  p1: "성태", p2: "성찬" },
-  { pos: "원딜", icon: "🎯",  p1: "승주", p2: "성빈" },
-  { pos: "서폿", icon: "🛡️", p1: "한준", p2: "만슥" },
+  { pos: "미드", icon: "✨",  p1: "성빈", p2: "용욱" },
+  { pos: "원딜", icon: "🎯",  p1: "서연", p2: "만슥" },
+  { pos: "서폿", icon: "🛡️", p1: "성태", p2: "성찬" },
 ];
 const WORLDS_PLAYERS = WORLDS_PAIRS.flatMap(p => [p.p1, p.p2]);
 
@@ -2099,35 +2099,88 @@ function JourneyTab() {
 // ─── 스크림 탭 ────────────────────────────────────────────────────────────────
 
 function ScrimTab() {
-  return (
-    <div className="flex flex-col items-center gap-6 py-10 text-center">
-      <div className="text-5xl">📊</div>
-      <h3 className="text-xl font-black" style={{ color: "var(--accent)" }}>스크림 데이터</h3>
-      <div className="max-w-lg rounded-2xl p-6"
-        style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
-        <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-          Worlds 준비 스크림 결과를 기록하고 선수별 퍼포먼스 데이터를 쌓습니다.
-        </p>
-        <div className="grid grid-cols-2 gap-3 text-left">
-          {[
-            { icon: "🏹", label: "스크림 전적", desc: "팀별 승패 기록" },
-            { icon: "📈", label: "선수 성장 추이", desc: "KDA·CS·딜량 추이" },
-            { icon: "🃏", label: "챔피언 풀 현황", desc: "스크림 사용 챔피언" },
-            { icon: "🔥", label: "MVP·ACE 기록", desc: "스크림 수훈선수" },
-          ].map(item => (
-            <div key={item.label} className="rounded-xl p-3"
-              style={{ background: "var(--hover)", border: "1px solid var(--border)" }}>
-              <div className="text-lg mb-1">{item.icon}</div>
-              <div className="text-xs font-bold" style={{ color: "var(--text)" }}>{item.label}</div>
-              <div className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{item.desc}</div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-5 px-4 py-2 rounded-lg text-xs font-bold"
-          style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>
-          🚧 준비 중 — 선수단 구성 후 활성화됩니다
-        </div>
+  const [records, setRecords] = useState<import("@/lib/types").GameRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    import("@/lib/stats").then(({ loadGameRecords }) => {
+      loadGameRecords().then(data => {
+        setRecords(data.filter(r => r.category === "스크림"));
+        setLoading(false);
+      });
+    });
+  }, []);
+
+  if (loading) {
+    return <div className="py-16 text-center" style={{ color: "var(--text-muted)" }}>불러오는 중...</div>;
+  }
+
+  if (records.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <div className="text-4xl">📊</div>
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>스크림으로 분류된 경기 기록이 없습니다.</p>
+        <p className="text-xs" style={{ color: "var(--text-dim)" }}>AI 분석 페이지에서 경기 유형을 &quot;스크림&quot;으로 설정하면 여기에 표시됩니다.</p>
       </div>
+    );
+  }
+
+  // 날짜별 그룹
+  const groups: Record<string, typeof records> = {};
+  for (const r of records) {
+    if (!groups[r.date]) groups[r.date] = [];
+    groups[r.date].push(r);
+  }
+  const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  const teamWins = (recs: typeof records) => {
+    const t1 = recs.filter(r => r.winTeam === 1).length;
+    const t2 = recs.filter(r => r.winTeam === 2).length;
+    return { t1, t2 };
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-black text-base" style={{ color: "var(--accent)" }}>스크림 기록</h3>
+        <span className="text-xs" style={{ color: "var(--text-dim)" }}>총 {records.length}경기 · {sortedDates.length}일</span>
+      </div>
+      {sortedDates.map(date => {
+        const recs = groups[date];
+        const { t1, t2 } = teamWins(recs);
+        const title = recs[0]?.title;
+        return (
+          <div key={date} className="p-4 rounded-xl" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <div className="font-bold text-sm" style={{ color: "var(--text)" }}>
+                  {title ? <>{title} <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: 12 }}>({date})</span></> : date}
+                </div>
+                <div className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
+                  {recs[0]?.gameFormat} · {recs.length}경기
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black" style={{ color: t1 > t2 ? "var(--win)" : "var(--text-muted)" }}>팀1 {t1}</span>
+                <span style={{ color: "var(--text-dim)", fontSize: 11 }}>:</span>
+                <span className="text-xs font-black" style={{ color: t2 > t1 ? "var(--win)" : "var(--text-muted)" }}>{t2} 팀2</span>
+              </div>
+            </div>
+            <div className="flex gap-1 flex-wrap mt-1">
+              {recs.sort((a, b) => a.gameNumber - b.gameNumber).map(r => (
+                <span key={r.id} className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                  style={{
+                    background: r.winTeam === 1 ? "var(--win)20" : "var(--loss)20",
+                    color: r.winTeam === 1 ? "var(--win)" : "var(--loss)",
+                    border: `1px solid ${r.winTeam === 1 ? "var(--win)" : "var(--loss)"}44`,
+                  }}>
+                  {r.gameNumber}경기 {r.winTeam === 1 ? "팀1 승" : "팀2 승"}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
