@@ -202,12 +202,17 @@ export function computePlayerStats(nickname: string, records: GameRecord[], nick
   for (const s of playerSeries) {
     const isBalance = s.records.some(r => r.category === "밸런스판");
     const first = s.records[0];
+    // 승/패 기여는 밸런스판도 동일하게 적용 (wins*3 - losses 공식 유지)
+    // 밸런스판 구 데이터에 customWinScore=2가 저장돼 있을 수 있어 2 이하면 기본값 3으로 처리
+    const winScore = isBalance
+      ? ((first?.customWinScore ?? 0) > 2 ? first!.customWinScore! : 3)
+      : (first?.customWinScore ?? 3);
+    const loseScore = first?.customLoseScore ?? -1;
+    score += s.won ? winScore : loseScore;
     if (isBalance) {
-      const pts = first?.customWinScore ?? 2;
-      score += pts;
-      balanceBonus += pts;
-    } else {
-      score += s.won ? (first?.customWinScore ?? 3) : (first?.customLoseScore ?? -1);
+      // 밸런스판은 추가로 +2 보너스 (승패 무관, 전원)
+      score += 2;
+      balanceBonus += 2;
     }
   }
 

@@ -152,7 +152,7 @@ export default function CalendarPage() {
       category: recs[0]?.category || "내전",
       gameFormat: recs[0]?.gameFormat || "3판2선",
       date,
-      customWinScore: recs[0]?.customWinScore ?? (isBalance ? 2 : 3),
+      customWinScore: recs[0]?.customWinScore ?? 3,
       customLoseScore: recs[0]?.customLoseScore ?? -1,
     });
     setShowSeriesForm(true);
@@ -283,34 +283,26 @@ export default function CalendarPage() {
           {/* 점수 설정 */}
           <div className="mb-4">
             <label className="text-xs mb-2 block font-semibold" style={{ color: "var(--text-muted)" }}>점수 설정</label>
-            {seriesForm.category === "밸런스판" ? (
-              <div className="flex items-center gap-3">
-                <span className="text-xs" style={{ color: "var(--text-dim)" }}>전원</span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded font-semibold" style={{ background: "rgba(34,197,94,0.12)", color: "var(--win)", border: "1px solid var(--border-green)" }}>이긴 팀</span>
                 <input type="number" className="w-20 px-3 py-2 rounded text-sm text-center font-bold"
-                  style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
+                  style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--win)" }}
                   value={seriesForm.customWinScore}
                   onChange={(e) => setSeriesForm({ ...seriesForm, customWinScore: Number(e.target.value) })} />
                 <span className="text-xs" style={{ color: "var(--text-dim)" }}>점</span>
               </div>
-            ) : (
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-1 rounded font-semibold" style={{ background: "rgba(34,197,94,0.12)", color: "var(--win)", border: "1px solid var(--border-green)" }}>이긴 팀</span>
-                  <input type="number" className="w-20 px-3 py-2 rounded text-sm text-center font-bold"
-                    style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--win)" }}
-                    value={seriesForm.customWinScore}
-                    onChange={(e) => setSeriesForm({ ...seriesForm, customWinScore: Number(e.target.value) })} />
-                  <span className="text-xs" style={{ color: "var(--text-dim)" }}>점</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs px-2 py-1 rounded font-semibold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--loss)", border: "1px solid #ef444444" }}>진 팀</span>
-                  <input type="number" className="w-20 px-3 py-2 rounded text-sm text-center font-bold"
-                    style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--loss)" }}
-                    value={seriesForm.customLoseScore}
-                    onChange={(e) => setSeriesForm({ ...seriesForm, customLoseScore: Number(e.target.value) })} />
-                  <span className="text-xs" style={{ color: "var(--text-dim)" }}>점</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 rounded font-semibold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--loss)", border: "1px solid #ef444444" }}>진 팀</span>
+                <input type="number" className="w-20 px-3 py-2 rounded text-sm text-center font-bold"
+                  style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--loss)" }}
+                  value={seriesForm.customLoseScore}
+                  onChange={(e) => setSeriesForm({ ...seriesForm, customLoseScore: Number(e.target.value) })} />
+                <span className="text-xs" style={{ color: "var(--text-dim)" }}>점</span>
               </div>
+            </div>
+            {seriesForm.category === "밸런스판" && (
+              <p className="text-xs mt-2" style={{ color: "#7c3aed" }}>+ 밸런스 보너스 +2가 승패 무관하게 전원에게 자동 추가됩니다</p>
             )}
           </div>
           <div className="flex gap-2">
