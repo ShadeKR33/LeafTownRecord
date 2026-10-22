@@ -45,6 +45,8 @@ const emptyGameRecord = (): Omit<GameRecord, "id"> => ({
   team2: POSITIONS.map(emptyTeamRow),
   winTeam: 1,
   summary: "",
+  title: "",
+  category: "내전",
 });
 
 export default function CalendarPage() {
@@ -100,7 +102,8 @@ export default function CalendarPage() {
 
     const parsedDuration = durationStr.trim() ? parseMmSs(durationStr) : undefined;
     const gameDuration = parsedDuration !== undefined ? parsedDuration : form.gameDuration;
-    const recordData = { ...form, gameDuration };
+    const title = form.title?.trim() || undefined;
+    const recordData = { ...form, gameDuration, title };
 
     if (editId) {
       save(records.map((r) => (r.id === editId ? { ...recordData, id: editId } : r)));
@@ -114,7 +117,7 @@ export default function CalendarPage() {
   };
 
   const startEdit = (r: GameRecord) => {
-    setForm({ date: r.date, gameFormat: r.gameFormat, gameNumber: r.gameNumber, team1: r.team1, team2: r.team2, winTeam: r.winTeam, summary: r.summary || "", bans: r.bans, gameDuration: r.gameDuration });
+    setForm({ date: r.date, gameFormat: r.gameFormat, gameNumber: r.gameNumber, team1: r.team1, team2: r.team2, winTeam: r.winTeam, summary: r.summary || "", bans: r.bans, gameDuration: r.gameDuration, title: r.title || "", category: r.category || "내전" });
     setDurationStr(r.gameDuration ? durationToMmSs(r.gameDuration) : "");
     setEditId(r.id);
     setShowForm(true);
@@ -173,6 +176,31 @@ export default function CalendarPage() {
           <h3 className="text-sm font-bold mb-4" style={{ color: "var(--accent)" }}>
             {editId ? "경기 수정" : "새 경기 기록"}
           </h3>
+
+          {/* 경기 제목 & 카테고리 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <div>
+              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>경기 제목 <span style={{ color: "var(--text-dim)" }}>(선택)</span></label>
+              <input type="text" className="w-full px-3 py-2 rounded text-sm"
+                style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
+                placeholder="예: 팀 바뀌기 전 마지막 스크림"
+                value={form.title ?? ""}
+                onChange={(e) => setForm({ ...form, title: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>카테고리</label>
+              <div className="flex gap-2 flex-wrap">
+                {(["내전", "스크림", "밸런스판", "월즈"] as const).map((cat) => (
+                  <button key={cat} type="button"
+                    onClick={() => setForm({ ...form, category: cat })}
+                    className="px-3 py-2 rounded text-xs font-semibold flex-1"
+                    style={{ background: form.category === cat ? "var(--accent)" : "var(--panel-alt)", color: form.category === cat ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${form.category === cat ? "var(--accent)" : "var(--border)"}` }}>
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* 기본 정보 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
