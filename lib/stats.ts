@@ -192,11 +192,19 @@ export function computePlayerStats(nickname: string, records: GameRecord[], nick
   const wins = playerSeries.filter((s) => s.won).length;
   const losses = playerSeries.filter((s) => !s.won).length;
   const totalGames = wins + losses; // 시리즈 참여 횟수
-  const balanceSeries = playerSeries.filter(s =>
-    s.records.some(r => r.category === "밸런스판")
-  ).length;
-  const balanceBonus = balanceSeries * 2;
-  const score = wins * 3 - losses + balanceBonus;
+  let score = 0;
+  let balanceBonus = 0;
+  for (const s of playerSeries) {
+    const isBalance = s.records.some(r => r.category === "밸런스판");
+    const first = s.records[0];
+    if (isBalance) {
+      const pts = first?.customWinScore ?? 2;
+      score += pts;
+      balanceBonus += pts;
+    } else {
+      score += s.won ? (first?.customWinScore ?? 3) : (first?.customLoseScore ?? -1);
+    }
+  }
 
   let currentStreak = 0;
   if (playerSeries.length > 0) {
@@ -617,8 +625,8 @@ export function computeAggregatedStats(displayName: string, nicknames: string[],
   const wins = allStats.reduce((sum, s) => sum + s.wins, 0);
   const losses = allStats.reduce((sum, s) => sum + s.losses, 0);
   const totalGames = wins + losses;
+  const score = allStats.reduce((sum, s) => sum + s.score, 0);
   const balanceBonus = allStats.reduce((sum, s) => sum + s.balanceBonus, 0);
-  const score = wins * 3 - losses + balanceBonus;
   const winRate = totalGames > 0 ? wins / totalGames : 0;
 
   // 여러 닉네임을 시간순으로 합산해 현재 연승/연패 계산 (같은 사람이 닉네임 바꾼 경우 정확도 향상)

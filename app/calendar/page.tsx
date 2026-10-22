@@ -69,8 +69,12 @@ export default function CalendarPage() {
 
   const [showSeriesForm, setShowSeriesForm] = useState(false);
   const [seriesEditDate, setSeriesEditDate] = useState<string | null>(null);
-  const [seriesForm, setSeriesForm] = useState<{ title: string; category: string; gameFormat: GameRecord["gameFormat"]; date: string }>({
+  const [seriesForm, setSeriesForm] = useState<{
+    title: string; category: string; gameFormat: GameRecord["gameFormat"]; date: string;
+    customWinScore: number; customLoseScore: number;
+  }>({
     title: "", category: "내전", gameFormat: "3판2선", date: "",
+    customWinScore: 3, customLoseScore: -1,
   });
 
   // 닉네임 자동완성용
@@ -142,11 +146,14 @@ export default function CalendarPage() {
 
   const startEditSeries = (date: string, recs: GameRecord[]) => {
     setSeriesEditDate(date);
+    const isBalance = recs.some(r => r.category === "밸런스판");
     setSeriesForm({
       title: recs[0]?.title || "",
       category: recs[0]?.category || "내전",
       gameFormat: recs[0]?.gameFormat || "3판2선",
       date,
+      customWinScore: recs[0]?.customWinScore ?? (isBalance ? 2 : 3),
+      customLoseScore: recs[0]?.customLoseScore ?? -1,
     });
     setShowSeriesForm(true);
     setShowForm(false);
@@ -163,6 +170,8 @@ export default function CalendarPage() {
         title: seriesForm.title.trim() || undefined,
         category: seriesForm.category,
         gameFormat: seriesForm.gameFormat,
+        customWinScore: seriesForm.customWinScore,
+        customLoseScore: seriesForm.customLoseScore,
       };
     });
     save(updated);
@@ -270,6 +279,39 @@ export default function CalendarPage() {
                 ))}
               </div>
             </div>
+          </div>
+          {/* 점수 설정 */}
+          <div className="mb-4">
+            <label className="text-xs mb-2 block font-semibold" style={{ color: "var(--text-muted)" }}>점수 설정</label>
+            {seriesForm.category === "밸런스판" ? (
+              <div className="flex items-center gap-3">
+                <span className="text-xs" style={{ color: "var(--text-dim)" }}>전원</span>
+                <input type="number" className="w-20 px-3 py-2 rounded text-sm text-center font-bold"
+                  style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
+                  value={seriesForm.customWinScore}
+                  onChange={(e) => setSeriesForm({ ...seriesForm, customWinScore: Number(e.target.value) })} />
+                <span className="text-xs" style={{ color: "var(--text-dim)" }}>점</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-1 rounded font-semibold" style={{ background: "rgba(34,197,94,0.12)", color: "var(--win)", border: "1px solid var(--border-green)" }}>이긴 팀</span>
+                  <input type="number" className="w-20 px-3 py-2 rounded text-sm text-center font-bold"
+                    style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--win)" }}
+                    value={seriesForm.customWinScore}
+                    onChange={(e) => setSeriesForm({ ...seriesForm, customWinScore: Number(e.target.value) })} />
+                  <span className="text-xs" style={{ color: "var(--text-dim)" }}>점</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-1 rounded font-semibold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--loss)", border: "1px solid #ef444444" }}>진 팀</span>
+                  <input type="number" className="w-20 px-3 py-2 rounded text-sm text-center font-bold"
+                    style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--loss)" }}
+                    value={seriesForm.customLoseScore}
+                    onChange={(e) => setSeriesForm({ ...seriesForm, customLoseScore: Number(e.target.value) })} />
+                  <span className="text-xs" style={{ color: "var(--text-dim)" }}>점</span>
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             <button onClick={handleSeriesSubmit} className="px-5 py-2 rounded text-sm font-semibold" style={{ background: "var(--accent)", color: "var(--panel-alt)" }}>저장</button>

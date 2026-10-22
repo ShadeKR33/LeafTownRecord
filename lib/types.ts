@@ -23,8 +23,10 @@ export interface GameRecord {
   bans?: { team1: string[]; team2: string[] };
   gameDuration?: number; // 게임 시간 (분, 소수 가능 - 분당 CS 계산용)
   summary?: string;   // AI 혹은 수동 요약
-  title?: string;     // 경기 제목 (예: "시즌 2 플레이오프")
-  category?: string;  // 경기 유형 (내전 / 스크림 / 밸런스판 / 본 게임)
+  title?: string;        // 경기 제목 (예: "시즌 2 플레이오프")
+  category?: string;     // 경기 유형 (내전 / 스크림 / 밸런스판 / 본 게임)
+  customWinScore?: number;   // 이긴 팀(또는 밸런스판 전원) 점수 오버라이드
+  customLoseScore?: number;  // 진 팀 점수 오버라이드
 }
 
 export interface NapuPlayerRating {
