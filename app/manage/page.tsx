@@ -1153,7 +1153,7 @@ function TrophyTab() {
     const map = new Map<string, {
       key: string;
       label: string;
-      type: "season" | "worlds";
+      type: "season" | "worlds" | "worlds-mvp";
       holders: { rank: 1 | 2 | 3; nick: string; name: string }[];
     }>();
     for (const n of nicknames) {

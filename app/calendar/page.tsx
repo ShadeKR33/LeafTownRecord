@@ -67,6 +67,12 @@ export default function CalendarPage() {
   const [durationStr, setDurationStr] = useState("");
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
 
+  const [showSeriesForm, setShowSeriesForm] = useState(false);
+  const [seriesEditDate, setSeriesEditDate] = useState<string | null>(null);
+  const [seriesForm, setSeriesForm] = useState<{ title: string; category: string; gameFormat: GameRecord["gameFormat"]; date: string }>({
+    title: "", category: "내전", gameFormat: "3판2선", date: "",
+  });
+
   // 닉네임 자동완성용
   const [allNicknames, setAllNicknames] = useState<string[]>([]);
 
@@ -102,14 +108,23 @@ export default function CalendarPage() {
 
     const parsedDuration = durationStr.trim() ? parseMmSs(durationStr) : undefined;
     const gameDuration = parsedDuration !== undefined ? parsedDuration : form.gameDuration;
-    const title = form.title?.trim() || undefined;
-    const recordData = { ...form, gameDuration, title };
 
     if (editId) {
+      // 단판 수정: 시리즈 레벨 필드(제목·카테고리·형식·날짜)는 원본 유지
+      const original = records.find((r) => r.id === editId);
+      const recordData = {
+        ...form,
+        gameDuration,
+        title: original?.title,
+        category: original?.category,
+        gameFormat: original?.gameFormat ?? form.gameFormat,
+        date: original?.date ?? form.date,
+      };
       save(records.map((r) => (r.id === editId ? { ...recordData, id: editId } : r)));
       setEditId(null);
     } else {
-      save([...records, { ...recordData, id: Date.now().toString() }]);
+      const title = form.title?.trim() || undefined;
+      save([...records, { ...form, gameDuration, title, id: Date.now().toString() }]);
     }
     setForm(emptyGameRecord());
     setDurationStr("");
@@ -121,7 +136,39 @@ export default function CalendarPage() {
     setDurationStr(r.gameDuration ? durationToMmSs(r.gameDuration) : "");
     setEditId(r.id);
     setShowForm(true);
+    setShowSeriesForm(false);
     setSelectedDate(null);
+  };
+
+  const startEditSeries = (date: string, recs: GameRecord[]) => {
+    setSeriesEditDate(date);
+    setSeriesForm({
+      title: recs[0]?.title || "",
+      category: recs[0]?.category || "내전",
+      gameFormat: recs[0]?.gameFormat || "3판2선",
+      date,
+    });
+    setShowSeriesForm(true);
+    setShowForm(false);
+    setEditId(null);
+  };
+
+  const handleSeriesSubmit = () => {
+    if (!seriesEditDate) return;
+    const updated = records.map((r) => {
+      if (r.date !== seriesEditDate) return r;
+      return {
+        ...r,
+        date: seriesForm.date,
+        title: seriesForm.title.trim() || undefined,
+        category: seriesForm.category,
+        gameFormat: seriesForm.gameFormat,
+      };
+    });
+    save(updated);
+    setShowSeriesForm(false);
+    if (seriesForm.date !== seriesEditDate) setSelectedDate(seriesForm.date);
+    setSeriesEditDate(null);
   };
 
   const deleteRecord = (id: string) => {
@@ -170,46 +217,117 @@ export default function CalendarPage() {
         <h2 className="text-xl font-bold" style={{ color: "var(--accent)" }}>📅 내전 달력</h2>
       </div>
 
-      {/* ─── 경기 기록 등록 폼 ─── */}
-      {showForm && (
+      {/* ─── 시리즈 수정 폼 ─── */}
+      {showSeriesForm && (
         <div className="mb-6 p-5 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--accent)" }}>
-          <h3 className="text-sm font-bold mb-4" style={{ color: "var(--accent)" }}>
-            {editId ? "경기 수정" : "새 경기 기록"}
-          </h3>
-
-          {/* 경기 제목 & 카테고리 */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold" style={{ color: "var(--accent)" }}>시리즈 수정</h3>
+            <span className="text-xs px-2 py-1 rounded" style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>
+              {seriesEditDate} · 전체 {records.filter(r => r.date === seriesEditDate).length}판에 일괄 적용
+            </span>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
             <div>
               <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>경기 제목 <span style={{ color: "var(--text-dim)" }}>(선택)</span></label>
               <input type="text" className="w-full px-3 py-2 rounded text-sm"
                 style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
                 placeholder="예: 팀 바뀌기 전 마지막 스크림"
-                value={form.title ?? ""}
-                onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                value={seriesForm.title}
+                onChange={(e) => setSeriesForm({ ...seriesForm, title: e.target.value })} />
             </div>
             <div>
               <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>카테고리</label>
               <div className="flex gap-2 flex-wrap">
                 {(["내전", "스크림", "밸런스판", "월즈"] as const).map((cat) => (
                   <button key={cat} type="button"
-                    onClick={() => setForm({ ...form, category: cat })}
+                    onClick={() => setSeriesForm({ ...seriesForm, category: cat })}
                     className="px-3 py-2 rounded text-xs font-semibold flex-1"
-                    style={{ background: form.category === cat ? "var(--accent)" : "var(--panel-alt)", color: form.category === cat ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${form.category === cat ? "var(--accent)" : "var(--border)"}` }}>
+                    style={{ background: seriesForm.category === cat ? "var(--accent)" : "var(--panel-alt)", color: seriesForm.category === cat ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${seriesForm.category === cat ? "var(--accent)" : "var(--border)"}` }}>
                     {cat}
                   </button>
                 ))}
               </div>
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div>
+              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>날짜</label>
+              <input type="date" className="w-full px-3 py-2 rounded text-sm"
+                style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
+                value={seriesForm.date}
+                onChange={(e) => setSeriesForm({ ...seriesForm, date: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>시리즈 형식</label>
+              <div className="flex gap-2">
+                {(["3판2선", "5판3선"] as const).map((fmt) => (
+                  <button key={fmt} type="button"
+                    onClick={() => setSeriesForm({ ...seriesForm, gameFormat: fmt as GameRecord["gameFormat"] })}
+                    className="px-3 py-2 rounded text-xs font-semibold flex-1"
+                    style={{ background: seriesForm.gameFormat === fmt ? "var(--accent)" : "var(--panel-alt)", color: seriesForm.gameFormat === fmt ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${seriesForm.gameFormat === fmt ? "var(--accent)" : "var(--border)"}` }}>
+                    {fmt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleSeriesSubmit} className="px-5 py-2 rounded text-sm font-semibold" style={{ background: "var(--accent)", color: "var(--panel-alt)" }}>저장</button>
+            <button onClick={() => { setShowSeriesForm(false); setSeriesEditDate(null); }} className="px-5 py-2 rounded text-sm" style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>취소</button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── 경기 기록 등록 폼 ─── */}
+      {showForm && (
+        <div className="mb-6 p-5 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--accent)" }}>
+          <h3 className="text-sm font-bold mb-4" style={{ color: "var(--accent)" }}>
+            {editId ? "판별 수정" : "새 경기 기록"}
+          </h3>
+
+          {/* 새 경기 등록 시에만: 경기 제목 & 카테고리 */}
+          {!editId && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>경기 제목 <span style={{ color: "var(--text-dim)" }}>(선택)</span></label>
+                <input type="text" className="w-full px-3 py-2 rounded text-sm"
+                  style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
+                  placeholder="예: 팀 바뀌기 전 마지막 스크림"
+                  value={form.title ?? ""}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })} />
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>카테고리</label>
+                <div className="flex gap-2 flex-wrap">
+                  {(["내전", "스크림", "밸런스판", "월즈"] as const).map((cat) => (
+                    <button key={cat} type="button"
+                      onClick={() => setForm({ ...form, category: cat })}
+                      className="px-3 py-2 rounded text-xs font-semibold flex-1"
+                      style={{ background: form.category === cat ? "var(--accent)" : "var(--panel-alt)", color: form.category === cat ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${form.category === cat ? "var(--accent)" : "var(--border)"}` }}>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          {editId && (
+            <div className="mb-4 px-3 py-2 rounded text-xs" style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>
+              제목·카테고리·날짜·시리즈 형식은 <strong style={{ color: "var(--text-muted)" }}>시리즈 수정</strong>에서 변경하세요
+            </div>
+          )}
 
           {/* 기본 정보 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+            {!editId && (
             <div>
               <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>날짜</label>
               <input type="date" className="w-full px-3 py-2 rounded text-sm"
                 style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
                 value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
             </div>
+            )}
+            {!editId && (
             <div>
               <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>시리즈 형식</label>
               <div className="flex gap-2">
@@ -222,6 +340,7 @@ export default function CalendarPage() {
                 ))}
               </div>
             </div>
+            )}
             <div>
               <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>게임 번호</label>
               <div className="flex gap-1">
@@ -441,6 +560,14 @@ export default function CalendarPage() {
                   {selectedDate} 경기 기록 ({dayRecords.length}경기)
                 </h3>
                 <div className="flex items-center gap-2">
+                  {!isViewer && (
+                    <button
+                      onClick={() => startEditSeries(selectedDate!, dayRecords)}
+                      className="px-3 py-1 rounded text-xs font-semibold"
+                      style={{ background: "var(--hover)", color: "var(--accent)", border: "1px solid var(--accent)" }}>
+                      시리즈 수정
+                    </button>
+                  )}
                   <button
                     onClick={() => setSelectedDate(null)}
                     className="px-3 py-1 rounded text-xs font-semibold"
