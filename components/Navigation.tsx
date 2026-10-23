@@ -623,8 +623,8 @@ export default function Navigation() {
       {/* 아카츠키 붉은 구름 및 배경 */}
       {theme === "aka" && (
         <>
-          {/* 실제 배경 이미지 레이어 */}
-          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: -1 }}>
+          {/* 실제 배경 이미지 레이어 — z:1로 body 배경색 위에 위치 */}
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
             <img
               src="/images/aka-bg.webp"
               alt=""
@@ -632,13 +632,13 @@ export default function Navigation() {
                 position: "absolute", inset: 0,
                 width: "100%", height: "100%",
                 objectFit: "cover", objectPosition: "center top",
-                opacity: 0.55,
+                opacity: 0.75,
               }}
             />
             {/* 하단 페이드 + 전체 다크 오버레이 */}
             <div style={{
               position: "absolute", inset: 0,
-              background: "linear-gradient(to bottom, rgba(11,11,13,0.15) 0%, rgba(11,11,13,0.45) 50%, rgba(11,11,13,0.88) 100%)",
+              background: "linear-gradient(to bottom, rgba(11,11,13,0.2) 0%, rgba(11,11,13,0.35) 50%, rgba(11,11,13,0.85) 100%)",
             }} />
           </div>
           {/* 아카츠키 구름 — 실제 PNG 이미지 사용 */}
@@ -659,7 +659,7 @@ export default function Navigation() {
             ))}
           </div>
           {/* 아카츠키 배경 구조물 (좌우 코너) */}
-          <div className="aka-bg-structures pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.22, color: "var(--accent)" }}>
+          <div className="aka-bg-structures pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ opacity: 0.22, color: "var(--accent)", zIndex: 3 }}>
             {/* Left Structure */}
             <div className="absolute left-0 bottom-0" style={{ height: "55vh", width: "320px" }}>
               <svg width="100%" height="100%" viewBox="0 0 320 600" preserveAspectRatio="xMinYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2109,7 +2109,7 @@ export default function Navigation() {
                 <img
                   src="/images/konoha-logo.png"
                   alt="코노하 마크"
-                  style={{ width: 42, height: 42, objectFit: "contain", filter: "drop-shadow(0 1px 4px rgba(46,125,50,0.4))" }}
+                  style={{ width: 42, height: 42, objectFit: "contain", mixBlendMode: "multiply", filter: "drop-shadow(0 1px 4px rgba(46,125,50,0.35))" }}
                 />
               </div>
             ) : (

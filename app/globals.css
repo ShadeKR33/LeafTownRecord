@@ -177,7 +177,7 @@ html.aka-mode .leaf-float { display: none; }
   pointer-events: none;
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 2;
   overflow: hidden;
 }
 .aka-cloud {

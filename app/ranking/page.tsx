@@ -1342,33 +1342,15 @@ export default function RankingPage() {
                     className="transition-all">
                     <td className="px-4 py-3 font-bold" style={{ color: ranks[i] <= 3 ? "var(--accent)" : "var(--text-muted)" }}>{rankIcon(ranks[i])}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        {/* 아바타 원 */}
-                        {(() => {
-                          const [bg, shadow] = getAvatarColors(p.mainNickname);
-                          const initials = p.displayName.slice(0, 2);
-                          return (
-                            <div className="shrink-0 flex items-center justify-center rounded-full text-white text-xs font-black select-none"
-                              style={{
-                                width: 30, height: 30,
-                                background: bg,
-                                boxShadow: `0 2px 6px ${shadow}60`,
-                                letterSpacing: "-0.02em",
-                              }}>
-                              {initials}
-                            </div>
-                          );
-                        })()}
-                        <div className="flex flex-wrap items-end gap-2">
-                          {ranks[i] <= 3 ? (
-                            <span style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : "#c2410c", fontWeight: 800 }}>
-                              {p.displayName}
-                            </span>
-                          ) : (
-                            <span className="font-semibold" style={{ color: "var(--text)" }}>{p.displayName}</span>
-                          )}
-                          <TrophyList trophies={getTrophies(p.mainNickname)} />
-                        </div>
+                      <div className="flex flex-wrap items-end gap-2">
+                        {ranks[i] <= 3 ? (
+                          <span style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : "#c2410c", fontWeight: 800 }}>
+                            {p.displayName}
+                          </span>
+                        ) : (
+                          <span className="font-semibold" style={{ color: "var(--text)" }}>{p.displayName}</span>
+                        )}
+                        <TrophyList trophies={getTrophies(p.mainNickname)} />
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center"><StreakBadge streak={p.currentStreak} /></td>
