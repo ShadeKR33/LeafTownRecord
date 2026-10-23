@@ -1089,13 +1089,12 @@ export default function RankingPage() {
 
   const StreakBadge = ({ streak }: { streak: number }) => {
     if (Math.abs(streak) < 2) return <span className="text-xs" style={{ color: "var(--text-dim)" }}>-</span>;
-    const isAka = activeTheme === "aka";
     if (streak > 0) return (
       <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold"
         style={{
-          background: isAka ? "rgba(180,0,0,0.25)" : "rgba(46,125,50,0.13)",
+          background: "rgba(46,125,50,0.13)",
           color: "var(--win)",
-          border: isAka ? "1px solid rgba(230,57,70,0.4)" : "1px solid rgba(46,125,50,0.3)",
+          border: "1px solid rgba(46,125,50,0.3)",
         }}>
         🔥 {streak}연승중
       </span>
@@ -1103,11 +1102,11 @@ export default function RankingPage() {
     return (
       <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold"
         style={{
-          background: isAka ? "rgba(40,0,0,0.45)" : "rgba(172,36,54,0.10)",
+          background: "rgba(172,36,54,0.10)",
           color: "var(--loss)",
-          border: isAka ? "1px solid rgba(180,0,0,0.35)" : "1px solid rgba(172,36,54,0.28)",
+          border: "1px solid rgba(172,36,54,0.28)",
         }}>
-        {isAka ? "🌙" : "🌧️"} {Math.abs(streak)}연패중
+        🌧️ {Math.abs(streak)}연패중
       </span>
     );
   };

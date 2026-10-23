@@ -135,24 +135,24 @@ html.ame-mode ::-webkit-scrollbar-thumb:hover { background: #9d92d4; }
    검정 + 진홍색. 붉은 달, 붉은 구름. 어둠과 긴장감.
 ──────────────────────────────────────────────────────────────── */
 html.aka-mode {
-  --bg:           #0B0B0D;
-  --panel:        #1A1A1F;
-  --panel-alt:    #222228;
-  --hover:        #2A1418;
-  --border:       #2E1A1A;
+  --bg:           #0D0F17;
+  --panel:        #161924;
+  --panel-alt:    #1C1F2E;
+  --hover:        #252839;
+  --border:       #2E3148;
   --border-green: #E63946;
   --accent:       #E63946;
-  --accent-light: #FF4D4D;
+  --accent-light: #FF5566;
   --accent-dark:  #9B1B2A;
   --accent-gold:  #FF8A80;
   --orange:       #E63946;
-  --text:         #F5F5F5;
-  --text-muted:   #B0B0B8;
-  --text-dim:     #6B6B78;
+  --text:         #E8E9F0;
+  --text-muted:   #9EA0B2;
+  --text-dim:     #5A5C72;
   --text-bright:  #FFFFFF;
   --win:          #4ade80;
-  --loss:         #FF4D4D;
-  background-color: #0B0B0D;
+  --loss:         #FF5566;
+  background-color: #0D0F17;
 
   --cloud-fill:   rgba(230, 57, 70, 0.42);
   --cloud-stroke: rgba(255, 255, 255, 0.65);
@@ -162,11 +162,10 @@ html.aka-mode {
 /* body 기본 배경을 덮어쓰기 — !important 없이 충분히 구체적으로 */
 html.aka-mode body,
 html.aka-mode body:not(.placeholder) {
-  background-color: #0B0B0D !important;
+  background-color: #0D0F17 !important;
   background-image:
-    radial-gradient(circle at 82% 12%, rgba(230, 57, 70, 0.14) 0%, rgba(230, 57, 70, 0.04) 38%, transparent 68%),
-    radial-gradient(ellipse at 50% 0%, rgba(230, 57, 70, 0.06) 0%, transparent 55%),
-    radial-gradient(ellipse at 15% 85%, rgba(155, 27, 42, 0.05) 0%, transparent 50%) !important;
+    radial-gradient(circle at 80% 10%, rgba(230, 57, 70, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 90%, rgba(155, 27, 42, 0.07) 0%, transparent 50%) !important;
   background-size: auto !important;
 }
 

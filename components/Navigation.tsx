@@ -445,13 +445,13 @@ export default function Navigation() {
                 position: "absolute", inset: 0,
                 width: "100%", height: "100%",
                 objectFit: "cover", objectPosition: "center top",
-                opacity: 0.75,
+                opacity: 0.45,
               }}
             />
-            {/* 하단 페이드 + 전체 다크 오버레이 */}
+            {/* 하단 페이드 오버레이 */}
             <div style={{
               position: "absolute", inset: 0,
-              background: "linear-gradient(to bottom, rgba(11,11,13,0.2) 0%, rgba(11,11,13,0.35) 50%, rgba(11,11,13,0.85) 100%)",
+              background: "linear-gradient(to bottom, rgba(13,15,23,0.15) 0%, rgba(13,15,23,0.25) 50%, rgba(13,15,23,0.6) 100%)",
             }} />
           </div>
         </>
@@ -1931,7 +1931,13 @@ export default function Navigation() {
                   color: "var(--text-muted)",
                   border: "1px solid var(--border)",
                 }}>
-                <span>{cur.icon}</span>
+                {cur.id === "leaf" ? (
+                  <img src="/images/konoha-logo-new.png" alt="" style={{ width: 16, height: 16, objectFit: "contain", mixBlendMode: "multiply" }} />
+                ) : cur.id === "aka" ? (
+                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />
+                ) : (
+                  <span>{cur.icon}</span>
+                )}
                 <span>{cur.name}</span>
                 <span style={{ fontSize: 8, opacity: 0.7 }}>{dropdownOpen ? "▲" : "▼"}</span>
               </button>
@@ -1954,7 +1960,13 @@ export default function Navigation() {
                         color: theme === t.id ? t.accentColor : "var(--text-muted)",
                         borderBottom: i < selectableThemes.length - 1 ? "1px solid var(--border)" : "none",
                       }}>
-                      <span style={{ fontSize: 16, ...(t.id === "aka" ? { filter: "sepia(1) saturate(8) hue-rotate(310deg) brightness(0.85)" } : {}) }}>{t.icon}</span>
+                      {t.id === "leaf" ? (
+                        <img src="/images/konoha-logo-new.png" alt="" style={{ width: 16, height: 16, objectFit: "contain", mixBlendMode: "multiply" }} />
+                      ) : t.id === "aka" ? (
+                        <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />
+                      ) : (
+                        <span style={{ fontSize: 16 }}>{t.icon}</span>
+                      )}
                       <span style={{ whiteSpace: "nowrap" }}>{t.name}</span>
                       {theme === t.id && <span style={{ marginLeft: "auto", fontSize: 10 }}>✓</span>}
                     </button>
