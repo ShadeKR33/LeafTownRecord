@@ -68,11 +68,11 @@ function PinballGame({players,ballCount=1,onResult}:{
 }){
   const cvRef=useRef<HTMLCanvasElement>(null);
   const rafRef=useRef<number|null>(null);
-  const finRef=useRef<string[]>([]);           // 완주한 playerLabel 순서 (중복 허용)
-  const playerRankRef=useRef<string[]>([]);    // 플레이어 레벨 순위 (중복 없음)
+  const finRef=useRef<string[]>([]);       // 완주한 playerLabel 순서 (순서대로)
   const bumperHitRef=useRef<Set<number>>(new Set());
   const [phase,setPhase]=useState<"idle"|"running"|"done">("idle");
-  const [playerRanks,setPlayerRanks]=useState<string[]>([]);
+  const [ballsLeft,setBallsLeft]=useState(0);
+  const [winner,setWinner]=useState("");
 
   const FINISH_Y=PB_H-40;
 
@@ -144,13 +144,11 @@ function PinballGame({players,ballCount=1,onResult}:{
 
   const startRace=()=>{
     if(rafRef.current) cancelAnimationFrame(rafRef.current);
-    finRef.current=[]; playerRankRef.current=[];
-    bumperHitRef.current.clear();
-    setPlayerRanks([]); setPhase("running");
+    finRef.current=[]; bumperHitRef.current.clear();
+    setWinner(""); setPhase("running");
 
-    // 플레이어당 ballCount개 공 생성
     const balls:PhysBall[]=[];
-    const totalSlots=players.length*(ballCount);
+    const totalSlots=players.length*ballCount;
     const slotW=PB_W/(totalSlots+1);
     let slotIdx=0;
     players.forEach(p=>{
@@ -164,6 +162,7 @@ function PinballGame({players,ballCount=1,onResult}:{
         slotIdx++;
       }
     });
+    setBallsLeft(balls.length);
 
     const cv=cvRef.current!; const ctx=cv.getContext("2d")!;
     const loop=()=>{
@@ -197,27 +196,28 @@ function PinballGame({players,ballCount=1,onResult}:{
         if(b.y+PB_BR>=FINISH_Y){
           b.finished=true; b.y=FINISH_Y-PB_BR; b.vx=0; b.vy=0;
           newFin.push(b.playerLabel);
-          // 플레이어 첫 완주
-          if(!playerRankRef.current.includes(b.playerLabel)){
-            playerRankRef.current=[...playerRankRef.current,b.playerLabel];
-            setPlayerRanks([...playerRankRef.current]);
-          }
         }
       });
 
       balls.forEach(b=>drawBall(ctx,b));
 
-      if(active===0||finRef.current.length+newFin.length>=balls.length){
-        finRef.current=[...finRef.current,...newFin];
-        setPhase("done");
-        const winner=playerRankRef.current[0]||newFin.find(l=>!playerRankRef.current.includes(l))||"";
-        if(winner&&onResult){
-          const wi=players.findIndex(p=>p.label===winner);
-          setTimeout(()=>onResult(winner,wi===0?"blue":"red"),800);
+      // 남은 공 수 업데이트
+      const remaining=active-newFin.length;
+      setBallsLeft(remaining);
+
+      const totalFin=finRef.current.length+newFin.length;
+      finRef.current=[...finRef.current,...newFin];
+
+      if(remaining===0||totalFin>=balls.length){
+        // 마지막에 완주한 공의 플레이어가 승자
+        const lastWinner=finRef.current[finRef.current.length-1]||"";
+        setWinner(lastWinner); setPhase("done");
+        if(lastWinner&&onResult){
+          const wi=players.findIndex(p=>p.label===lastWinner);
+          setTimeout(()=>onResult(lastWinner,wi===0?"blue":"red"),800);
         }
         return;
       }
-      finRef.current=[...finRef.current,...newFin];
       rafRef.current=requestAnimationFrame(loop);
     };
     rafRef.current=requestAnimationFrame(loop);
@@ -254,23 +254,28 @@ function PinballGame({players,ballCount=1,onResult}:{
         <canvas ref={cvRef} width={PB_W} height={PB_H}
           style={{borderRadius:12,border:"2px solid var(--border)",boxShadow:"0 8px 40px rgba(0,0,0,0.25)",display:"block"}}/>
       </div>
-      {playerRanks.length>0&&(
-        <div className="flex flex-wrap gap-2 justify-center">
-          {playerRanks.map((name,i)=>{
-            const p=players.find(pl=>pl.label===name);
-            return(
-              <div key={i} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-bold" style={{
-                background:i===0?"rgba(251,191,36,0.15)":"var(--panel)",
-                color:i===0?"#fbbf24":"var(--text-muted)",
-                border:i===0?"1px solid #fbbf24":"1px solid var(--border)",
-              }}>
-                <div style={{width:8,height:8,borderRadius:"50%",background:p?.color||"#888"}}/>
-                {i===0?"🏆":i===1?"🥈":i===2?"🥉":`${i+1}.`} {name}
-              </div>
-            );
-          })}
+      {phase==="running"&&ballsLeft>0&&(
+        <div className="text-sm font-bold px-4 py-2 rounded-full" style={{
+          background:"var(--panel)",border:"1px solid var(--border)",color:"var(--text-muted)"}}>
+          🎯 공 {ballsLeft}개 남음{ballsLeft===1?" — 마지막 공!":""}
         </div>
       )}
+      {phase==="done"&&winner&&(()=>{
+        const wp=players.find(p=>p.label===winner);
+        return(
+          <div className="flex flex-col items-center gap-1 py-3 px-6 rounded-2xl" style={{
+            background:"var(--panel)",border:`2px solid ${wp?.color||"var(--accent)"}`,
+            boxShadow:`0 0 24px ${wp?.color||"var(--accent)"}44`}}>
+            <div className="flex items-center gap-2">
+              <div style={{width:14,height:14,borderRadius:"50%",background:wp?.color||"var(--accent)",
+                boxShadow:`0 0 8px ${wp?.color||"var(--accent)"}88`}}/>
+              <span className="text-lg font-black" style={{color:wp?.color||"var(--accent)"}}>{winner} WIN!</span>
+              <span style={{fontSize:20}}>🏆</span>
+            </div>
+            <span className="text-xs" style={{color:"var(--text-muted)"}}>마지막 공으로 살아남았습니다</span>
+          </div>
+        );
+      })()}
       <GameBtn onClick={startRace} disabled={phase==="running"}
         label={phase==="running"?"경주 중...":phase==="done"?"다시 하기":"🎮 핀볼 시작!"}/>
     </div>
