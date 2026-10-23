@@ -2054,10 +2054,32 @@ export default function Navigation() {
         <div className="max-w-6xl mx-auto px-4" style={{ position: "relative" }}>
           {/* 타이틀 */}
           <div className="pt-5 pb-2 text-center relative">
-            <div className="text-2xl mb-1"
-              style={theme === "aka" ? { filter: "sepia(1) saturate(8) hue-rotate(310deg) brightness(0.85)" } : undefined}>
-              {cur.icon}
-            </div>
+            {theme === "leaf" ? (
+              /* 코노하 나뭇잎 마크 SVG */
+              <div className="mb-1 flex justify-center" aria-hidden="true">
+                <svg width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  {/* 외부 원형 테두리 */}
+                  <circle cx="24" cy="24" r="22" stroke="var(--accent)" strokeWidth="2" opacity="0.7" fill="none"/>
+                  {/* 코노하 나뭇잎 본체 — 큰 물방울 형태로 잎을 표현 */}
+                  <path d="M24 8 C16 8 10 14 10 22 C10 30 16 38 24 40 C32 38 38 30 38 22 C38 14 32 8 24 8 Z"
+                    fill="var(--accent)" opacity="0.85"/>
+                  {/* 잎 중앙 줄기선 */}
+                  <line x1="24" y1="10" x2="24" y2="39" stroke="white" strokeWidth="1.5" opacity="0.6"/>
+                  {/* 잎 좌우 줄기선 */}
+                  <line x1="24" y1="17" x2="14" y2="24" stroke="white" strokeWidth="1" opacity="0.45"/>
+                  <line x1="24" y1="17" x2="34" y2="24" stroke="white" strokeWidth="1" opacity="0.45"/>
+                  <line x1="24" y1="24" x2="13" y2="30" stroke="white" strokeWidth="1" opacity="0.35"/>
+                  <line x1="24" y1="24" x2="35" y2="30" stroke="white" strokeWidth="1" opacity="0.35"/>
+                  {/* 중앙 소용돌이 점 */}
+                  <circle cx="24" cy="23" r="2.5" fill="white" opacity="0.75"/>
+                </svg>
+              </div>
+            ) : (
+              <div className="text-2xl mb-1"
+                style={theme === "aka" ? { filter: "sepia(1) saturate(8) hue-rotate(310deg) brightness(0.85)" } : undefined}>
+                {cur.icon}
+              </div>
+            )}
             <h1 className="text-xl font-black tracking-wide" style={{ color: cur.accentColor }}>
               {cur.title}
             </h1>

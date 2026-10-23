@@ -1075,17 +1075,29 @@ export default function RankingPage() {
 
   const rankIcon = (rank: number) => (rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `${rank}위`);
 
+  const AVATAR_PALETTES = [
+    ["#4CAF50","#2E7D32"],["#2196F3","#1565C0"],["#9C27B0","#6A1B9A"],
+    ["#FF5722","#BF360C"],["#00BCD4","#006064"],["#FF9800","#E65100"],
+    ["#E91E63","#880E4F"],["#607D8B","#263238"],["#8BC34A","#33691E"],
+    ["#F44336","#B71C1C"],
+  ];
+  const getAvatarColors = (name: string) => {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff;
+    return AVATAR_PALETTES[h % AVATAR_PALETTES.length];
+  };
+
   const StreakBadge = ({ streak }: { streak: number }) => {
-    if (Math.abs(streak) < 2) return <span className="text-xs text-gray-400">-</span>;
+    if (Math.abs(streak) < 2) return <span className="text-xs" style={{ color: "var(--text-dim)" }}>-</span>;
     if (streak > 0) return (
       <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold"
-        style={{ background: "#ffebee", color: "var(--loss)", border: "1px solid #ffcdd2" }}>
+        style={{ background: "var(--win-bg, rgba(76,175,80,0.12))", color: "var(--win)", border: "1px solid var(--win-border, rgba(76,175,80,0.3))" }}>
         🔥 {streak}연승중
       </span>
     );
     return (
       <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold"
-        style={{ background: "#e3f2fd", color: "#1565c0", border: "1px solid #bbdefb" }}>
+        style={{ background: "var(--loss-bg, rgba(239,68,68,0.1))", color: "var(--loss)", border: "1px solid var(--loss-border, rgba(239,68,68,0.25))" }}>
         🌧️ {Math.abs(streak)}연패중
       </span>
     );
@@ -1316,15 +1328,33 @@ export default function RankingPage() {
                     className="transition-all">
                     <td className="px-4 py-3 font-bold" style={{ color: ranks[i] <= 3 ? "var(--accent)" : "var(--text-muted)" }}>{rankIcon(ranks[i])}</td>
                     <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-end gap-2">
-                        {ranks[i] <= 3 ? (
-                          <span style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : "#c2410c", fontWeight: 800 }}>
-                            {p.displayName}
-                          </span>
-                        ) : (
-                          <span className="font-semibold" style={{ color: "var(--text)" }}>{p.displayName}</span>
-                        )}
-                        <TrophyList trophies={getTrophies(p.mainNickname)} />
+                      <div className="flex items-center gap-2.5">
+                        {/* 아바타 원 */}
+                        {(() => {
+                          const [bg, shadow] = getAvatarColors(p.mainNickname);
+                          const initials = p.displayName.slice(0, 2);
+                          return (
+                            <div className="shrink-0 flex items-center justify-center rounded-full text-white text-xs font-black select-none"
+                              style={{
+                                width: 30, height: 30,
+                                background: bg,
+                                boxShadow: `0 2px 6px ${shadow}60`,
+                                letterSpacing: "-0.02em",
+                              }}>
+                              {initials}
+                            </div>
+                          );
+                        })()}
+                        <div className="flex flex-wrap items-end gap-2">
+                          {ranks[i] <= 3 ? (
+                            <span style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : "#c2410c", fontWeight: 800 }}>
+                              {p.displayName}
+                            </span>
+                          ) : (
+                            <span className="font-semibold" style={{ color: "var(--text)" }}>{p.displayName}</span>
+                          )}
+                          <TrophyList trophies={getTrophies(p.mainNickname)} />
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center"><StreakBadge streak={p.currentStreak} /></td>

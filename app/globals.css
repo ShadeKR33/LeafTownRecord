@@ -21,6 +21,11 @@
 
   --win:          #2e7d32;
   --loss:         #AC2436;
+
+  --win-bg:       rgba(46,125,50,0.10);
+  --win-border:   rgba(46,125,50,0.28);
+  --loss-bg:      rgba(172,36,54,0.10);
+  --loss-border:  rgba(172,36,54,0.28);
 }
 
 * { box-sizing: border-box; }
