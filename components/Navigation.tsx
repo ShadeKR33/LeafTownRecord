@@ -1855,7 +1855,7 @@ export default function Navigation() {
                 <img
                   src="/images/aka-cloud-logo.png"
                   alt="아카츠키 마크"
-                  style={{ width: 88, height: 88, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(230,57,70,0.7))" }}
+                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(230,57,70,0.7))" }}
                 />
               </div>
             ) : (
@@ -1934,7 +1934,7 @@ export default function Navigation() {
                 {cur.id === "leaf" ? (
                   <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 ) : cur.id === "aka" ? (
-                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{cur.icon}</span>
                 )}
@@ -1963,7 +1963,7 @@ export default function Navigation() {
                       {t.id === "leaf" ? (
                         <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                       ) : t.id === "aka" ? (
-                        <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                        <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                       ) : (
                         <span style={{ fontSize: 16 }}>{t.icon}</span>
                       )}
