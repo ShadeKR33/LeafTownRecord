@@ -1847,7 +1847,7 @@ export default function Navigation() {
                 <img
                   src="/images/konoha-logo-new.png"
                   alt="코노하 마크"
-                  style={{ width: 42, height: 42, objectFit: "contain", mixBlendMode: "multiply", filter: "drop-shadow(0 1px 4px rgba(46,125,50,0.35))" }}
+                  style={{ width: 60, height: 60, objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(46,125,50,0.4))" }}
                 />
               </div>
             ) : theme === "aka" ? (
@@ -1855,7 +1855,7 @@ export default function Navigation() {
                 <img
                   src="/images/aka-cloud-logo.png"
                   alt="아카츠키 마크"
-                  style={{ width: 48, height: 48, objectFit: "contain", filter: "drop-shadow(0 2px 8px rgba(230,57,70,0.6))" }}
+                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(230,57,70,0.7))" }}
                 />
               </div>
             ) : (
@@ -1932,9 +1932,9 @@ export default function Navigation() {
                   border: "1px solid var(--border)",
                 }}>
                 {cur.id === "leaf" ? (
-                  <img src="/images/konoha-logo-new.png" alt="" style={{ width: 16, height: 16, objectFit: "contain", mixBlendMode: "multiply" }} />
+                  <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 ) : cur.id === "aka" ? (
-                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />
+                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 ) : (
                   <span>{cur.icon}</span>
                 )}
@@ -1961,9 +1961,9 @@ export default function Navigation() {
                         borderBottom: i < selectableThemes.length - 1 ? "1px solid var(--border)" : "none",
                       }}>
                       {t.id === "leaf" ? (
-                        <img src="/images/konoha-logo-new.png" alt="" style={{ width: 16, height: 16, objectFit: "contain", mixBlendMode: "multiply" }} />
+                        <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                       ) : t.id === "aka" ? (
-                        <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />
+                        <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                       ) : (
                         <span style={{ fontSize: 16 }}>{t.icon}</span>
                       )}

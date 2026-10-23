@@ -1218,9 +1218,9 @@ export default function RankingPage() {
                 : "#22c55e",
             }}>
             {activeTheme === "leaf" ? (
-              <img src="/images/konoha-logo-new.png" alt="" style={{ width: 18, height: 18, objectFit: "contain", mixBlendMode: "multiply" }} />
+              <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
             ) : activeTheme === "aka" ? (
-              <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
+              <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
             ) : (
               <span>{newsTitles[activeTheme].icon}</span>
             )}
@@ -1266,9 +1266,9 @@ export default function RankingPage() {
               style={{ borderColor: "var(--border)" }}>
               <div className="font-black text-base flex items-center gap-2" style={{ color: "var(--accent)" }}>
                 {activeTheme === "leaf" ? (
-                  <img src="/images/konoha-logo-new.png" alt="" style={{ width: 18, height: 18, objectFit: "contain", mixBlendMode: "multiply" }} />
+                  <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 ) : activeTheme === "aka" ? (
-                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 ) : (
                   <span>{newsTitles[activeTheme].icon}</span>
                 )}
