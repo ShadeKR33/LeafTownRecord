@@ -21,105 +21,194 @@ function lightenHex(hex: string, t: number): string {
 }
 
 // ─── Pinball board constants ──────────────────────────────────────────────────
-const PB_W=300, PB_H=480, PB_BR=10, PB_PR=5;
-const PEGS=(()=>{
-  const ps:{x:number;y:number}[]=[];
-  for(let row=0;row<9;row++){
-    const y=65+row*44;
-    const even=row%2===0, n=even?6:5;
-    const startX=even?(PB_W-5*46)/2:(PB_W-4*46)/2+23;
-    for(let c=0;c<n;c++) ps.push({x:startX+c*46,y});
+const PB_W=340, PB_H=740, PB_BR=9;
+interface PegDef{x:number;y:number;r:number;type:"normal"|"bumper";}
+const PEGS:PegDef[]=(()=>{
+  const ps:PegDef[]=[];
+  const add=(x:number,y:number,r=6,type:"normal"|"bumper"="normal")=>ps.push({x,y,r,type});
+
+  // Zone 1 – 깔때기 (funnel) y=60~120
+  for(let i=0;i<5;i++){
+    add(18+i*22, 62+i*14); // 왼쪽 대각
+    add(322-i*22, 62+i*14); // 오른쪽 대각
+  }
+  // Zone 2 – 일반 핀 격자 y=145~290 (4행)
+  for(let row=0;row<4;row++){
+    const y=145+row*48, even=row%2===0, n=even?7:6;
+    const sx=even?(PB_W-6*44)/2:(PB_W-5*44)/2+22;
+    for(let c=0;c<n;c++) add(sx+c*44,y);
+  }
+  // Zone 3 – 대형 범퍼 y=320~420
+  [[85,345],[170,325],[255,345],[128,392],[212,392]].forEach(([x,y])=>add(x,y,15,"bumper"));
+  // 범퍼 주변 소형 핀
+  [[50,360],[120,315],[220,315],[290,360],[155,425],[185,425]].forEach(([x,y])=>add(x,y,5));
+
+  // Zone 4 – 지그재그 미끄럼틀 y=445~545
+  // 왼쪽으로 흐르는 줄
+  for(let i=0;i<6;i++) add(295-i*42, 450+i*16, 7);
+  // 오른쪽으로 흐르는 줄
+  for(let i=0;i<6;i++) add(45+i*42, 510+i*16, 7);
+
+  // Zone 5 – 촘촘한 최종 구간 y=570~670 (5행)
+  for(let row=0;row<5;row++){
+    const y=570+row*36, even=row%2===0, n=even?9:8;
+    const sx=even?(PB_W-8*34)/2:(PB_W-7*34)/2+17;
+    for(let c=0;c<n;c++) add(sx+c*34,y,5);
   }
   return ps;
 })();
 
-interface PhysBall{x:number;y:number;vx:number;vy:number;color:string;label:string;finished:boolean;}
+interface PhysBall{x:number;y:number;vx:number;vy:number;color:string;label:string;playerLabel:string;finished:boolean;}
 
 // ─── Pinball component ────────────────────────────────────────────────────────
-function PinballGame({players,onResult}:{
+function PinballGame({players,ballCount=1,onResult}:{
   players:{label:string;color:string}[];
+  ballCount?:number;
   onResult?:(winner:string,side:Side)=>void;
 }){
   const cvRef=useRef<HTMLCanvasElement>(null);
   const rafRef=useRef<number|null>(null);
-  const finRef=useRef<string[]>([]);
+  const finRef=useRef<string[]>([]);           // 완주한 playerLabel 순서 (중복 허용)
+  const playerRankRef=useRef<string[]>([]);    // 플레이어 레벨 순위 (중복 없음)
+  const bumperHitRef=useRef<Set<number>>(new Set());
   const [phase,setPhase]=useState<"idle"|"running"|"done">("idle");
-  const [ranks,setRanks]=useState<string[]>([]);
+  const [playerRanks,setPlayerRanks]=useState<string[]>([]);
+
+  const FINISH_Y=PB_H-40;
 
   const drawBg=(ctx:CanvasRenderingContext2D)=>{
-    ctx.fillStyle="#0f172a"; ctx.fillRect(0,0,PB_W,PB_H);
-    PEGS.forEach(p=>{
-      ctx.beginPath(); ctx.arc(p.x,p.y,PB_PR,0,Math.PI*2);
-      ctx.fillStyle="#334155"; ctx.fill();
-      ctx.strokeStyle="#94a3b8"; ctx.lineWidth=1.5; ctx.stroke();
+    // 배경
+    ctx.fillStyle="#080f1e"; ctx.fillRect(0,0,PB_W,PB_H);
+    // 벽면 가이드
+    ctx.strokeStyle="#1e293b"; ctx.lineWidth=2;
+    ctx.strokeRect(1,1,PB_W-2,PB_H-2);
+
+    PEGS.forEach((p,idx)=>{
+      const isBumper=p.type==="bumper";
+      const isHit=bumperHitRef.current.has(idx);
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      if(isBumper){
+        ctx.shadowBlur=isHit?24:8;
+        ctx.shadowColor=isHit?"#fbbf24":"#f97316aa";
+        const grad=ctx.createRadialGradient(p.x-4,p.y-4,1,p.x,p.y,p.r);
+        grad.addColorStop(0,isHit?"#fde68a":"#fed7aa");
+        grad.addColorStop(1,isHit?"#f59e0b":"#ea580c");
+        ctx.fillStyle=grad; ctx.fill();
+        ctx.shadowBlur=0;
+        ctx.strokeStyle=isHit?"#fbbf24":"#f97316"; ctx.lineWidth=2; ctx.stroke();
+      } else {
+        ctx.fillStyle="#1e3a5f"; ctx.fill();
+        ctx.strokeStyle="#3b82f6aa"; ctx.lineWidth=1; ctx.stroke();
+      }
     });
-    ctx.strokeStyle="#fbbf24"; ctx.lineWidth=2; ctx.setLineDash([6,4]);
-    ctx.beginPath(); ctx.moveTo(0,PB_H-35); ctx.lineTo(PB_W,PB_H-35); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle="#fbbf2499"; ctx.font="bold 9px sans-serif";
+
+    // 구역 구분 라벨
+    const zoneLabel=(text:string,y:number)=>{
+      ctx.fillStyle="#ffffff18"; ctx.font="9px sans-serif";
+      ctx.textAlign="right"; ctx.textBaseline="middle";
+      ctx.fillText(text,PB_W-4,y);
+    };
+    zoneLabel("ZONE 1",110); zoneLabel("ZONE 2",220);
+    zoneLabel("BUMPER",380); zoneLabel("SLIDE",500); zoneLabel("ZONE 3",635);
+
+    // FINISH 라인
+    ctx.shadowBlur=6; ctx.shadowColor="#fbbf24";
+    ctx.strokeStyle="#fbbf24"; ctx.lineWidth=2.5; ctx.setLineDash([8,5]);
+    ctx.beginPath(); ctx.moveTo(0,FINISH_Y); ctx.lineTo(PB_W,FINISH_Y); ctx.stroke();
+    ctx.setLineDash([]); ctx.shadowBlur=0;
+    ctx.fillStyle="#fbbf24cc"; ctx.font="bold 10px sans-serif";
     ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText("FINISH",PB_W/2,PB_H-18);
+    ctx.fillText("⚑ FINISH",PB_W/2,FINISH_Y+16);
   };
 
   const drawBall=(ctx:CanvasRenderingContext2D,b:PhysBall)=>{
-    ctx.shadowBlur=10; ctx.shadowColor=b.color+"aa";
+    ctx.shadowBlur=12; ctx.shadowColor=b.color+"bb";
     ctx.beginPath(); ctx.arc(b.x,b.y,PB_BR,0,Math.PI*2);
     const g=ctx.createRadialGradient(b.x-3,b.y-3,1,b.x,b.y,PB_BR);
-    g.addColorStop(0,lightenHex(b.color,0.4)); g.addColorStop(1,b.color);
+    g.addColorStop(0,lightenHex(b.color,0.42)); g.addColorStop(1,b.color);
     ctx.fillStyle=g; ctx.fill(); ctx.shadowBlur=0;
-    ctx.strokeStyle="rgba(255,255,255,0.25)"; ctx.lineWidth=1.5; ctx.stroke();
-    ctx.fillStyle="#fff"; ctx.font="bold 7px sans-serif";
+    ctx.strokeStyle="rgba(255,255,255,0.3)"; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle="#fff"; ctx.font="bold 6.5px sans-serif";
     ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillText(b.label.length>3?b.label.slice(0,3):b.label,b.x,b.y);
   };
 
   const startRace=()=>{
     if(rafRef.current) cancelAnimationFrame(rafRef.current);
-    finRef.current=[]; setRanks([]); setPhase("running");
-    const sp=PB_W/(players.length+1);
-    const balls:PhysBall[]=players.map((p,i)=>({
-      x:sp*(i+1)+(Math.random()-0.5)*8,y:15,
-      vx:(Math.random()-0.5)*2,vy:1.5,
-      color:p.color,label:p.label,finished:false,
-    }));
+    finRef.current=[]; playerRankRef.current=[];
+    bumperHitRef.current.clear();
+    setPlayerRanks([]); setPhase("running");
+
+    // 플레이어당 ballCount개 공 생성
+    const balls:PhysBall[]=[];
+    const totalSlots=players.length*(ballCount);
+    const slotW=PB_W/(totalSlots+1);
+    let slotIdx=0;
+    players.forEach(p=>{
+      for(let b=0;b<ballCount;b++){
+        balls.push({
+          x:slotW*(slotIdx+1)+(Math.random()-0.5)*6,
+          y:20+(Math.random()*8),
+          vx:(Math.random()-0.5)*1.8, vy:1.5+Math.random(),
+          color:p.color, label:p.label, playerLabel:p.label, finished:false,
+        });
+        slotIdx++;
+      }
+    });
+
     const cv=cvRef.current!; const ctx=cv.getContext("2d")!;
     const loop=()=>{
       drawBg(ctx);
       let active=0; const newFin:string[]=[];
+
       balls.forEach(b=>{
         if(b.finished) return; active++;
-        b.vy=Math.min(b.vy+0.28,9); b.x+=b.vx; b.y+=b.vy;
-        if(b.x-PB_BR<0){b.x=PB_BR;b.vx=Math.abs(b.vx)*0.7;}
-        if(b.x+PB_BR>PB_W){b.x=PB_W-PB_BR;b.vx=-Math.abs(b.vx)*0.7;}
-        for(const p of PEGS){
-          const dx=b.x-p.x,dy=b.y-p.y,d=Math.hypot(dx,dy),minD=PB_BR+PB_PR+0.5;
+        b.vy=Math.min(b.vy+0.25,10); b.x+=b.vx; b.y+=b.vy;
+        if(b.x-PB_BR<1){b.x=PB_BR+1;b.vx=Math.abs(b.vx)*0.75;}
+        if(b.x+PB_BR>PB_W-1){b.x=PB_W-PB_BR-1;b.vx=-Math.abs(b.vx)*0.75;}
+
+        PEGS.forEach((p,idx)=>{
+          const dx=b.x-p.x, dy=b.y-p.y, d=Math.hypot(dx,dy);
+          const minD=PB_BR+p.r+0.5;
           if(d<minD&&d>0.01){
-            const nx=dx/d,ny=dy/d;
+            const nx=dx/d, ny=dy/d;
             b.x=p.x+nx*(minD+1); b.y=p.y+ny*(minD+1);
             const dot=b.vx*nx+b.vy*ny;
-            if(dot<0){b.vx-=2*dot*nx*0.5;b.vy-=2*dot*ny*0.5;}
-            b.vx+=(Math.random()-0.5)*1.5; if(b.vy<2)b.vy=2;
+            const bf=p.type==="bumper"?1.05:0.52;
+            if(dot<0){b.vx-=2*dot*nx*bf; b.vy-=2*dot*ny*bf;}
+            b.vx+=(Math.random()-0.5)*(p.type==="bumper"?2.2:1.4);
+            if(b.vy<(p.type==="bumper"?0.5:1.8))b.vy=(p.type==="bumper"?0.5:1.8);
+            if(p.type==="bumper"){
+              bumperHitRef.current.add(idx);
+              setTimeout(()=>bumperHitRef.current.delete(idx),200);
+            }
+          }
+        });
+
+        if(b.y+PB_BR>=FINISH_Y){
+          b.finished=true; b.y=FINISH_Y-PB_BR; b.vx=0; b.vy=0;
+          newFin.push(b.playerLabel);
+          // 플레이어 첫 완주
+          if(!playerRankRef.current.includes(b.playerLabel)){
+            playerRankRef.current=[...playerRankRef.current,b.playerLabel];
+            setPlayerRanks([...playerRankRef.current]);
           }
         }
-        if(b.y+PB_BR>=PB_H-35){
-          b.finished=true;b.y=PB_H-35-PB_BR;b.vx=0;b.vy=0;
-          newFin.push(b.label);
-        }
       });
+
       balls.forEach(b=>drawBall(ctx,b));
-      if(newFin.length>0){
+
+      if(active===0||finRef.current.length+newFin.length>=balls.length){
         finRef.current=[...finRef.current,...newFin];
-        setRanks([...finRef.current]);
-      }
-      if(active===0||finRef.current.length>=balls.length){
         setPhase("done");
-        const winner=finRef.current[0];
+        const winner=playerRankRef.current[0]||newFin.find(l=>!playerRankRef.current.includes(l))||"";
         if(winner&&onResult){
           const wi=players.findIndex(p=>p.label===winner);
           setTimeout(()=>onResult(winner,wi===0?"blue":"red"),800);
         }
         return;
       }
+      finRef.current=[...finRef.current,...newFin];
       rafRef.current=requestAnimationFrame(loop);
     };
     rafRef.current=requestAnimationFrame(loop);
@@ -131,9 +220,10 @@ function PinballGame({players,onResult}:{
     const sp=PB_W/(players.length+1);
     players.forEach((p,i)=>{
       const x=sp*(i+1);
+      ctx.shadowBlur=8; ctx.shadowColor=p.color+"aa";
       ctx.beginPath(); ctx.arc(x,20,PB_BR,0,Math.PI*2);
-      ctx.fillStyle=p.color; ctx.fill();
-      ctx.fillStyle="#fff"; ctx.font="bold 7px sans-serif";
+      ctx.fillStyle=p.color; ctx.fill(); ctx.shadowBlur=0;
+      ctx.fillStyle="#fff"; ctx.font="bold 6.5px sans-serif";
       ctx.textAlign="center"; ctx.textBaseline="middle";
       ctx.fillText(p.label.length>3?p.label.slice(0,3):p.label,x,20);
     });
@@ -145,22 +235,31 @@ function PinballGame({players,onResult}:{
       <div className="flex flex-wrap gap-2 justify-center">
         {players.map((p,i)=>(
           <div key={i} className="flex items-center gap-1.5 text-xs font-bold">
-            <div style={{width:10,height:10,borderRadius:"50%",background:p.color,border:"1.5px solid rgba(255,255,255,0.2)"}}/>
+            <div style={{width:10,height:10,borderRadius:"50%",background:p.color,border:"1.5px solid rgba(255,255,255,0.25)"}}/>
             <span style={{color:"var(--text)"}}>{p.label}</span>
+            {ballCount>1&&<span className="text-xs" style={{color:"var(--text-dim)"}}>×{ballCount}</span>}
           </div>
         ))}
       </div>
-      <canvas ref={cvRef} width={PB_W} height={PB_H}
-        style={{borderRadius:12,border:"2px solid #1e293b",boxShadow:"0 8px 32px rgba(0,0,0,0.4)",display:"block"}}/>
-      {ranks.length>0&&(
+      <div style={{maxHeight:"70vh",overflowY:"auto",borderRadius:12}}>
+        <canvas ref={cvRef} width={PB_W} height={PB_H}
+          style={{borderRadius:12,border:"2px solid #1e3a5f",boxShadow:"0 8px 40px rgba(0,0,0,0.5)",display:"block"}}/>
+      </div>
+      {playerRanks.length>0&&(
         <div className="flex flex-wrap gap-2 justify-center">
-          {ranks.map((name,i)=>(
-            <div key={i} className="text-xs px-2.5 py-1 rounded-full font-bold" style={{
-              background:i===0?"rgba(251,191,36,0.12)":"var(--panel)",
-              color:i===0?"#fbbf24":"var(--text-muted)",
-              border:i===0?"1px solid #fbbf24":"1px solid var(--border)",
-            }}>{i===0?"🏆":i===1?"🥈":i===2?"🥉":`${i+1}.`} {name}</div>
-          ))}
+          {playerRanks.map((name,i)=>{
+            const p=players.find(pl=>pl.label===name);
+            return(
+              <div key={i} className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-bold" style={{
+                background:i===0?"rgba(251,191,36,0.15)":"var(--panel)",
+                color:i===0?"#fbbf24":"var(--text-muted)",
+                border:i===0?"1px solid #fbbf24":"1px solid var(--border)",
+              }}>
+                <div style={{width:8,height:8,borderRadius:"50%",background:p?.color||"#888"}}/>
+                {i===0?"🏆":i===1?"🥈":i===2?"🥉":`${i+1}.`} {name}
+              </div>
+            );
+          })}
         </div>
       )}
       <GameBtn onClick={startRace} disabled={phase==="running"}
@@ -323,6 +422,7 @@ export default function TeamPage(){
   const [soGame,setSoGame]=useState<MiniGameType>("pinball");
   const [soSelected,setSoSelected]=useState<string[]>([]);
   const [soStep,setSoStep]=useState<"select"|"play">("select");
+  const [soBallCount,setSoBallCount]=useState(1);
 
   const LANE_LIST=["탑","정글","미드","원딜","서폿"];
   const LANE_COLORS:Record<string,string>={탑:"#e06060",정글:"#50a050",미드:"#5090d0",원딜:"#c0a030",서폿:"#9060c0"};
@@ -465,7 +565,22 @@ export default function TeamPage(){
                   );
                 })}
               </div>
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold" style={{color:"var(--text-muted)"}}>공 개수</span>
+                  <div className="flex items-center gap-1.5">
+                    {[1,2,3,4,5].map(n=>(
+                      <button key={n} onClick={()=>setSoBallCount(n)}
+                        className="w-8 h-8 rounded-full text-sm font-bold transition-all"
+                        style={{background:soBallCount===n?"var(--accent)":"var(--hover)",
+                          color:soBallCount===n?"#fff":"var(--text-muted)",
+                          border:soBallCount===n?"2px solid var(--accent)":"1px solid var(--border)",cursor:"pointer"}}>
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-xs" style={{color:"var(--text-dim)"}}>인당 {soBallCount}개</span>
+                </div>
                 <button onClick={()=>setSoStep("play")} disabled={soSelected.length<2}
                   className="px-8 py-3 rounded-full font-bold text-base"
                   style={{background:soSelected.length<2?"var(--border)":"var(--accent)",color:"#fff",cursor:soSelected.length<2?"not-allowed":"pointer",opacity:soSelected.length<2?0.6:1}}>
@@ -482,7 +597,7 @@ export default function TeamPage(){
                 <span className="text-sm font-bold" style={{color:"var(--text-muted)"}}>{soSelected.length}명 참여</span>
               </div>
               <div className="flex justify-center">
-                <PinballGame players={soPinballPlayers}/>
+                <PinballGame players={soPinballPlayers} ballCount={soBallCount}/>
               </div>
             </div>
           )}
