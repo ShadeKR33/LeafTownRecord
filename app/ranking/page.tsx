@@ -1217,7 +1217,13 @@ export default function RankingPage() {
                 ? "#059669"
                 : "#22c55e",
             }}>
-            <span>{newsTitles[activeTheme].icon}</span>
+            {activeTheme === "leaf" ? (
+              <img src="/images/konoha-logo-new.png" alt="" style={{ width: 18, height: 18, objectFit: "contain", mixBlendMode: "multiply" }} />
+            ) : activeTheme === "aka" ? (
+              <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
+            ) : (
+              <span>{newsTitles[activeTheme].icon}</span>
+            )}
             <span className="hidden sm:inline">{newsTitles[activeTheme].name}</span>
           </div>
           {/* 흐르는 뉴스 아이템 */}
@@ -1259,7 +1265,13 @@ export default function RankingPage() {
             <div className="px-5 py-4 border-b flex items-center justify-between flex-shrink-0"
               style={{ borderColor: "var(--border)" }}>
               <div className="font-black text-base flex items-center gap-2" style={{ color: "var(--accent)" }}>
-                <span>{newsTitles[activeTheme].icon}</span>
+                {activeTheme === "leaf" ? (
+                  <img src="/images/konoha-logo-new.png" alt="" style={{ width: 18, height: 18, objectFit: "contain", mixBlendMode: "multiply" }} />
+                ) : activeTheme === "aka" ? (
+                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 18, height: 18, objectFit: "contain" }} />
+                ) : (
+                  <span>{newsTitles[activeTheme].icon}</span>
+                )}
                 <span>{newsTitles[activeTheme].name}</span>
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20">전체 속보</span>
               </div>
