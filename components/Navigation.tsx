@@ -1960,13 +1960,15 @@ export default function Navigation() {
                         color: theme === t.id ? t.accentColor : "var(--text-muted)",
                         borderBottom: i < selectableThemes.length - 1 ? "1px solid var(--border)" : "none",
                       }}>
-                      {t.id === "leaf" ? (
-                        <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
-                      ) : t.id === "aka" ? (
-                        <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
-                      ) : (
-                        <span style={{ fontSize: 16 }}>{t.icon}</span>
-                      )}
+                      <span style={{ width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {t.id === "leaf" ? (
+                          <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                        ) : t.id === "aka" ? (
+                          <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                        ) : (
+                          <span style={{ fontSize: 16 }}>{t.icon}</span>
+                        )}
+                      </span>
                       <span style={{ whiteSpace: "nowrap" }}>{t.name}</span>
                       {theme === t.id && <span style={{ marginLeft: "auto", fontSize: 10 }}>✓</span>}
                     </button>
