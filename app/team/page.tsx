@@ -51,11 +51,13 @@ const OBSTACLES:Obstacle[]=(()=>{
   obs.push(ln(30,420,150,440,8));   // 왼쪽 하단 가이드
   obs.push(ln(310,420,190,440,8));  // 오른쪽 하단 가이드
 
-  // Zone 4 – 교차 미끄럼틀 (X자 선분)
-  obs.push(ln(278,450,62,535,11)); // 오른→왼 슬라이드
-  obs.push(ln(62,450,278,535,11)); // 왼→오른 슬라이드
-  obs.push(pg(170,492,7));         // 교차점 핀
-  obs.push(pg(100,548)); obs.push(pg(240,548)); // 슬라이드 출구 핀
+  // Zone 4 – W자 슬라이드 (교차 없음, 끼임 방지)
+  obs.push(ln(20,448,155,498,10)); // 왼쪽 바깥 슬라이드 ↘
+  obs.push(ln(320,448,185,498,10));// 오른쪽 바깥 슬라이드 ↙
+  obs.push(ln(95,520,170,548,9));  // 왼쪽 안쪽 슬라이드 ↘
+  obs.push(ln(245,520,170,548,9)); // 오른쪽 안쪽 슬라이드 ↙
+  obs.push(pg(170,500,8));         // W 중앙 핀
+  obs.push(pg(60,505)); obs.push(pg(280,505)); // 바깥 유도 핀
 
   // Zone 5 – 촘촘한 최종 구간
   for(let row=0;row<5;row++){
@@ -76,11 +78,13 @@ function PinballGame({players,ballCount=1,onResult}:{
 }){
   const cvRef=useRef<HTMLCanvasElement>(null);
   const rafRef=useRef<number|null>(null);
-  const finRef=useRef<string[]>([]);       // 완주한 playerLabel 순서 (순서대로)
+  const finRef=useRef<string[]>([]);
   const bumperHitRef=useRef<Set<number>>(new Set());
+  const windRef=useRef<{fx:number;left:number;next:number}>({fx:0,left:0,next:300});
   const [phase,setPhase]=useState<"idle"|"running"|"done">("idle");
   const [ballsLeft,setBallsLeft]=useState(0);
   const [winner,setWinner]=useState("");
+  const [windDir,setWindDir]=useState<""|"←"|"→">("");
 
   const FINISH_Y=PB_H-40;
 
@@ -164,7 +168,8 @@ function PinballGame({players,ballCount=1,onResult}:{
   const startRace=()=>{
     if(rafRef.current) cancelAnimationFrame(rafRef.current);
     finRef.current=[]; bumperHitRef.current.clear();
-    setWinner(""); setPhase("running");
+    windRef.current={fx:0,left:0,next:300};
+    setWindDir(""); setWinner(""); setPhase("running");
 
     const balls:PhysBall[]=[];
     const totalSlots=players.length*ballCount;
@@ -229,12 +234,11 @@ function PinballGame({players,ballCount=1,onResult}:{
             }
           }
         });
-        // 끼임 방지: 속도가 너무 낮으면 카운터 증가 → 일정 프레임 후 강제 탈출
-        if(Math.abs(b.vx)<0.6&&Math.abs(b.vy)<0.6){
+        // 끼임 방지: 10프레임 저속 → 강제 탈출
+        if(Math.abs(b.vx)<0.7&&Math.abs(b.vy)<0.7){
           b.stuckTick++;
-          if(b.stuckTick>25){b.vx=(Math.random()-0.5)*5;b.vy=2.5+Math.random()*2;b.stuckTick=0;}
+          if(b.stuckTick>10){b.vx=(Math.random()-0.5)*9;b.vy=3+Math.random()*3;b.stuckTick=0;}
         } else { b.stuckTick=0; }
-        // 최소 하향 속도 보장
         if(b.vy<0.4) b.vy=0.4;
 
         if(b.y+PB_BR>=FINISH_Y){
@@ -244,6 +248,20 @@ function PinballGame({players,ballCount=1,onResult}:{
       });
 
       balls.forEach(b=>drawBall(ctx,b));
+
+      // 바람 로직 (5초 주기, 1.5초 지속)
+      const w=windRef.current;
+      w.next--;
+      if(w.next<=0){
+        const dir=Math.random()>0.5?1:-1;
+        w.fx=dir*1.4; w.left=90; w.next=300;
+        setWindDir(dir>0?"→":"←");
+      }
+      if(w.left>0){
+        balls.forEach(b=>{if(!b.finished) b.vx+=w.fx*0.12;});
+        w.left--;
+        if(w.left===0){w.fx=0; setWindDir("");}
+      }
 
       // 남은 공 수 업데이트
       const remaining=active-newFin.length;
@@ -294,10 +312,21 @@ function PinballGame({players,ballCount=1,onResult}:{
           </div>
         ))}
       </div>
-      <div style={{maxHeight:"70vh",overflowY:"auto",borderRadius:12}}>
+      <div style={{position:"relative",maxHeight:"70vh",overflowY:"auto",borderRadius:12}}>
         <canvas ref={cvRef} width={PB_W} height={PB_H}
           style={{borderRadius:12,border:"2px solid var(--border)",boxShadow:"0 8px 40px rgba(0,0,0,0.25)",display:"block"}}/>
+        {windDir&&(
+          <div style={{position:"absolute",top:8,left:windDir==="←"?8:undefined,right:windDir==="→"?8:undefined,
+            display:"flex",alignItems:"center",gap:4,
+            background:"var(--panel)",border:"1px solid var(--border)",
+            borderRadius:20,padding:"4px 10px",fontSize:13,fontWeight:700,
+            color:"var(--accent)",opacity:0.9,pointerEvents:"none",
+            animation:"windPulse 0.4s ease infinite alternate"}}>
+            {windDir==="←"?"💨 ←":"→ 💨"}
+          </div>
+        )}
       </div>
+      <style>{`@keyframes windPulse{from{opacity:.7}to{opacity:1}}`}</style>
       {phase==="running"&&ballsLeft>0&&(
         <div className="text-sm font-bold px-4 py-2 rounded-full" style={{
           background:"var(--panel)",border:"1px solid var(--border)",color:"var(--text-muted)"}}>
