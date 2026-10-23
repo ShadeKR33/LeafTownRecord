@@ -22,43 +22,51 @@ function lightenHex(hex: string, t: number): string {
 
 // ─── Pinball board constants ──────────────────────────────────────────────────
 const PB_W=340, PB_H=740, PB_BR=9;
-interface PegDef{x:number;y:number;r:number;type:"normal"|"bumper";}
-const PEGS:PegDef[]=(()=>{
-  const ps:PegDef[]=[];
-  const add=(x:number,y:number,r=6,type:"normal"|"bumper"="normal")=>ps.push({x,y,r,type});
+interface CirclePeg{kind:"peg";x:number;y:number;r:number;type:"normal"|"bumper";}
+interface LineBar{kind:"line";x1:number;y1:number;x2:number;y2:number;w:number;}
+type Obstacle=CirclePeg|LineBar;
+const pg=(x:number,y:number,r=6,type:"normal"|"bumper"="normal"):CirclePeg=>({kind:"peg",x,y,r,type});
+const ln=(x1:number,y1:number,x2:number,y2:number,w=9):LineBar=>({kind:"line",x1,y1,x2,y2,w});
 
-  // Zone 1 – 깔때기 (funnel) y=60~120
-  for(let i=0;i<5;i++){
-    add(18+i*22, 62+i*14); // 왼쪽 대각
-    add(322-i*22, 62+i*14); // 오른쪽 대각
-  }
-  // Zone 2 – 일반 핀 격자 y=145~290 (4행)
+const OBSTACLES:Obstacle[]=(()=>{
+  const obs:Obstacle[]=[];
+
+  // Zone 1 – 깔때기 레일 (선분)
+  obs.push(ln(6,50,140,118,10));    // 왼쪽 대각 레일
+  obs.push(ln(334,50,200,118,10));  // 오른쪽 대각 레일
+  obs.push(pg(170,72));             // 중앙 상단 핀
+
+  // Zone 2 – 격자 핀 + 가로 바
   for(let row=0;row<4;row++){
-    const y=145+row*48, even=row%2===0, n=even?7:6;
+    const y=148+row*48, even=row%2===0, n=even?7:6;
     const sx=even?(PB_W-6*44)/2:(PB_W-5*44)/2+22;
-    for(let c=0;c<n;c++) add(sx+c*44,y);
+    for(let c=0;c<n;c++) obs.push(pg(sx+c*44,y));
   }
-  // Zone 3 – 대형 범퍼 y=320~420
-  [[85,345],[170,325],[255,345],[128,392],[212,392]].forEach(([x,y])=>add(x,y,15,"bumper"));
-  // 범퍼 주변 소형 핀
-  [[50,360],[120,315],[220,315],[290,360],[155,425],[185,425]].forEach(([x,y])=>add(x,y,5));
+  obs.push(ln(44,196,116,196,7));   // 가로 바 1
+  obs.push(ln(224,244,296,244,7));  // 가로 바 2
 
-  // Zone 4 – 지그재그 미끄럼틀 y=445~545
-  // 왼쪽으로 흐르는 줄
-  for(let i=0;i<6;i++) add(295-i*42, 450+i*16, 7);
-  // 오른쪽으로 흐르는 줄
-  for(let i=0;i<6;i++) add(45+i*42, 510+i*16, 7);
+  // Zone 3 – 대형 범퍼 + V자 가이드 선분
+  [[85,345],[170,325],[255,345],[128,392],[212,392]].forEach(([x,y])=>obs.push(pg(x,y,15,"bumper")));
+  [[50,362],[120,316],[220,316],[290,362]].forEach(([x,y])=>obs.push(pg(x,y,5)));
+  obs.push(ln(30,420,150,440,8));   // 왼쪽 하단 가이드
+  obs.push(ln(310,420,190,440,8));  // 오른쪽 하단 가이드
 
-  // Zone 5 – 촘촘한 최종 구간 y=570~670 (5행)
+  // Zone 4 – 교차 미끄럼틀 (X자 선분)
+  obs.push(ln(278,450,62,535,11)); // 오른→왼 슬라이드
+  obs.push(ln(62,450,278,535,11)); // 왼→오른 슬라이드
+  obs.push(pg(170,492,7));         // 교차점 핀
+  obs.push(pg(100,548)); obs.push(pg(240,548)); // 슬라이드 출구 핀
+
+  // Zone 5 – 촘촘한 최종 구간
   for(let row=0;row<5;row++){
-    const y=570+row*36, even=row%2===0, n=even?9:8;
+    const y=572+row*34, even=row%2===0, n=even?9:8;
     const sx=even?(PB_W-8*34)/2:(PB_W-7*34)/2+17;
-    for(let c=0;c<n;c++) add(sx+c*34,y,5);
+    for(let c=0;c<n;c++) obs.push(pg(sx+c*34,y,5));
   }
-  return ps;
+  return obs;
 })();
 
-interface PhysBall{x:number;y:number;vx:number;vy:number;color:string;label:string;playerLabel:string;finished:boolean;}
+interface PhysBall{x:number;y:number;vx:number;vy:number;color:string;label:string;playerLabel:string;finished:boolean;stuckTick:number;}
 
 // ─── Pinball component ────────────────────────────────────────────────────────
 function PinballGame({players,ballCount=1,onResult}:{
@@ -93,21 +101,32 @@ function PinballGame({players,ballCount=1,onResult}:{
     ctx.strokeStyle=t.border; ctx.lineWidth=2;
     ctx.strokeRect(1,1,PB_W-2,PB_H-2);
 
-    PEGS.forEach((p,idx)=>{
-      const isBumper=p.type==="bumper";
-      const isHit=bumperHitRef.current.has(idx);
-      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-      if(isBumper){
-        ctx.shadowBlur=isHit?24:8;
-        ctx.shadowColor=isHit?t.accentGold:t.accentGold+"99";
-        const g=ctx.createRadialGradient(p.x-4,p.y-4,1,p.x,p.y,p.r);
-        g.addColorStop(0,isHit?lightenHex(t.accentGold,0.45):lightenHex(t.accentGold,0.22));
-        g.addColorStop(1,isHit?t.accentGold:t.accent);
-        ctx.fillStyle=g; ctx.fill(); ctx.shadowBlur=0;
-        ctx.strokeStyle=isHit?t.accentGold:t.accentLight; ctx.lineWidth=2; ctx.stroke();
+    OBSTACLES.forEach((o,idx)=>{
+      if(o.kind==="line"){
+        // 선분 장애물 — 두꺼운 라인 + 내부 하이라이트
+        ctx.lineCap="round";
+        ctx.shadowBlur=4; ctx.shadowColor=t.accentLight+"66";
+        ctx.strokeStyle=t.accentLight+"cc"; ctx.lineWidth=o.w;
+        ctx.beginPath(); ctx.moveTo(o.x1,o.y1); ctx.lineTo(o.x2,o.y2); ctx.stroke();
+        ctx.strokeStyle=lightenHex(t.accent,0.35)+"99"; ctx.lineWidth=o.w*0.35;
+        ctx.beginPath(); ctx.moveTo(o.x1,o.y1); ctx.lineTo(o.x2,o.y2); ctx.stroke();
+        ctx.shadowBlur=0;
       } else {
-        ctx.fillStyle=t.border; ctx.fill();
-        ctx.strokeStyle=t.accentLight+"99"; ctx.lineWidth=1; ctx.stroke();
+        const isBumper=o.type==="bumper";
+        const isHit=bumperHitRef.current.has(idx);
+        ctx.beginPath(); ctx.arc(o.x,o.y,o.r,0,Math.PI*2);
+        if(isBumper){
+          ctx.shadowBlur=isHit?24:8;
+          ctx.shadowColor=isHit?t.accentGold:t.accentGold+"99";
+          const g=ctx.createRadialGradient(o.x-4,o.y-4,1,o.x,o.y,o.r);
+          g.addColorStop(0,isHit?lightenHex(t.accentGold,0.45):lightenHex(t.accentGold,0.22));
+          g.addColorStop(1,isHit?t.accentGold:t.accent);
+          ctx.fillStyle=g; ctx.fill(); ctx.shadowBlur=0;
+          ctx.strokeStyle=isHit?t.accentGold:t.accentLight; ctx.lineWidth=2; ctx.stroke();
+        } else {
+          ctx.fillStyle=t.border; ctx.fill();
+          ctx.strokeStyle=t.accentLight+"99"; ctx.lineWidth=1; ctx.stroke();
+        }
       }
     });
 
@@ -157,7 +176,7 @@ function PinballGame({players,ballCount=1,onResult}:{
           x:slotW*(slotIdx+1)+(Math.random()-0.5)*6,
           y:20+(Math.random()*8),
           vx:(Math.random()-0.5)*1.8, vy:1.5+Math.random(),
-          color:p.color, label:p.label, playerLabel:p.label, finished:false,
+          color:p.color, label:p.label, playerLabel:p.label, finished:false, stuckTick:0,
         });
         slotIdx++;
       }
@@ -175,23 +194,48 @@ function PinballGame({players,ballCount=1,onResult}:{
         if(b.x-PB_BR<1){b.x=PB_BR+1;b.vx=Math.abs(b.vx)*0.75;}
         if(b.x+PB_BR>PB_W-1){b.x=PB_W-PB_BR-1;b.vx=-Math.abs(b.vx)*0.75;}
 
-        PEGS.forEach((p,idx)=>{
-          const dx=b.x-p.x, dy=b.y-p.y, d=Math.hypot(dx,dy);
-          const minD=PB_BR+p.r+0.5;
-          if(d<minD&&d>0.01){
-            const nx=dx/d, ny=dy/d;
-            b.x=p.x+nx*(minD+1); b.y=p.y+ny*(minD+1);
-            const dot=b.vx*nx+b.vy*ny;
-            const bf=p.type==="bumper"?1.05:0.52;
-            if(dot<0){b.vx-=2*dot*nx*bf; b.vy-=2*dot*ny*bf;}
-            b.vx+=(Math.random()-0.5)*(p.type==="bumper"?2.2:1.4);
-            if(b.vy<(p.type==="bumper"?0.5:1.8))b.vy=(p.type==="bumper"?0.5:1.8);
-            if(p.type==="bumper"){
-              bumperHitRef.current.add(idx);
-              setTimeout(()=>bumperHitRef.current.delete(idx),200);
+        OBSTACLES.forEach((o,idx)=>{
+          if(o.kind==="line"){
+            // 선분 충돌 — 최근접점 계산
+            const dx=o.x2-o.x1, dy=o.y2-o.y1, len2=dx*dx+dy*dy;
+            if(len2<0.001) return;
+            const tParam=Math.max(0,Math.min(1,((b.x-o.x1)*dx+(b.y-o.y1)*dy)/len2));
+            const cx=o.x1+tParam*dx, cy=o.y1+tParam*dy;
+            const ex=b.x-cx, ey=b.y-cy, d=Math.hypot(ex,ey);
+            const minD=PB_BR+o.w/2+0.5;
+            if(d<minD&&d>0.01){
+              const nx=ex/d, ny=ey/d;
+              b.x=cx+nx*(minD+1); b.y=cy+ny*(minD+1);
+              const dot=b.vx*nx+b.vy*ny;
+              if(dot<0){b.vx-=2*dot*nx*0.58; b.vy-=2*dot*ny*0.58;}
+              b.vx+=(Math.random()-0.5)*0.6;
+              if(b.vy<1.5) b.vy=1.5;
+            }
+          } else {
+            const dx=b.x-o.x, dy=b.y-o.y, d=Math.hypot(dx,dy);
+            const minD=PB_BR+o.r+0.5;
+            if(d<minD&&d>0.01){
+              const nx=dx/d, ny=dy/d;
+              b.x=o.x+nx*(minD+1); b.y=o.y+ny*(minD+1);
+              const dot=b.vx*nx+b.vy*ny;
+              const bf=o.type==="bumper"?1.05:0.52;
+              if(dot<0){b.vx-=2*dot*nx*bf; b.vy-=2*dot*ny*bf;}
+              b.vx+=(Math.random()-0.5)*(o.type==="bumper"?2.2:1.4);
+              if(b.vy<(o.type==="bumper"?0.5:1.8))b.vy=(o.type==="bumper"?0.5:1.8);
+              if(o.type==="bumper"){
+                bumperHitRef.current.add(idx);
+                setTimeout(()=>bumperHitRef.current.delete(idx),200);
+              }
             }
           }
         });
+        // 끼임 방지: 속도가 너무 낮으면 카운터 증가 → 일정 프레임 후 강제 탈출
+        if(Math.abs(b.vx)<0.6&&Math.abs(b.vy)<0.6){
+          b.stuckTick++;
+          if(b.stuckTick>25){b.vx=(Math.random()-0.5)*5;b.vy=2.5+Math.random()*2;b.stuckTick=0;}
+        } else { b.stuckTick=0; }
+        // 최소 하향 속도 보장
+        if(b.vy<0.4) b.vy=0.4;
 
         if(b.y+PB_BR>=FINISH_Y){
           b.finished=true; b.y=FINISH_Y-PB_BR; b.vx=0; b.vy=0;
