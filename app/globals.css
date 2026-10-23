@@ -461,6 +461,7 @@ html.anbu-mode body {
     radial-gradient(ellipse at 20% 80%, rgba(226,232,240,0.08) 0%, transparent 60%);
   background-size: auto;
 }
+html.anbu-mode main { position: relative; z-index: 2; }
 html.anbu-mode .leaf-float { display: none; }
 html.anbu-mode ::-webkit-scrollbar-track { background: #1e2430; }
 html.anbu-mode ::-webkit-scrollbar-thumb { background: #3f4a5f; }

@@ -127,19 +127,6 @@ const MYOBOKU_SPARKS = Array.from({ length: 25 }, (_, i) => ({
   shadow: i % 2 === 0 ? "0 0 8px #a3e635" : "0 0 8px #facc15",
 }));
 
-// 암부 핏자국 — 화면 가장자리 혈흔이 나타났다가 사라지는 효과 (14s 주기)
-const ANBU_BLOOD_MARKS = [
-  { top: "-8px",             left: "18%",              delay: "0s",   rot: 0,   size: 1.0  },
-  { top: "-6px",             left: "52%",              delay: "2.8s", rot: 8,   size: 0.85 },
-  { top: "-8px",             left: "80%",              delay: "5.5s", rot: -6,  size: 1.15 },
-  { top: "22%",              left: "-8px",             delay: "1.2s", rot: 90,  size: 0.9  },
-  { top: "62%",              left: "-6px",             delay: "4.2s", rot: 88,  size: 1.1  },
-  { top: "38%",              left: "calc(100% + 6px)", delay: "0.5s", rot: -90, size: 0.85 },
-  { top: "74%",              left: "calc(100% + 8px)", delay: "3.6s", rot: -92, size: 1.0  },
-  { top: "calc(100% + 6px)", left: "28%",              delay: "6.0s", rot: 180, size: 0.9  },
-  { top: "calc(100% + 8px)", left: "70%",              delay: "2.0s", rot: 176, size: 1.05 },
-] as const;
-
 
 // 독성 가스 기포: 동그란 물방울 대신 위로 피어오르는 독연기 와이프 형태로 표현
 const OROCHI_BUBBLES = Array.from({ length: 20 }, (_, i) => ({
@@ -1220,207 +1207,15 @@ export default function Navigation() {
       )}      {/* 암살전술 특수부대 배경 (청록색과 회색 메인의 사령부/데스크) - 오른쪽에 긴 구조물 없음 */}
       {theme === "anbu" && (
         <>
-          <div className="anbu-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.42, color: "var(--accent)" }}>
-            {/* Left Side: Anbu Equipment Desk & Mask Wall */}
-            <div className="absolute left-0 bottom-0" style={{ height: "65vh", width: "clamp(115px, 20vw, 260px)" }}>
-              <svg width="100%" height="100%" viewBox="0 0 260 600" preserveAspectRatio="xMinYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* 회색 철골 세로 벽/기둥 */}
-                <rect x="0" y="80" width="35" height="520" fill="currentColor" opacity="0.16" />
-                <line x1="35" y1="80" x2="35" y2="600" stroke="var(--border)" strokeWidth="2" opacity="0.4" />
-                
-                {/* 그릴 보관망 */}
-                <rect x="50" y="170" width="160" height="230" stroke="currentColor" strokeWidth="2.2" opacity="0.7" strokeDasharray="3,3" />
-                {/* 세로 철창 선 */}
-                <line x1="90" y1="170" x2="90" y2="400" stroke="currentColor" strokeWidth="1.8" opacity="0.65" />
-                <line x1="130" y1="170" x2="130" y2="400" stroke="currentColor" strokeWidth="1.8" opacity="0.65" />
-                <line x1="170" y1="170" x2="170" y2="400" stroke="currentColor" strokeWidth="1.8" opacity="0.65" />
-                {/* 가로 철창 선 추가 */}
-                <line x1="50" y1="210" x2="210" y2="210" stroke="currentColor" strokeWidth="1.5" opacity="0.55" />
-                <line x1="50" y1="260" x2="210" y2="260" stroke="currentColor" strokeWidth="1.5" opacity="0.55" />
-                <line x1="50" y1="310" x2="210" y2="310" stroke="currentColor" strokeWidth="1.5" opacity="0.55" />
-                <line x1="50" y1="360" x2="210" y2="360" stroke="currentColor" strokeWidth="1.5" opacity="0.55" />
-                
-                {/* 装備부 네온 전광판 (청록색 광선) */}
-                <rect x="50" y="120" width="100" height="30" rx="5" fill="#1e293b" stroke="#06b6d4" strokeWidth="1.5" opacity="0.8" />
-                <text x="65" y="140" fill="#22d3ee" fontSize="12" fontWeight="bold" letterSpacing="2" opacity="0.95">装備부</text>
-                
-                {/* 철제 배급 책상 */}
-                <path d="M 0,440 L 220,440 L 200,600 L 0,600 Z" fill="currentColor" opacity="0.22" />
-                <path d="M 0,440 L 220,440" stroke="#06b6d4" strokeWidth="3" opacity="0.75" />
-                <line x1="0" y1="455" x2="215" y2="455" stroke="var(--border)" strokeWidth="1.5" opacity="0.45" />
-                
-                {/* 암부 카타나 칼 */}
-                <path d="M 30,433 L 170,433" stroke="#e2e8f0" strokeWidth="2" opacity="0.85" />
-                <path d="M 170,431 L 195,431" stroke="#0891b2" strokeWidth="3.5" opacity="0.75" />
-                
-                {/* 가면 장식 - 3/4 측면 암부 가면 */}
-                <g transform="translate(115, 215) scale(1.2)">
-                  {/* Left Ear */}
-                  <path d="M -4,-8 L -16,-38 L 8,-8" fill="#ffffff" stroke="var(--border)" strokeWidth="2.5" strokeLinejoin="round" />
-                  <path d="M -2,-8 L -10,-32 L 4,-8" fill="#4b5358" />
-
-                  {/* Right Ear */}
-                  <path d="M 18,-8 L 32,-40 L 38,-8" fill="#ffffff" stroke="var(--border)" strokeWidth="2.5" strokeLinejoin="round" />
-                  <path d="M 22,-8 L 29,-34 L 34,-8" fill="#4b5358" />
-
-                  {/* Face Shield */}
-                  <path d="M 5,-10
-                           C -5,0 -8,15 -8,25
-                           C -8,30 -15,32 -22,42
-                           C -26,47 -26,52 -22,56
-                           C -15,62 -2,65 5,65
-                           C 20,65 48,55 48,20
-                           C 48,-5 30,-10 20,-10 Z"
-                        fill="#ffffff" stroke="var(--border)" strokeWidth="2.5" strokeLinejoin="round" />
-
-                  {/* Forehead Stripe */}
-                  <path d="M 4,-10 C 8,-2 10,10 8,22 C 11,10 16,-2 20,-10 Z" fill="#4b5358" />
-
-                  {/* Eyes */}
-                  <ellipse cx="-2" cy="32" rx="4.5" ry="6.5" fill="#111827" />
-                  <ellipse cx="22" cy="32" rx="6" ry="8.5" fill="#111827" />
-
-                  {/* Nose Tip */}
-                  <path d="M -23,45 C -25,47 -25,51 -23,53 L -20,49 Z" fill="#111827" />
-
-                  {/* Nose Line Down */}
-                  <path d="M -21,49 L -19,53" stroke="#111827" strokeWidth="1.8" strokeLinecap="round" />
-
-                  {/* Mouth Line */}
-                  <path d="M -23,53 L -14,53" stroke="#111827" strokeWidth="1.8" strokeLinecap="round" />
-                </g>
-                
-                {/* 사령부 세로 청록 데이터선 */}
-                <path d="M 12,80 L 12,600" stroke="#06b6d4" strokeWidth="1.5" strokeDasharray="10,35" opacity="0.45" />
-              </svg>
-            </div>
-
-            {/* Right Side: Armory door (오른쪽에 장비부 문과 네온 글자 전광판 추가) - 밝기 밝게 조절 */}
-            <div className="absolute right-0 bottom-0" style={{ height: "60vh", width: "clamp(80px, 14vw, 180px)" }}>
-              <svg width="100%" height="100%" viewBox="0 0 180 550" preserveAspectRatio="xMaxYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  {/* 청록 네온 텍스트 글로우 필터 */}
-                  <filter id="anbuNeonGlow">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                    <feMerge>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                </defs>
-
-                {/* 은은한 배경 안개 기운 */}
-                <path d="M 180,150 Q 110,300 150,450 T 180,550 Z" fill="currentColor" opacity="0.08" />
-
-                {/* 🚪 장비부 철제 문 (Steel Door) 그룹 */}
-                <g transform="translate(15, 80)">
-                  {/* 💡 문 위 装備부 네온 전광판 */}
-                  <rect x="25" y="-40" width="100" height="28" rx="4" fill="#1e293b" stroke="#0891b2" strokeWidth="1.8" opacity="0.95" />
-                  <rect x="25" y="-40" width="100" height="28" rx="4" fill="none" stroke="#22d3ee" strokeWidth="1.2" opacity="0.75" filter="url(#anbuNeonGlow)" />
-                  <text x="43" y="-22" fill="#22d3ee" fontSize="12" fontWeight="bold" letterSpacing="3" opacity="0.95" filter="url(#anbuNeonGlow)">装備부</text>
-
-                  {/* 외부 문틀 (Door Frame) - 밝은 색으로 변경 */}
-                  <rect x="10" y="0" width="130" height="470" fill="#2e3f56" stroke="#475a72" strokeWidth="3.5" opacity="0.9" />
-
-                  {/* 안쪽 철제 문 본체 (Steel Plate Door) - 밝은 색으로 변경 */}
-                  <rect x="17" y="8" width="116" height="454" fill="#475a72" stroke="#647d9c" strokeWidth="2.5" />
-
-                  {/* 3단 격자 패널 프레임 */}
-                  {/* 상단 패널 */}
-                  <rect x="25" y="20" width="100" height="125" fill="#223147" stroke="#647d9c" strokeWidth="1.8" />
-                  {/* 중단 패널 */}
-                  <rect x="25" y="165" width="100" height="125" fill="#223147" stroke="#647d9c" strokeWidth="1.8" />
-                  {/* 하단 패널 */}
-                  <rect x="25" y="310" width="100" height="125" fill="#223147" stroke="#647d9c" strokeWidth="1.8" />
-
-                  {/* 🔩 리벳 못 디테일 (Rivet dots around frame) - 더 밝게 */}
-                  {/* 왼쪽 프레임 라인 리벳 */}
-                  <circle cx="13" cy="15" r="2" fill="#94a3b8" /><circle cx="13" cy="65" r="2" fill="#94a3b8" /><circle cx="13" cy="115" r="2" fill="#94a3b8" />
-                  <circle cx="13" cy="165" r="2" fill="#94a3b8" /><circle cx="13" cy="215" r="2" fill="#94a3b8" /><circle cx="13" cy="265" r="2" fill="#94a3b8" />
-                  <circle cx="13" cy="315" r="2" fill="#94a3b8" /><circle cx="13" cy="365" r="2" fill="#94a3b8" /><circle cx="13" cy="415" r="2" fill="#94a3b8" />
-                  <circle cx="13" cy="455" r="2" fill="#94a3b8" />
-
-                  {/* 오른쪽 프레임 라인 리벳 */}
-                  <circle cx="137" cy="15" r="2" fill="#94a3b8" /><circle cx="137" cy="65" r="2" fill="#94a3b8" /><circle cx="137" cy="115" r="2" fill="#94a3b8" />
-                  <circle cx="137" cy="165" r="2" fill="#94a3b8" /><circle cx="137" cy="215" r="2" fill="#94a3b8" /><circle cx="137" cy="265" r="2" fill="#94a3b8" />
-                  <circle cx="137" cy="315" r="2" fill="#94a3b8" /><circle cx="137" cy="365" r="2" fill="#94a3b8" /><circle cx="137" cy="415" r="2" fill="#94a3b8" />
-                  <circle cx="137" cy="455" r="2" fill="#94a3b8" />
-
-                  {/* 가로 프레임 라인 리벳 */}
-                  <circle cx="35" cy="5" r="2" fill="#94a3b8" /><circle cx="75" cy="5" r="2" fill="#94a3b8" /><circle cx="115" cy="5" r="2" fill="#94a3b8" />
-                  <circle cx="35" cy="465" r="2" fill="#94a3b8" /><circle cx="75" cy="465" r="2" fill="#94a3b8" /><circle cx="115" cy="465" r="2" fill="#94a3b8" />
-
-                  {/* 🎛️ 황동색 문 손잡이 노브 */}
-                  <circle cx="32" cy="227" r="7" fill="#223147" stroke="#647d9c" strokeWidth="1.5" />
-                  <circle cx="36" cy="227" r="4.2" fill="#eab308" stroke="#ca8a04" strokeWidth="1.2" />
-                  <circle cx="36" cy="227" r="1.2" fill="#ffffff" />
-                </g>
-              </svg>
-            </div>
-            {/* 암부 화면 전체 그림자 안개 레이어 */}
-            <div className="anbu-mist-layer pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-              <style>{`
-                @keyframes anbuMist {
-                  0%, 100% { opacity: 0.15; transform: scale(1) translateX(0); }
-                  50% { opacity: 0.28; transform: scale(1.15) translateX(30px); }
-                }
-                .anbu-mist {
-                  position: absolute;
-                  width: 200%;
-                  height: 200%;
-                  background: radial-gradient(circle, rgba(15,23,42,0.6) 0%, transparent 60%);
-                  animation: anbuMist 20s ease-in-out infinite;
-                }
-              `}</style>
-              <div className="anbu-mist" style={{ top: '-50%', left: '-50%' }} />
-            </div>
-            {/* 핏자국 — 화면 가장자리 혈흔이 나타났다 사라짐 */}
-            <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
-              <style>{`
-                @keyframes bloodFade {
-                  0%   { opacity: 0; }
-                  5%   { opacity: 0.82; }
-                  70%  { opacity: 0.72; }
-                  88%  { opacity: 0.25; }
-                  100% { opacity: 0; }
-                }
-                .blood-svg {
-                  animation: bloodFade 14s ease-in-out infinite;
-                  display: block;
-                }
-              `}</style>
-
-              {ANBU_BLOOD_MARKS.map((b, i) => (
-                <div
-                  key={`blood-${i}`}
-                  style={{
-                    position: "absolute",
-                    top: b.top,
-                    left: b.left,
-                    transform: `rotate(${b.rot}deg) scale(${b.size})`,
-                    transformOrigin: "center top",
-                  }}
-                >
-                  <svg
-                    className="blood-svg"
-                    width="26"
-                    height="34"
-                    viewBox="0 0 28 36"
-                    style={{ animationDelay: b.delay }}
-                  >
-                    {/* 메인 핏자국 */}
-                    <ellipse cx="14" cy="9" rx="12" ry="9" fill="#7f1d1d" />
-                    {/* 흘러내리는 피 */}
-                    <path d="M 10,16 Q 12,26 14,34 Q 16,26 18,16" fill="#7f1d1d" />
-                    {/* 위성 핏방울 */}
-                    <circle cx="3" cy="7" r="4" fill="#7f1d1d" />
-                    <circle cx="23" cy="3" r="3" fill="#7f1d1d" />
-                    <circle cx="26" cy="14" r="2.5" fill="#7f1d1d" />
-                  </svg>
-                </div>
-              ))}
-            </div>
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
+            <img src="/images/anbu-bg.png" alt="" style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover", objectPosition: "center top", opacity: 0.5,
+            }} />
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to bottom, rgba(30,36,48,0.15) 0%, rgba(30,36,48,0.3) 50%, rgba(30,36,48,0.65) 100%)",
+            }} />
           </div>
         </>
       )}
@@ -1858,6 +1653,14 @@ export default function Navigation() {
                   style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(230,57,70,0.7))" }}
                 />
               </div>
+            ) : theme === "anbu" ? (
+              <div className="mb-1 flex justify-center" aria-hidden="true">
+                <img
+                  src="/images/anbu-logo.png"
+                  alt="암부 마크"
+                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(6,182,212,0.6))" }}
+                />
+              </div>
             ) : (
               <div className="text-2xl mb-1">{cur.icon}</div>
             )}
@@ -1935,6 +1738,8 @@ export default function Navigation() {
                   <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 ) : cur.id === "aka" ? (
                   <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : cur.id === "anbu" ? (
+                  <img src="/images/anbu-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{cur.icon}</span>
                 )}
@@ -1965,6 +1770,8 @@ export default function Navigation() {
                           <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                         ) : t.id === "aka" ? (
                           <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                        ) : t.id === "anbu" ? (
+                          <img src="/images/anbu-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : (
                           <span style={{ fontSize: 16 }}>{t.icon}</span>
                         )}
