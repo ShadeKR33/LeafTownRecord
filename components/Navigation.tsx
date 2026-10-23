@@ -338,10 +338,28 @@ export default function Navigation() {
 
   return (
     <>
-      {/* 나뭇잎 마을 입구 배경 (정문 도리이 기둥 및 마을 건물) */}
+      {/* 나뭇잎 마을 입구 배경 */}
       {theme === "leaf" && (
         <>
-          <div className="leaf-bg-valley pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.2, color: "var(--accent)" }}>
+          {/* 실제 배경 이미지 레이어 */}
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: -1 }}>
+            <img
+              src="/images/leaf-bg.webp"
+              alt=""
+              style={{
+                position: "absolute", inset: 0,
+                width: "100%", height: "100%",
+                objectFit: "cover", objectPosition: "center top",
+                opacity: 0.28,
+              }}
+            />
+            {/* 하단으로 갈수록 페이드 — UI 가독성 확보 */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to bottom, rgba(245,247,242,0) 0%, rgba(245,247,242,0.55) 55%, rgba(245,247,242,0.92) 100%)",
+            }} />
+          </div>
+          <div className="leaf-bg-valley pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.18, color: "var(--accent)" }}>
             {/* 왼쪽 절반 (나뭇잎 마을 정문 좌측 건물 + 홍살문/도리이 기둥) */}
             <div className="absolute left-0 bottom-0" style={{ height: "55vh", width: "320px" }}>
               <svg width="100%" height="100%" viewBox="0 0 320 600" preserveAspectRatio="xMinYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -602,19 +620,42 @@ export default function Navigation() {
         </>
       )}
 
-      {/* 아카츠키 붉은 구름 및 배경 구조물 */}
+      {/* 아카츠키 붉은 구름 및 배경 */}
       {theme === "aka" && (
         <>
+          {/* 실제 배경 이미지 레이어 */}
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: -1 }}>
+            <img
+              src="/images/aka-bg.webp"
+              alt=""
+              style={{
+                position: "absolute", inset: 0,
+                width: "100%", height: "100%",
+                objectFit: "cover", objectPosition: "center top",
+                opacity: 0.55,
+              }}
+            />
+            {/* 하단 페이드 + 전체 다크 오버레이 */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to bottom, rgba(11,11,13,0.15) 0%, rgba(11,11,13,0.45) 50%, rgba(11,11,13,0.88) 100%)",
+            }} />
+          </div>
+          {/* 아카츠키 구름 — 실제 PNG 이미지 사용 */}
           <div className="aka-cloud-layer" aria-hidden>
             {AKA_CLOUDS.map((c, i) => (
-              <AkaCloud key={i} scale={c.scale} style={{
+              <div key={i} className="aka-cloud" style={{
                 top: c.top,
                 left: c.left,
                 right: c.right,
                 animationDuration: c.duration,
                 animationDelay: c.delay,
                 opacity: c.opacity,
-              }} />
+                transform: `scale(${c.scale})`,
+                transformOrigin: "center",
+              }}>
+                <img src="/images/akatsuki-cloud.png" alt="" style={{ width: 120, height: "auto", display: "block" }} />
+              </div>
             ))}
           </div>
           {/* 아카츠키 배경 구조물 (좌우 코너) */}
@@ -2055,24 +2096,13 @@ export default function Navigation() {
           {/* 타이틀 */}
           <div className="pt-5 pb-2 text-center relative">
             {theme === "leaf" ? (
-              /* 코노하 나뭇잎 마크 SVG */
+              /* 코노하 나뭇잎 마크 실제 이미지 */
               <div className="mb-1 flex justify-center" aria-hidden="true">
-                <svg width="38" height="38" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  {/* 외부 원형 테두리 */}
-                  <circle cx="24" cy="24" r="22" stroke="var(--accent)" strokeWidth="2" opacity="0.7" fill="none"/>
-                  {/* 코노하 나뭇잎 본체 — 큰 물방울 형태로 잎을 표현 */}
-                  <path d="M24 8 C16 8 10 14 10 22 C10 30 16 38 24 40 C32 38 38 30 38 22 C38 14 32 8 24 8 Z"
-                    fill="var(--accent)" opacity="0.85"/>
-                  {/* 잎 중앙 줄기선 */}
-                  <line x1="24" y1="10" x2="24" y2="39" stroke="white" strokeWidth="1.5" opacity="0.6"/>
-                  {/* 잎 좌우 줄기선 */}
-                  <line x1="24" y1="17" x2="14" y2="24" stroke="white" strokeWidth="1" opacity="0.45"/>
-                  <line x1="24" y1="17" x2="34" y2="24" stroke="white" strokeWidth="1" opacity="0.45"/>
-                  <line x1="24" y1="24" x2="13" y2="30" stroke="white" strokeWidth="1" opacity="0.35"/>
-                  <line x1="24" y1="24" x2="35" y2="30" stroke="white" strokeWidth="1" opacity="0.35"/>
-                  {/* 중앙 소용돌이 점 */}
-                  <circle cx="24" cy="23" r="2.5" fill="white" opacity="0.75"/>
-                </svg>
+                <img
+                  src="/images/konoha-logo.png"
+                  alt="코노하 마크"
+                  style={{ width: 42, height: 42, objectFit: "contain", filter: "drop-shadow(0 1px 4px rgba(46,125,50,0.4))" }}
+                />
               </div>
             ) : (
               <div className="text-2xl mb-1"
