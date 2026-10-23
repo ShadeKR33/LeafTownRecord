@@ -454,23 +454,6 @@ export default function Navigation() {
               background: "linear-gradient(to bottom, rgba(11,11,13,0.2) 0%, rgba(11,11,13,0.35) 50%, rgba(11,11,13,0.85) 100%)",
             }} />
           </div>
-          {/* 아카츠키 구름 — 실제 PNG 이미지 사용 */}
-          <div className="aka-cloud-layer" aria-hidden>
-            {AKA_CLOUDS.map((c, i) => (
-              <div key={i} className="aka-cloud" style={{
-                top: c.top,
-                left: c.left,
-                right: c.right,
-                animationDuration: c.duration,
-                animationDelay: c.delay,
-                opacity: c.opacity,
-                transform: `scale(${c.scale})`,
-                transformOrigin: "center",
-              }}>
-                <img src="/images/akatsuki-cloud.png" alt="" style={{ width: 120, height: "auto", display: "block" }} />
-              </div>
-            ))}
-          </div>
         </>
       )}
 
@@ -1860,19 +1843,23 @@ export default function Navigation() {
           {/* 타이틀 */}
           <div className="pt-5 pb-2 text-center relative">
             {theme === "leaf" ? (
-              /* 코노하 나뭇잎 마크 실제 이미지 */
               <div className="mb-1 flex justify-center" aria-hidden="true">
                 <img
-                  src="/images/konoha-logo.png"
+                  src="/images/konoha-logo-new.png"
                   alt="코노하 마크"
                   style={{ width: 42, height: 42, objectFit: "contain", mixBlendMode: "multiply", filter: "drop-shadow(0 1px 4px rgba(46,125,50,0.35))" }}
                 />
               </div>
-            ) : (
-              <div className="text-2xl mb-1"
-                style={theme === "aka" ? { filter: "sepia(1) saturate(8) hue-rotate(310deg) brightness(0.85)" } : undefined}>
-                {cur.icon}
+            ) : theme === "aka" ? (
+              <div className="mb-1 flex justify-center" aria-hidden="true">
+                <img
+                  src="/images/aka-cloud-logo.png"
+                  alt="아카츠키 마크"
+                  style={{ width: 48, height: 48, objectFit: "contain", filter: "drop-shadow(0 2px 8px rgba(230,57,70,0.6))" }}
+                />
               </div>
+            ) : (
+              <div className="text-2xl mb-1">{cur.icon}</div>
             )}
             <h1 className="text-xl font-black tracking-wide" style={{ color: cur.accentColor }}>
               {cur.title}

@@ -172,6 +172,12 @@ html.aka-mode body:not(.placeholder) {
 
 html.aka-mode .leaf-float { display: none; }
 
+/* 배경 이미지(z-index:1) 위로 콘텐츠 올리기 */
+html.aka-mode main {
+  position: relative;
+  z-index: 2;
+}
+
 /* 붉은 구름 */
 .aka-cloud-layer {
   pointer-events: none;
