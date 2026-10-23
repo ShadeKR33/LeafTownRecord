@@ -76,11 +76,21 @@ function PinballGame({players,ballCount=1,onResult}:{
 
   const FINISH_Y=PB_H-40;
 
+  const getTheme=()=>{
+    const s=getComputedStyle(document.documentElement);
+    const v=(k:string)=>s.getPropertyValue(k).trim();
+    return{bg:v("--bg"),panel:v("--panel"),accent:v("--accent"),
+      accentLight:v("--accent-light"),accentGold:v("--accent-gold"),border:v("--border")};
+  };
+
   const drawBg=(ctx:CanvasRenderingContext2D)=>{
-    // 배경
-    ctx.fillStyle="#080f1e"; ctx.fillRect(0,0,PB_W,PB_H);
-    // 벽면 가이드
-    ctx.strokeStyle="#1e293b"; ctx.lineWidth=2;
+    const t=getTheme();
+    // 배경: 패널→배경 그라데이션
+    const bgGrad=ctx.createLinearGradient(0,0,0,PB_H);
+    bgGrad.addColorStop(0,t.panel); bgGrad.addColorStop(1,t.bg);
+    ctx.fillStyle=bgGrad; ctx.fillRect(0,0,PB_W,PB_H);
+    // 벽면 테두리
+    ctx.strokeStyle=t.border; ctx.lineWidth=2;
     ctx.strokeRect(1,1,PB_W-2,PB_H-2);
 
     PEGS.forEach((p,idx)=>{
@@ -89,22 +99,21 @@ function PinballGame({players,ballCount=1,onResult}:{
       ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
       if(isBumper){
         ctx.shadowBlur=isHit?24:8;
-        ctx.shadowColor=isHit?"#fbbf24":"#f97316aa";
-        const grad=ctx.createRadialGradient(p.x-4,p.y-4,1,p.x,p.y,p.r);
-        grad.addColorStop(0,isHit?"#fde68a":"#fed7aa");
-        grad.addColorStop(1,isHit?"#f59e0b":"#ea580c");
-        ctx.fillStyle=grad; ctx.fill();
-        ctx.shadowBlur=0;
-        ctx.strokeStyle=isHit?"#fbbf24":"#f97316"; ctx.lineWidth=2; ctx.stroke();
+        ctx.shadowColor=isHit?t.accentGold:t.accentGold+"99";
+        const g=ctx.createRadialGradient(p.x-4,p.y-4,1,p.x,p.y,p.r);
+        g.addColorStop(0,isHit?lightenHex(t.accentGold,0.45):lightenHex(t.accentGold,0.22));
+        g.addColorStop(1,isHit?t.accentGold:t.accent);
+        ctx.fillStyle=g; ctx.fill(); ctx.shadowBlur=0;
+        ctx.strokeStyle=isHit?t.accentGold:t.accentLight; ctx.lineWidth=2; ctx.stroke();
       } else {
-        ctx.fillStyle="#1e3a5f"; ctx.fill();
-        ctx.strokeStyle="#3b82f6aa"; ctx.lineWidth=1; ctx.stroke();
+        ctx.fillStyle=t.border; ctx.fill();
+        ctx.strokeStyle=t.accentLight+"99"; ctx.lineWidth=1; ctx.stroke();
       }
     });
 
     // 구역 구분 라벨
     const zoneLabel=(text:string,y:number)=>{
-      ctx.fillStyle="#ffffff18"; ctx.font="9px sans-serif";
+      ctx.fillStyle=t.accent+"33"; ctx.font="9px sans-serif";
       ctx.textAlign="right"; ctx.textBaseline="middle";
       ctx.fillText(text,PB_W-4,y);
     };
@@ -112,11 +121,11 @@ function PinballGame({players,ballCount=1,onResult}:{
     zoneLabel("BUMPER",380); zoneLabel("SLIDE",500); zoneLabel("ZONE 3",635);
 
     // FINISH 라인
-    ctx.shadowBlur=6; ctx.shadowColor="#fbbf24";
-    ctx.strokeStyle="#fbbf24"; ctx.lineWidth=2.5; ctx.setLineDash([8,5]);
+    ctx.shadowBlur=6; ctx.shadowColor=t.accentGold;
+    ctx.strokeStyle=t.accentGold; ctx.lineWidth=2.5; ctx.setLineDash([8,5]);
     ctx.beginPath(); ctx.moveTo(0,FINISH_Y); ctx.lineTo(PB_W,FINISH_Y); ctx.stroke();
     ctx.setLineDash([]); ctx.shadowBlur=0;
-    ctx.fillStyle="#fbbf24cc"; ctx.font="bold 10px sans-serif";
+    ctx.fillStyle=t.accentGold+"cc"; ctx.font="bold 10px sans-serif";
     ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillText("⚑ FINISH",PB_W/2,FINISH_Y+16);
   };
@@ -243,7 +252,7 @@ function PinballGame({players,ballCount=1,onResult}:{
       </div>
       <div style={{maxHeight:"70vh",overflowY:"auto",borderRadius:12}}>
         <canvas ref={cvRef} width={PB_W} height={PB_H}
-          style={{borderRadius:12,border:"2px solid #1e3a5f",boxShadow:"0 8px 40px rgba(0,0,0,0.5)",display:"block"}}/>
+          style={{borderRadius:12,border:"2px solid var(--border)",boxShadow:"0 8px 40px rgba(0,0,0,0.25)",display:"block"}}/>
       </div>
       {playerRanks.length>0&&(
         <div className="flex flex-wrap gap-2 justify-center">
