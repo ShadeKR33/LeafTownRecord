@@ -31,40 +31,32 @@ const ln=(x1:number,y1:number,x2:number,y2:number,w=9):LineBar=>({kind:"line",x1
 const OBSTACLES:Obstacle[]=(()=>{
   const obs:Obstacle[]=[];
 
-  // Zone 1 – 깔때기 레일 (선분)
-  obs.push(ln(6,50,140,118,10));    // 왼쪽 대각 레일
-  obs.push(ln(334,50,200,118,10));  // 오른쪽 대각 레일
-  obs.push(pg(170,72));             // 중앙 상단 핀
+  // Zone 1 – 깔때기 레일 (벽에서 25px 이격 → 공이 끼지 않는 통로 확보)
+  obs.push(ln(25,52,128,106,9));    // 왼쪽 레일
+  obs.push(ln(315,52,212,106,9));   // 오른쪽 레일
+  obs.push(pg(170,76));
 
-  // Zone 2 – 격자 핀 + 가로 바
-  for(let row=0;row<4;row++){
-    const y=148+row*48, even=row%2===0, n=even?7:6;
-    const sx=even?(PB_W-6*44)/2:(PB_W-5*44)/2+22;
-    for(let c=0;c<n;c++) obs.push(pg(sx+c*44,y));
+  // Zone 2 – 3행, 52px 간격 (공 직경 18px 기준 갭 24px, 통과 가능)
+  for(let row=0;row<3;row++){
+    const y=150+row*54, even=row%2===0;
+    const xs=even?[40,92,144,196,248,300]:[66,118,170,222,274];
+    xs.forEach(x=>obs.push(pg(x,y)));
   }
-  obs.push(ln(44,196,116,196,7));   // 가로 바 1
-  obs.push(ln(224,244,296,244,7));  // 가로 바 2
 
-  // Zone 3 – 대형 범퍼 + V자 가이드 선분
-  [[85,345],[170,325],[255,345],[128,392],[212,392]].forEach(([x,y])=>obs.push(pg(x,y,15,"bumper")));
-  [[50,362],[120,316],[220,316],[290,362]].forEach(([x,y])=>obs.push(pg(x,y,5)));
-  obs.push(ln(30,420,150,440,8));   // 왼쪽 하단 가이드
-  obs.push(ln(310,420,190,440,8));  // 오른쪽 하단 가이드
+  // Zone 3 – 범퍼만 (주변 소형 핀 제거, 끼임 원인)
+  [[85,340],[170,318],[255,340],[128,386],[212,386]].forEach(([x,y])=>obs.push(pg(x,y,14,"bumper")));
 
-  // Zone 4 – W자 슬라이드 (교차 없음, 끼임 방지)
-  obs.push(ln(20,448,155,498,10)); // 왼쪽 바깥 슬라이드 ↘
-  obs.push(ln(320,448,185,498,10));// 오른쪽 바깥 슬라이드 ↙
-  obs.push(ln(95,520,170,548,9));  // 왼쪽 안쪽 슬라이드 ↘
-  obs.push(ln(245,520,170,548,9)); // 오른쪽 안쪽 슬라이드 ↙
-  obs.push(pg(170,500,8));         // W 중앙 핀
-  obs.push(pg(60,505)); obs.push(pg(280,505)); // 바깥 유도 핀
+  // Zone 4 – W자 슬라이드 (벽에서 30px 이격, 중앙 통로 열림)
+  obs.push(ln(30,448,145,494,9));
+  obs.push(ln(310,448,195,494,9));
+  obs.push(ln(100,516,168,542,8));
+  obs.push(ln(240,516,172,542,8));
+  obs.push(pg(170,498,7));
 
-  // Zone 5 – 촘촘한 최종 구간
-  for(let row=0;row<5;row++){
-    const y=572+row*34, even=row%2===0, n=even?9:8;
-    const sx=even?(PB_W-8*34)/2:(PB_W-7*34)/2+17;
-    for(let c=0;c<n;c++) obs.push(pg(sx+c*34,y,5));
-  }
+  // Zone 5 – 2행, 52px 간격 (넉넉한 통로)
+  [40,92,144,196,248,300].forEach(x=>obs.push(pg(x,578,5)));
+  [66,118,222,274].forEach(x=>obs.push(pg(x,630,5))); // 중앙 170 비워 큰 구멍
+
   return obs;
 })();
 
