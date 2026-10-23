@@ -1855,7 +1855,7 @@ export default function Navigation() {
                 <img
                   src="/images/aka-cloud-logo.png"
                   alt="아카츠키 마크"
-                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(230,57,70,0.7))" }}
+                  style={{ width: 88, height: 88, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(230,57,70,0.7))" }}
                 />
               </div>
             ) : (

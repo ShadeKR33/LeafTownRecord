@@ -1220,7 +1220,7 @@ export default function RankingPage() {
             {activeTheme === "leaf" ? (
               <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
             ) : activeTheme === "aka" ? (
-              <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+              <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
             ) : (
               <span>{newsTitles[activeTheme].icon}</span>
             )}
@@ -1268,7 +1268,7 @@ export default function RankingPage() {
                 {activeTheme === "leaf" ? (
                   <img src="/images/konoha-logo-new.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
                 ) : activeTheme === "aka" ? (
-                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+                  <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{newsTitles[activeTheme].icon}</span>
                 )}
