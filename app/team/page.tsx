@@ -11,7 +11,7 @@ type MiniGameType = "shuriken" | "coin" | "scroll" | "pinball";
 type Side = "blue" | "red" | null;
 
 const BALL_COLORS = [
-  "#06b6d4","#3b82f6","#8b5cf6","#a855f7",
+  "#eab308","#3b82f6","#8b5cf6","#a855f7",
   "#ec4899","#ef4444","#f97316","#eab308","#22c55e","#14b8a6",
 ];
 
