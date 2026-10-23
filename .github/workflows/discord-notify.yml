@@ -1,0 +1,91 @@
+name: Discord 업데이트 알림
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Discord 알림 전송
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python3 << 'EOF'
+          import json, os, subprocess, urllib.request, datetime
+
+          webhook = os.environ.get("DISCORD_WEBHOOK", "")
+          if not webhook:
+              print("DISCORD_WEBHOOK_URL 시크릿이 설정되지 않았습니다.")
+              exit(0)
+
+          subject = subprocess.check_output(
+              ["git", "log", "-1", "--pretty=%s"]
+          ).decode().strip()
+
+          body = subprocess.check_output(
+              ["git", "log", "-1", "--pretty=%b"]
+          ).decode().strip()
+
+          sha = subprocess.check_output(
+              ["git", "log", "-1", "--pretty=%h"]
+          ).decode().strip()
+
+          author = subprocess.check_output(
+              ["git", "log", "-1", "--pretty=%an"]
+          ).decode().strip()
+
+          # 커밋 타입별 이모지
+          type_map = {
+              "feat": "✨", "fix": "🐛", "refactor": "🔨",
+              "style": "💅", "docs": "📝", "chore": "🔧",
+              "perf": "⚡", "test": "🧪",
+          }
+          prefix = subject.split(":")[0].strip().lower() if ":" in subject else ""
+          emoji = type_map.get(prefix, "🔄")
+
+          # 본문 포맷: 줄바꿈을 • 리스트로
+          lines = [l.strip() for l in body.splitlines() if l.strip() and not l.strip().startswith("Co-Authored")]
+          body_text = "\n".join(f"• {l}" for l in lines) if lines else ""
+
+          description_parts = [f"**{emoji} {subject}**"]
+          if body_text:
+              description_parts.append(body_text)
+
+          now = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+
+          payload = {
+              "embeds": [{
+                  "author": {
+                      "name": "🌿 내전 기록소 업데이트",
+                      "url": "https://leaf-town-records.vercel.app",
+                  },
+                  "description": "\n\n".join(description_parts),
+                  "color": 0x2A5C1E,
+                  "fields": [
+                      {"name": "배포", "value": "[leaf-town-records.vercel.app](https://leaf-town-records.vercel.app)", "inline": True},
+                      {"name": "커밋", "value": f"`{sha}`", "inline": True},
+                      {"name": "작성자", "value": author, "inline": True},
+                  ],
+                  "footer": {"text": "Vercel 자동 배포"},
+                  "timestamp": now,
+              }]
+          }
+
+          data = json.dumps(payload).encode()
+          req = urllib.request.Request(
+              webhook, data=data,
+              headers={"Content-Type": "application/json"},
+              method="POST"
+          )
+          try:
+              urllib.request.urlopen(req)
+              print("Discord 알림 전송 완료")
+          except Exception as e:
+              print(f"전송 실패: {e}")
+          EOF
