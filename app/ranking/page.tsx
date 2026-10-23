@@ -1089,16 +1089,25 @@ export default function RankingPage() {
 
   const StreakBadge = ({ streak }: { streak: number }) => {
     if (Math.abs(streak) < 2) return <span className="text-xs" style={{ color: "var(--text-dim)" }}>-</span>;
+    const isAka = activeTheme === "aka";
     if (streak > 0) return (
       <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold"
-        style={{ background: "var(--win-bg, rgba(76,175,80,0.12))", color: "var(--win)", border: "1px solid var(--win-border, rgba(76,175,80,0.3))" }}>
+        style={{
+          background: isAka ? "rgba(180,0,0,0.25)" : "rgba(46,125,50,0.13)",
+          color: "var(--win)",
+          border: isAka ? "1px solid rgba(230,57,70,0.4)" : "1px solid rgba(46,125,50,0.3)",
+        }}>
         🔥 {streak}연승중
       </span>
     );
     return (
       <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold"
-        style={{ background: "var(--loss-bg, rgba(239,68,68,0.1))", color: "var(--loss)", border: "1px solid var(--loss-border, rgba(239,68,68,0.25))" }}>
-        🌧️ {Math.abs(streak)}연패중
+        style={{
+          background: isAka ? "rgba(40,0,0,0.45)" : "rgba(172,36,54,0.10)",
+          color: "var(--loss)",
+          border: isAka ? "1px solid rgba(180,0,0,0.35)" : "1px solid rgba(172,36,54,0.28)",
+        }}>
+        {isAka ? "🌙" : "🌧️"} {Math.abs(streak)}연패중
       </span>
     );
   };
@@ -1300,16 +1309,21 @@ export default function RankingPage() {
                 return (
                   <tr key={p.mainNickname}
                     style={{
-                      background: ranks[i] === 1 ? "rgba(254,240,138,0.45)"
-                                : ranks[i] === 2 ? "rgba(241,245,249,0.8)"
-                                : ranks[i] === 3 ? "rgba(255,247,237,0.8)"
-                                : i % 2 === 0 ? "var(--panel)" : "var(--panel-alt)",
+                      background: (() => {
+                        if (ranks[i] === 1) return activeTheme === "aka" ? "rgba(180,0,0,0.28)" : "rgba(212,173,50,0.22)";
+                        if (ranks[i] === 2) return activeTheme === "aka" ? "rgba(120,0,0,0.20)" : "rgba(180,180,190,0.22)";
+                        if (ranks[i] === 3) return activeTheme === "aka" ? "rgba(80,0,0,0.18)" : "rgba(180,110,30,0.14)";
+                        return i % 2 === 0 ? "var(--panel)" : "var(--panel-alt)";
+                      })(),
                       borderBottom: "1px solid var(--border)",
                       cursor: "pointer",
-                      borderLeft: ranks[i] === 1 ? "4px solid #fbbf24"
-                                 : ranks[i] === 2 ? "4px solid #94a3b8"
-                                 : ranks[i] === 3 ? "4px solid #f97316"
-                                 : "3px solid transparent",
+                      borderLeft: ranks[i] === 1
+                        ? `4px solid ${activeTheme === "aka" ? "#E63946" : "#d4a010"}`
+                        : ranks[i] === 2
+                        ? `4px solid ${activeTheme === "aka" ? "#7a1020" : "#94a3b8"}`
+                        : ranks[i] === 3
+                        ? `4px solid ${activeTheme === "aka" ? "#500010" : "#c2640c"}`
+                        : "3px solid transparent",
                       transition: "filter 0.15s, border-left-color 0.15s",
                     }}
                     onMouseEnter={e => {

@@ -2065,15 +2065,23 @@ export default function Navigation() {
       )}
 
       <header style={{
-        background: "var(--panel)",
+        background: theme === "leaf"
+          ? "rgba(245,247,242,0.78)"
+          : theme === "aka"
+          ? "rgba(11,11,13,0.78)"
+          : "var(--panel)",
+        backdropFilter: (theme === "leaf" || theme === "aka") ? "blur(14px)" : undefined,
+        WebkitBackdropFilter: (theme === "leaf" || theme === "aka") ? "blur(14px)" : undefined,
         borderBottom: "1px solid var(--border)",
         boxShadow: theme === "aka"
-          ? "0 1px 12px rgba(180,0,0,0.3)"
+          ? "0 1px 16px rgba(180,0,0,0.35)"
           : theme === "rain"
           ? "0 1px 12px rgba(139,92,246,0.2)"
+          : theme === "leaf"
+          ? "0 1px 12px rgba(46,125,50,0.12)"
           : "0 1px 4px rgba(0,0,0,0.06)",
         position: "relative",
-        zIndex: 40,   // 메인 컨텐츠(z-10)보다 높아야 드롭다운이 위에 표시됨
+        zIndex: 40,
       }}>
         {/* 쿠나이 장식 */}
         {["left-6", "right-6"].map(side => (
