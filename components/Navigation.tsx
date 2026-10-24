@@ -1621,22 +1621,6 @@ export default function Navigation() {
         position: "relative",
         zIndex: 40,
       }}>
-        {/* 쿠나이 장식 */}
-        {["left-6", "right-6"].map(side => (
-          <div key={side} className={`absolute top-1/2 ${side} -translate-y-1/2 pointer-events-none hidden xl:block`} style={{ opacity: 0.5 }}>
-            <svg width="22" height="100" viewBox="0 0 24 110">
-              <polygon points="12,2 5,38 12,32 19,38" fill="#64748b"/>
-              <line x1="12" y1="2" x2="12" y2="32" stroke="#94a3b8" strokeWidth="0.8"/>
-              <rect x="3" y="38" width="18" height="5" rx="1.5" fill="#475569"/>
-              <rect x="8" y="43" width="8" height="42" rx="2" fill="#64748b"/>
-              {[51,59,67,75].map(y => (
-                <line key={y} x1="8" y1={y} x2="16" y2={y} stroke="#1e293b" strokeWidth="1.2" strokeOpacity="0.5"/>
-              ))}
-              <circle cx="12" cy="95" r="8" fill="none" stroke="#64748b" strokeWidth="2"/>
-              <circle cx="12" cy="95" r="4" fill="none" stroke="#94a3b8" strokeWidth="1"/>
-            </svg>
-          </div>
-        ))}
 
         <div className="max-w-6xl mx-auto px-4" style={{ position: "relative" }}>
           {/* 타이틀 */}
