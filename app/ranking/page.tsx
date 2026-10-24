@@ -1223,6 +1223,8 @@ export default function RankingPage() {
               <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
             ) : activeTheme === "anbu" ? (
               <img src="/images/anbu-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+            ) : activeTheme === "rain" ? (
+              <img src="/images/rain-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
             ) : (
               <span>{newsTitles[activeTheme].icon}</span>
             )}
@@ -1273,6 +1275,8 @@ export default function RankingPage() {
                   <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : activeTheme === "anbu" ? (
                   <img src="/images/anbu-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : activeTheme === "rain" ? (
+                  <img src="/images/rain-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{newsTitles[activeTheme].icon}</span>
                 )}

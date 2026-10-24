@@ -102,6 +102,7 @@ html.ame-mode body {
 }
 
 /* 나뭇잎 숨기기 */
+html.ame-mode main { position: relative; z-index: 3; }
 html.ame-mode .leaf-float { display: none; }
 
 /* 빗줄기 오버레이 */

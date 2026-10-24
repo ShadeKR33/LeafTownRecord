@@ -358,64 +358,25 @@ export default function Navigation() {
       {/* 비 마을 빗줄기 및 배경 건물 */}
       {theme === "rain" && (
         <>
-          <div className="ame-rain-layer" aria-hidden>
+          {/* 배경 이미지 레이어 */}
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
+            <img src="/images/rain-bg.png" alt="" style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover", objectPosition: "center top", opacity: 0.5,
+            }} />
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to bottom, rgba(30,28,48,0.15) 0%, rgba(30,28,48,0.3) 50%, rgba(30,28,48,0.65) 100%)",
+            }} />
+          </div>
+          {/* 비 효과 — bg 이미지 위에 표시 */}
+          <div className="ame-rain-layer" aria-hidden style={{ zIndex: 2 }}>
             {RAIN_DROPS.map((d, i) => (
               <div key={i} className="ame-rain-drop" style={{
                 left: d.left, height: d.height,
                 animationDuration: d.duration, animationDelay: d.delay, opacity: d.opacity,
               }} />
             ))}
-          </div>
-          {/* 비 마을 배경 건물 (고정형 구조물 2개) */}
-          <div className="ame-bg-buildings pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.16, color: "var(--border-green)" }}>
-            {/* Left Tower */}
-            <div className="absolute left-0 bottom-0" style={{ height: "65vh", width: "180px" }}>
-              <svg width="100%" height="100%" viewBox="0 0 200 600" preserveAspectRatio="xMinYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="40" y="250" width="60" height="350" fill="currentColor" opacity="0.3"/>
-                <rect x="50" y="150" width="40" height="100" fill="currentColor" opacity="0.4"/>
-                <rect x="65" y="50" width="10" height="100" fill="currentColor" opacity="0.5"/>
-                <line x1="70" y1="50" x2="70" y2="10" stroke="currentColor" strokeWidth="2"/>
-                <line x1="60" y1="25" x2="80" y2="25" stroke="currentColor" strokeWidth="1.5"/>
-                <line x1="63" y1="35" x2="77" y2="35" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M 40,280 C 10,280 10,400 40,400" stroke="currentColor" strokeWidth="4" fill="none"/>
-                <path d="M 40,290 C 18,290 18,390 40,390" stroke="currentColor" strokeWidth="2" fill="none"/>
-                <line x1="100" y1="300" x2="160" y2="350" stroke="currentColor" strokeWidth="3"/>
-                <line x1="100" y1="350" x2="160" y2="300" stroke="currentColor" strokeWidth="3"/>
-                <line x1="160" y1="300" x2="160" y2="600" stroke="currentColor" strokeWidth="3"/>
-                <line x1="40" y1="280" x2="100" y2="280" stroke="var(--bg)" strokeWidth="2"/>
-                <line x1="40" y1="340" x2="100" y2="340" stroke="var(--bg)" strokeWidth="2"/>
-                <line x1="40" y1="400" x2="100" y2="400" stroke="var(--bg)" strokeWidth="2"/>
-                <line x1="40" y1="480" x2="100" y2="480" stroke="var(--bg)" strokeWidth="2"/>
-                <line x1="40" y1="550" x2="100" y2="550" stroke="var(--bg)" strokeWidth="2"/>
-                <path d="M 0,200 Q 50,230 100,200" stroke="currentColor" strokeWidth="1" strokeDasharray="3,3" fill="none"/>
-                <path d="M 0,220 Q 50,250 100,220" stroke="currentColor" strokeWidth="0.8" fill="none"/>
-              </svg>
-            </div>
-            {/* Right Tower */}
-            <div className="absolute right-0 bottom-0" style={{ height: "75vh", width: "220px" }}>
-              <svg width="100%" height="100%" viewBox="0 0 250 700" preserveAspectRatio="xMaxYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="100" y="200" width="50" height="500" fill="currentColor" opacity="0.3"/>
-                <rect x="110" y="100" width="30" height="100" fill="currentColor" opacity="0.4"/>
-                <circle cx="125" cy="220" r="35" fill="currentColor" opacity="0.45"/>
-                <circle cx="125" cy="220" r="35" stroke="var(--bg)" strokeWidth="2" fill="none"/>
-                <path d="M 150,300 C 220,300 220,450 150,450" stroke="currentColor" strokeWidth="5" fill="none"/>
-                <path d="M 150,312 C 205,312 205,438 150,438" stroke="currentColor" strokeWidth="2.5" fill="none"/>
-                <line x1="125" y1="100" x2="125" y2="20" stroke="currentColor" strokeWidth="2"/>
-                <line x1="115" y1="40" x2="135" y2="40" stroke="currentColor" strokeWidth="1.5"/>
-                <line x1="120" y1="60" x2="130" y2="60" stroke="currentColor" strokeWidth="1.5"/>
-                <line x1="100" y1="280" x2="30" y2="350" stroke="currentColor" strokeWidth="2"/>
-                <line x1="100" y1="350" x2="30" y2="280" stroke="currentColor" strokeWidth="2"/>
-                <line x1="30" y1="280" x2="30" y2="700" stroke="currentColor" strokeWidth="2.5"/>
-                <line x1="30" y1="380" x2="100" y2="450" stroke="currentColor" strokeWidth="2"/>
-                <line x1="30" y1="450" x2="100" y2="380" stroke="currentColor" strokeWidth="2"/>
-                <line x1="100" y1="300" x2="150" y2="300" stroke="var(--bg)" strokeWidth="2"/>
-                <line x1="100" y1="380" x2="150" y2="380" stroke="var(--bg)" strokeWidth="2"/>
-                <line x1="100" y1="480" x2="150" y2="480" stroke="var(--bg)" strokeWidth="2"/>
-                <line x1="100" y1="580" x2="150" y2="580" stroke="var(--bg)" strokeWidth="2"/>
-                <path d="M 100,150 Q 50,180 0,160" stroke="currentColor" strokeWidth="0.8" fill="none"/>
-                <path d="M 100,165 Q 50,195 0,175" stroke="currentColor" strokeWidth="0.8" fill="none"/>
-              </svg>
-            </div>
           </div>
         </>
       )}
@@ -1605,9 +1566,11 @@ export default function Navigation() {
           ? "rgba(11,11,13,0.78)"
           : theme === "anbu"
           ? "rgba(18,22,32,0.68)"
+          : theme === "rain"
+          ? "rgba(20,18,38,0.72)"
           : "var(--panel)",
-        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu") ? "blur(14px)" : undefined,
-        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu") ? "blur(14px)" : undefined,
+        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain") ? "blur(14px)" : undefined,
+        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain") ? "blur(14px)" : undefined,
         borderBottom: "1px solid var(--border)",
         boxShadow: theme === "aka"
           ? "0 1px 16px rgba(180,0,0,0.35)"
@@ -1647,6 +1610,14 @@ export default function Navigation() {
                   src="/images/anbu-logo.png"
                   alt="암부 마크"
                   style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(6,182,212,0.6))" }}
+                />
+              </div>
+            ) : theme === "rain" ? (
+              <div className="mb-1 flex justify-center" aria-hidden="true">
+                <img
+                  src="/images/rain-logo.png"
+                  alt="비마을 마크"
+                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(139,92,246,0.7))" }}
                 />
               </div>
             ) : (
@@ -1728,6 +1699,8 @@ export default function Navigation() {
                   <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : cur.id === "anbu" ? (
                   <img src="/images/anbu-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : cur.id === "rain" ? (
+                  <img src="/images/rain-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{cur.icon}</span>
                 )}
@@ -1760,6 +1733,8 @@ export default function Navigation() {
                           <img src="/images/aka-cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : t.id === "anbu" ? (
                           <img src="/images/anbu-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                        ) : t.id === "rain" ? (
+                          <img src="/images/rain-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : (
                           <span style={{ fontSize: 16 }}>{t.icon}</span>
                         )}
