@@ -1603,12 +1603,16 @@ export default function Navigation() {
           ? "rgba(245,247,242,0.78)"
           : theme === "aka"
           ? "rgba(11,11,13,0.78)"
+          : theme === "anbu"
+          ? "rgba(18,22,32,0.68)"
           : "var(--panel)",
-        backdropFilter: (theme === "leaf" || theme === "aka") ? "blur(14px)" : undefined,
-        WebkitBackdropFilter: (theme === "leaf" || theme === "aka") ? "blur(14px)" : undefined,
+        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu") ? "blur(14px)" : undefined,
+        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu") ? "blur(14px)" : undefined,
         borderBottom: "1px solid var(--border)",
         boxShadow: theme === "aka"
           ? "0 1px 16px rgba(180,0,0,0.35)"
+          : theme === "anbu"
+          ? "0 1px 16px rgba(6,182,212,0.15)"
           : theme === "rain"
           ? "0 1px 12px rgba(139,92,246,0.2)"
           : theme === "leaf"
