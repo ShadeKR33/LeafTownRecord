@@ -360,6 +360,7 @@ html.hideout-mode ::-webkit-scrollbar-track { background: #474b54; }
 html.hideout-mode ::-webkit-scrollbar-thumb { background: #696e79; }
 html.hideout-mode ::-webkit-scrollbar-thumb:hover { background: #dc2626; }
 html.hideout-mode main { position: relative; z-index: 3; }
+html.myoboku-mode main { position: relative; z-index: 3; }
 
 /* 화둔 불씨 이펙트 */
 .hideout-ember-layer {

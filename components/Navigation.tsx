@@ -855,7 +855,11 @@ export default function Navigation() {
       {/* 묘목산 선보 배경 (기름 폭포와 거대 두꺼비 석상 & 우측 황금 싹 식물) */}
       {theme === "myoboku" && (
         <>
-          <div className="myoboku-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.35, color: "var(--accent)" }}>
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
+            <img src="/images/myoboku-bg.png" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.5 }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,30,10,0.1) 0%, rgba(10,30,10,0.25) 50%, rgba(10,30,10,0.6) 100%)" }} />
+          </div>
+          <div className="myoboku-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.35, color: "var(--accent)", display: "none" }}>
             {/* Left Side: 묘목산 선보 — 절벽 기름 폭포와 원형 돌통 속 나뭇잎 우산 두꺼비 석상 */}
             <div className="absolute left-0 bottom-0" style={{ height: "65vh", width: "320px" }}>
               <svg width="100%" height="100%" viewBox="0 0 320 600" preserveAspectRatio="xMinYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1138,7 +1142,7 @@ export default function Navigation() {
           </div>
 
           {/* 묘목산 선보 화면 전체 선술 구체 레이어 */}
-          <div className="myoboku-sparks-layer pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+          <div className="myoboku-sparks-layer pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 2 }}>
             <style>{`
               @keyframes sparkFloat {
                 0% { transform: translateY(110vh) translateX(0px); opacity: 0; }
@@ -1525,9 +1529,11 @@ export default function Navigation() {
           ? "rgba(10,25,50,0.72)"
           : theme === "hideout"
           ? "rgba(15,5,5,0.78)"
+          : theme === "myoboku"
+          ? "rgba(5,20,5,0.78)"
           : "var(--panel)",
-        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout") ? "blur(14px)" : undefined,
-        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout") ? "blur(14px)" : undefined,
+        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout" || theme === "myoboku") ? "blur(14px)" : undefined,
+        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout" || theme === "myoboku") ? "blur(14px)" : undefined,
         borderBottom: "1px solid var(--border)",
         boxShadow: theme === "aka"
           ? "0 1px 16px rgba(180,0,0,0.35)"
@@ -1541,6 +1547,8 @@ export default function Navigation() {
           ? "0 1px 12px rgba(125,211,252,0.15)"
           : theme === "hideout"
           ? "0 1px 16px rgba(220,38,38,0.2)"
+          : theme === "myoboku"
+          ? "0 1px 12px rgba(22,101,52,0.3)"
           : theme === "leaf"
           ? "0 1px 12px rgba(46,125,50,0.12)"
           : "0 1px 4px rgba(0,0,0,0.06)",
@@ -1605,6 +1613,14 @@ export default function Navigation() {
                   src="/images/hideout-logo.png"
                   alt="우치하 마크"
                   style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(220,38,38,0.7))" }}
+                />
+              </div>
+            ) : theme === "myoboku" ? (
+              <div className="mb-1 flex justify-center" aria-hidden="true">
+                <img
+                  src="/images/myoboku-logo.png"
+                  alt="묘목산 마크"
+                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(22,163,74,0.7))" }}
                 />
               </div>
             ) : (
@@ -1694,6 +1710,8 @@ export default function Navigation() {
                   <img src="/images/cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : cur.id === "hideout" ? (
                   <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : cur.id === "myoboku" ? (
+                  <img src="/images/myoboku-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{cur.icon}</span>
                 )}
@@ -1734,6 +1752,8 @@ export default function Navigation() {
                           <img src="/images/cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : t.id === "hideout" ? (
                           <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                        ) : t.id === "myoboku" ? (
+                          <img src="/images/myoboku-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : (
                           <span style={{ fontSize: 16 }}>{t.icon}</span>
                         )}

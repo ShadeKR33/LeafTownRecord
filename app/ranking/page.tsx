@@ -1231,6 +1231,8 @@ export default function RankingPage() {
               <img src="/images/cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
             ) : activeTheme === "hideout" ? (
               <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+            ) : activeTheme === "myoboku" ? (
+              <img src="/images/myoboku-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
             ) : (
               <span>{newsTitles[activeTheme].icon}</span>
             )}
@@ -1289,6 +1291,8 @@ export default function RankingPage() {
                   <img src="/images/cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : activeTheme === "hideout" ? (
                   <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : activeTheme === "myoboku" ? (
+                  <img src="/images/myoboku-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{newsTitles[activeTheme].icon}</span>
                 )}
