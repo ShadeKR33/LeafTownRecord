@@ -405,10 +405,14 @@ export default function Navigation() {
         </>
       )}
 
-      {/* 모래 마을 배경 (카제카게 집무실과 원형 돔형 가옥들) */}
+      {/* 모래 마을 배경 */}
       {theme === "sand" && (
         <>
-          <div className="sand-wind-layer" aria-hidden>
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
+            <img src="/images/sand-bg.png" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.5 }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(60,35,10,0.1) 0%, rgba(60,35,10,0.25) 50%, rgba(60,35,10,0.6) 100%)" }} />
+          </div>
+          <div className="sand-wind-layer" aria-hidden style={{ zIndex: 2 }}>
             {SAND_GRAINS.map((g, i) => (
               <div key={i} className="sand-grain" style={{
                 top: g.top,
@@ -420,7 +424,7 @@ export default function Navigation() {
               }} />
             ))}
           </div>
-          <div className="sand-bg-structures pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.32, color: "var(--accent)" }}>
+          <div className="sand-bg-structures-REMOVED pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ display: "none" }}>
             {/* Left Side: 모래 마을 카제카게 집무실 관저와 돔형 건물들 */}
             <div className="absolute left-0 bottom-0" style={{ height: "60vh", width: "320px" }}>
               <svg width="100%" height="100%" viewBox="0 0 320 600" preserveAspectRatio="xMinYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1568,9 +1572,11 @@ export default function Navigation() {
           ? "rgba(18,22,32,0.68)"
           : theme === "rain"
           ? "rgba(20,18,38,0.72)"
+          : theme === "sand"
+          ? "rgba(70,45,15,0.72)"
           : "var(--panel)",
-        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain") ? "blur(14px)" : undefined,
-        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain") ? "blur(14px)" : undefined,
+        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand") ? "blur(14px)" : undefined,
+        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand") ? "blur(14px)" : undefined,
         borderBottom: "1px solid var(--border)",
         boxShadow: theme === "aka"
           ? "0 1px 16px rgba(180,0,0,0.35)"
@@ -1578,6 +1584,8 @@ export default function Navigation() {
           ? "0 1px 16px rgba(6,182,212,0.15)"
           : theme === "rain"
           ? "0 1px 12px rgba(139,92,246,0.2)"
+          : theme === "sand"
+          ? "0 1px 12px rgba(178,124,48,0.2)"
           : theme === "leaf"
           ? "0 1px 12px rgba(46,125,50,0.12)"
           : "0 1px 4px rgba(0,0,0,0.06)",
@@ -1618,6 +1626,14 @@ export default function Navigation() {
                   src="/images/rain-logo.png"
                   alt="비마을 마크"
                   style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(139,92,246,0.7))" }}
+                />
+              </div>
+            ) : theme === "sand" ? (
+              <div className="mb-1 flex justify-center" aria-hidden="true">
+                <img
+                  src="/images/sand-logo.png"
+                  alt="모래마을 마크"
+                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(178,124,48,0.7))" }}
                 />
               </div>
             ) : (
@@ -1701,6 +1717,8 @@ export default function Navigation() {
                   <img src="/images/anbu-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : cur.id === "rain" ? (
                   <img src="/images/rain-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : cur.id === "sand" ? (
+                  <img src="/images/sand-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{cur.icon}</span>
                 )}
@@ -1735,6 +1753,8 @@ export default function Navigation() {
                           <img src="/images/anbu-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : t.id === "rain" ? (
                           <img src="/images/rain-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                        ) : t.id === "sand" ? (
+                          <img src="/images/sand-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : (
                           <span style={{ fontSize: 16 }}>{t.icon}</span>
                         )}

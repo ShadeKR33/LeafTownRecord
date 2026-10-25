@@ -257,6 +257,7 @@ html.sand-mode .leaf-float { display: none; }
 html.sand-mode ::-webkit-scrollbar-track { background: #f5eee0; }
 html.sand-mode ::-webkit-scrollbar-thumb { background: #d0b894; }
 html.sand-mode ::-webkit-scrollbar-thumb:hover { background: #b27c30; }
+html.sand-mode main { position: relative; z-index: 3; }
 
 /* ── 구름 마을 모드 ──────────────────────────────────────────────────
    하늘색/실버그레이/쿨화이트의 상쾌하고 시원한 고산지대 테마.
