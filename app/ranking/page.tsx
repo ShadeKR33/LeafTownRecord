@@ -279,10 +279,10 @@ function BadgeModal({
   const myLimitedIds = new Set(allLimitedTitles.filter(t => t.holder === person.mainNickname).map(t => t.id));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center"
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-6 overflow-y-auto"
       style={{ background: "rgba(0,0,0,0.75)" }}
       onClick={onClose}>
-      <div className="w-full mx-4 rounded-2xl overflow-hidden flex flex-col"
+      <div className="w-full mx-4 mb-6 rounded-2xl overflow-hidden flex flex-col"
         style={{ maxWidth: 520, maxHeight: "85vh", background: "var(--panel)", border: "1px solid var(--border)" }}
         onClick={e => e.stopPropagation()}>
 
