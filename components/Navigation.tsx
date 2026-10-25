@@ -103,13 +103,6 @@ const AKA_CLOUDS: { top: string; left?: string; right?: string; duration: string
   { top: "78%", right: "5%",  duration: "9.5s",delay: "3s",   scale: 0.55, opacity: 0.45 },
 ];
 
-// ── 우치하 지하아지트 까마귀 깃털 & 불씨 데이터 ─────────────────────────
-const HIDEOUT_FEATHERS = Array.from({ length: 15 }, (_, i) => ({
-  left: `${(i * 7 + (i % 3) * 4) % 100}%`,
-  delay: `${(i % 5) * 1.6}s`,
-  duration: `${6.5 + (i % 3) * 2}s`,
-  scale: 0.65 + (i % 4) * 0.2,
-}));
 
 // ── 묘목산 선술 에너지 구체 데이터 ─────────────────────────────────────
 const MYOBOKU_SPARKS = Array.from({ length: 25 }, (_, i) => ({
@@ -1206,7 +1199,6 @@ export default function Navigation() {
               background: "linear-gradient(to bottom, rgba(10,5,5,0.1) 0%, rgba(10,5,5,0.3) 50%, rgba(10,5,5,0.65) 100%)",
             }} />
           </div>
-          {/* 까마귀 깃털 & 불씨 효과 */}
         <div className="hideout-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ display: "none" }}>
           {/* 왼쪽: 우치하 석판 + 단상 */}
           <div className="absolute left-4 bottom-0" style={{ height: "60vh", width: "340px" }}>
@@ -1351,46 +1343,6 @@ export default function Navigation() {
             </svg>
           </div>
         </div>
-          {/* 우치하 지하아지트 화면 전체 까마귀 깃털 & 불씨 레이어 */}
-          <div className="hideout-embers-layer pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 2 }}>
-            <style>{`
-              @keyframes crowFall {
-                0% { transform: translateY(-10vh) translateX(0px) rotate(0deg); opacity: 0; }
-                10% { opacity: 0.85; }
-                90% { opacity: 0.85; }
-                100% { transform: translateY(110vh) translateX(60px) rotate(270deg); opacity: 0; }
-              }
-              .crow-feather {
-                position: absolute;
-                animation: crowFall 8s linear infinite;
-              }
-            `}</style>
-            {/* 🐦 까마귀 깃털 입자 15개 */}
-            {HIDEOUT_FEATHERS.map((f, i) => (
-              <svg
-                key={`feather-${i}`}
-                className="crow-feather"
-                width="24"
-                height="36"
-                viewBox="0 0 24 36"
-                style={{
-                  left: f.left,
-                  animationDelay: f.delay,
-                  animationDuration: f.duration,
-                  transform: `scale(${f.scale})`,
-                }}
-              >
-                <path
-                  d="M12 0 C16 6, 19 18, 14 30 C12 33, 10 35, 8 36 C7 35, 6 30, 6 25 C5 15, 8 6, 12 0 Z"
-                  fill="#0f172a"
-                  stroke="#ef4444"
-                  strokeWidth="0.8"
-                  opacity="0.85"
-                />
-                <path d="M12 3 C12 15, 10 28, 8 35" stroke="#ef4444" strokeWidth="0.5" opacity="0.6" />
-              </svg>
-            ))}
-          </div>
         </>
       )}
       {theme === "orochimaru" && (
