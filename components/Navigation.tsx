@@ -607,7 +607,7 @@ export default function Navigation() {
         </>
       )}
 
-      {/* 구름 마을 배경 (고산 봉우리, 라이카게 집무실 및 원형 전망 데크) */}
+      {/* 구름 마을 배경 */}
       {theme === "cloud" && (
         <>
           <style dangerouslySetInnerHTML={{ __html: `
@@ -623,8 +623,21 @@ export default function Navigation() {
               animation: cloudDrift linear infinite;
             }
           `}} />
-          
-          <div className="cloud-mist-layer pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+
+          {/* 배경 이미지 레이어 */}
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
+            <img src="/images/cloud-bg.png" alt="" style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover", objectPosition: "center top", opacity: 0.5,
+            }} />
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to bottom, rgba(10,20,40,0.1) 0%, rgba(10,20,40,0.25) 50%, rgba(10,20,40,0.6) 100%)",
+            }} />
+          </div>
+
+          {/* 구름 흐름 효과 */}
+          <div className="cloud-mist-layer pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 2 }}>
             {CLOUD_MISTS.map((c, i) => (
               <div key={i} className="cloud-mist-particle" style={{
                 top: c.top,
@@ -638,7 +651,7 @@ export default function Navigation() {
             ))}
           </div>
 
-          <div className="cloud-bg-structures pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.32, color: "var(--accent)" }}>
+          <div className="cloud-bg-structures-REMOVED pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ display: "none" }}>
             {/* Left Side: 사진 가운데의 사령탑(라이카게 집무실 관저)과 전망 데크 배치 */}
             <div className="absolute left-0 bottom-0" style={{ height: "65vh", width: "320px" }}>
               <svg width="100%" height="100%" viewBox="0 0 320 600" preserveAspectRatio="xMinYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1574,9 +1587,11 @@ export default function Navigation() {
           ? "rgba(20,18,38,0.72)"
           : theme === "sand"
           ? "rgba(70,45,15,0.72)"
+          : theme === "cloud"
+          ? "rgba(10,25,50,0.72)"
           : "var(--panel)",
-        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand") ? "blur(14px)" : undefined,
-        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand") ? "blur(14px)" : undefined,
+        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud") ? "blur(14px)" : undefined,
+        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud") ? "blur(14px)" : undefined,
         borderBottom: "1px solid var(--border)",
         boxShadow: theme === "aka"
           ? "0 1px 16px rgba(180,0,0,0.35)"
@@ -1586,6 +1601,8 @@ export default function Navigation() {
           ? "0 1px 12px rgba(139,92,246,0.2)"
           : theme === "sand"
           ? "0 1px 12px rgba(178,124,48,0.2)"
+          : theme === "cloud"
+          ? "0 1px 12px rgba(125,211,252,0.15)"
           : theme === "leaf"
           ? "0 1px 12px rgba(46,125,50,0.12)"
           : "0 1px 4px rgba(0,0,0,0.06)",
@@ -1634,6 +1651,14 @@ export default function Navigation() {
                   src="/images/sand-logo.png"
                   alt="모래마을 마크"
                   style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(178,124,48,0.7))" }}
+                />
+              </div>
+            ) : theme === "cloud" ? (
+              <div className="mb-1 flex justify-center" aria-hidden="true">
+                <img
+                  src="/images/cloud-logo.png"
+                  alt="구름마을 마크"
+                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(125,211,252,0.7))" }}
                 />
               </div>
             ) : (
@@ -1719,6 +1744,8 @@ export default function Navigation() {
                   <img src="/images/rain-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : cur.id === "sand" ? (
                   <img src="/images/sand-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : cur.id === "cloud" ? (
+                  <img src="/images/cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{cur.icon}</span>
                 )}
@@ -1755,6 +1782,8 @@ export default function Navigation() {
                           <img src="/images/rain-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : t.id === "sand" ? (
                           <img src="/images/sand-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                        ) : t.id === "cloud" ? (
+                          <img src="/images/cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : (
                           <span style={{ fontSize: 16 }}>{t.icon}</span>
                         )}

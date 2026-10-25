@@ -318,6 +318,7 @@ html.cloud-mode .leaf-float { display: none; }
 html.cloud-mode ::-webkit-scrollbar-track { background: #eef5f9; }
 html.cloud-mode ::-webkit-scrollbar-thumb { background: #a3c9e6; }
 html.cloud-mode ::-webkit-scrollbar-thumb:hover { background: #1d4ed8; }
+html.cloud-mode main { position: relative; z-index: 3; }
 
 /* 두루마리 장식선 */
 .scroll-border {
