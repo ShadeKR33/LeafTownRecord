@@ -1200,7 +1200,20 @@ export default function Navigation() {
 
       {/* 우치하 지하아지트 배경 */}
       {theme === "hideout" && (
-        <div className="hideout-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.35 }}>
+        <>
+          {/* 배경 이미지 레이어 */}
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
+            <img src="/images/hideout-bg.png" alt="" style={{
+              position: "absolute", inset: 0, width: "100%", height: "100%",
+              objectFit: "cover", objectPosition: "center top", opacity: 0.5,
+            }} />
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(to bottom, rgba(10,5,5,0.1) 0%, rgba(10,5,5,0.3) 50%, rgba(10,5,5,0.65) 100%)",
+            }} />
+          </div>
+          {/* 까마귀 깃털 & 불씨 효과 */}
+        <div className="hideout-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ display: "none" }}>
           {/* 왼쪽: 우치하 석판 + 단상 */}
           <div className="absolute left-4 bottom-0" style={{ height: "60vh", width: "340px" }}>
             <svg width="100%" height="100%" viewBox="0 0 340 600" preserveAspectRatio="xMinYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1344,7 +1357,7 @@ export default function Navigation() {
             </svg>
           </div>
           {/* 우치하 지하아지트 화면 전체 까마귀 깃털 & 불씨 레이어 */}
-          <div className="hideout-embers-layer pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+          <div className="hideout-embers-layer pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 2 }}>
             <style>{`
               @keyframes crowFall {
                 0% { transform: translateY(-10vh) translateX(0px) rotate(0deg); opacity: 0; }
@@ -1410,8 +1423,9 @@ export default function Navigation() {
               />
             ))}
           </div>
-        </div>
-      )}      {theme === "orochimaru" && (
+        </>
+      )}
+      {theme === "orochimaru" && (
         <div className="orochi-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.65, color: "var(--accent)" }}>
           {/* 왼쪽: 뱀 모양 기계 장치 및 돌 받침대 */}
           <div className="absolute bottom-0" style={{ height: "60vh", width: "clamp(135px, 23vw, 300px)", left: "clamp(-55px, -4.2vw, -25px)" }}>
@@ -1589,9 +1603,11 @@ export default function Navigation() {
           ? "rgba(70,45,15,0.72)"
           : theme === "cloud"
           ? "rgba(10,25,50,0.72)"
+          : theme === "hideout"
+          ? "rgba(15,5,5,0.78)"
           : "var(--panel)",
-        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud") ? "blur(14px)" : undefined,
-        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud") ? "blur(14px)" : undefined,
+        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout") ? "blur(14px)" : undefined,
+        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout") ? "blur(14px)" : undefined,
         borderBottom: "1px solid var(--border)",
         boxShadow: theme === "aka"
           ? "0 1px 16px rgba(180,0,0,0.35)"
@@ -1603,6 +1619,8 @@ export default function Navigation() {
           ? "0 1px 12px rgba(178,124,48,0.2)"
           : theme === "cloud"
           ? "0 1px 12px rgba(125,211,252,0.15)"
+          : theme === "hideout"
+          ? "0 1px 16px rgba(220,38,38,0.2)"
           : theme === "leaf"
           ? "0 1px 12px rgba(46,125,50,0.12)"
           : "0 1px 4px rgba(0,0,0,0.06)",
@@ -1659,6 +1677,14 @@ export default function Navigation() {
                   src="/images/cloud-logo.png"
                   alt="구름마을 마크"
                   style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(125,211,252,0.7))" }}
+                />
+              </div>
+            ) : theme === "hideout" ? (
+              <div className="mb-1 flex justify-center" aria-hidden="true">
+                <img
+                  src="/images/hideout-logo.png"
+                  alt="우치하 마크"
+                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(220,38,38,0.7))" }}
                 />
               </div>
             ) : (
@@ -1746,6 +1772,8 @@ export default function Navigation() {
                   <img src="/images/sand-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : cur.id === "cloud" ? (
                   <img src="/images/cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : cur.id === "hideout" ? (
+                  <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{cur.icon}</span>
                 )}
@@ -1784,6 +1812,8 @@ export default function Navigation() {
                           <img src="/images/sand-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : t.id === "cloud" ? (
                           <img src="/images/cloud-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                        ) : t.id === "hideout" ? (
+                          <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : (
                           <span style={{ fontSize: 16 }}>{t.icon}</span>
                         )}
