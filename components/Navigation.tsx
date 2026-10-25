@@ -1356,6 +1356,7 @@ export default function Navigation() {
               <path d="M 198,488 C 208,510 205,528 200,530 C 195,530 195,525 198,520 C 202,510 195,498 188,488 Z" fill="#1f293b" stroke="#0f172a" strokeWidth="1.5" />
             </svg>
           </div>
+        </div>
           {/* 우치하 지하아지트 화면 전체 까마귀 깃털 & 불씨 레이어 */}
           <div className="hideout-embers-layer pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 2 }}>
             <style>{`
@@ -1423,7 +1424,6 @@ export default function Navigation() {
               />
             ))}
           </div>
-        </div>
         </>
       )}
       {theme === "orochimaru" && (
