@@ -18,8 +18,13 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "나뭇잎 마을 내전 기록소 (상급닌자 제1시험)",
+  title: "나뭇잎 마을 내전 기록소",
   description: "나뭇잎 마을 친구들의 내전 기록을 관리하는 사이트",
+  applicationName: "내전 기록소",
+  appleWebApp: {
+    title: "내전 기록소",
+    capable: true,
+  },
 };
 
 export default function RootLayout({
