@@ -40,7 +40,7 @@ const RAIN_DROPS = Array.from({ length: 40 }, (_, i) => ({
 }));
 
 // ── 모래 마을 모래바람 입자 ──────────────────────────────────────────
-const SAND_GRAINS = Array.from({ length: 60 }, (_, i) => ({
+const SAND_GRAINS = Array.from({ length: 45 }, (_, i) => ({
   top: `${(i * 3.3 + (i % 4) * 2.5) % 100}%`,
   left: `${-10 - (i % 5) * 5}%`,
   width: `${2 + (i % 4) * 2}px`,
