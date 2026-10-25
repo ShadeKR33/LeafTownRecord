@@ -110,12 +110,6 @@ const HIDEOUT_FEATHERS = Array.from({ length: 15 }, (_, i) => ({
   duration: `${6.5 + (i % 3) * 2}s`,
   scale: 0.65 + (i % 4) * 0.2,
 }));
-const HIDEOUT_EMBERS = Array.from({ length: 20 }, (_, i) => ({
-  left: `${(i * 5.5 + (i % 4) * 3) % 100}%`,
-  delay: `${(i % 6) * 1.0}s`,
-  duration: `${4.5 + (i % 3) * 1.5}s`,
-  size: 7 + (i % 4) * 3,
-}));
 
 // ── 묘목산 선술 에너지 구체 데이터 ─────────────────────────────────────
 const MYOBOKU_SPARKS = Array.from({ length: 25 }, (_, i) => ({
@@ -1366,22 +1360,9 @@ export default function Navigation() {
                 90% { opacity: 0.85; }
                 100% { transform: translateY(110vh) translateX(60px) rotate(270deg); opacity: 0; }
               }
-              @keyframes emberRise {
-                0% { transform: translateY(110vh) translateX(0) scale(1); opacity: 0; }
-                20% { opacity: 0.95; }
-                80% { opacity: 0.95; }
-                100% { transform: translateY(-10vh) translateX(-40px) scale(0.6); opacity: 0; }
-              }
               .crow-feather {
                 position: absolute;
                 animation: crowFall 8s linear infinite;
-              }
-              .hideout-ember {
-                position: absolute;
-                border-radius: 50%;
-                background: radial-gradient(circle, #fdba74 20%, #ef4444 80%);
-                box-shadow: 0 0 10px #f97316, 0 0 4px #ef4444;
-                animation: emberRise 6s ease-in-out infinite;
               }
             `}</style>
             {/* 🐦 까마귀 깃털 입자 15개 */}
@@ -1408,20 +1389,6 @@ export default function Navigation() {
                 />
                 <path d="M12 3 C12 15, 10 28, 8 35" stroke="#ef4444" strokeWidth="0.5" opacity="0.6" />
               </svg>
-            ))}
-            {/* 🔥 타오르는 붉은 불씨 20개 */}
-            {HIDEOUT_EMBERS.map((e, i) => (
-              <div
-                key={`ember-${i}`}
-                className="hideout-ember"
-                style={{
-                  left: e.left,
-                  width: `${e.size}px`,
-                  height: `${e.size}px`,
-                  animationDelay: e.delay,
-                  animationDuration: e.duration,
-                }}
-              />
             ))}
           </div>
         </>
