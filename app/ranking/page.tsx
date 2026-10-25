@@ -1233,9 +1233,9 @@ export default function RankingPage() {
               <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
             ) : activeTheme === "myoboku" ? (
               <img src="/images/myoboku-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
-            ) : (
-              <span>{newsTitles[activeTheme].icon}</span>
-            )}
+            ) : activeTheme === "orochimaru" ? (
+              <img src="/images/orochi-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+            ) : null}
             <span className="hidden sm:inline">{newsTitles[activeTheme].name}</span>
           </div>
           {/* 흐르는 뉴스 아이템 */}
@@ -1293,9 +1293,9 @@ export default function RankingPage() {
                   <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : activeTheme === "myoboku" ? (
                   <img src="/images/myoboku-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
-                ) : (
-                  <span>{newsTitles[activeTheme].icon}</span>
-                )}
+                ) : activeTheme === "orochimaru" ? (
+                  <img src="/images/orochi-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : null}
                 <span>{newsTitles[activeTheme].name}</span>
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-500 border border-red-500/20">전체 속보</span>
               </div>

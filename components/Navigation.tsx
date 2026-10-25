@@ -1350,7 +1350,12 @@ export default function Navigation() {
         </>
       )}
       {theme === "orochimaru" && (
-        <div className="orochi-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.65, color: "var(--accent)" }}>
+        <>
+          <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
+            <img src="/images/orochi-bg.png" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.5 }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(5,0,15,0.15) 0%, rgba(5,0,15,0.3) 50%, rgba(5,0,15,0.65) 100%)" }} />
+          </div>
+          <div className="orochi-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.65, color: "var(--accent)", display: "none" }}>
           {/* 왼쪽: 뱀 모양 기계 장치 및 돌 받침대 */}
           <div className="absolute bottom-0" style={{ height: "60vh", width: "clamp(135px, 23vw, 300px)", left: "clamp(-55px, -4.2vw, -25px)" }}>
             <svg width="100%" height="100%" viewBox="0 0 300 600" preserveAspectRatio="xMinYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1472,7 +1477,8 @@ export default function Navigation() {
           </div>
 
           {/* 오로치마루 비밀실험실 화면 전체 보글보글 기포 레이어 */}
-          <div className="orochi-bubbles-layer pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
+          </div>
+          <div className="orochi-bubbles-layer pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 2 }}>
             <style>{`
               @keyframes gasRise {
                 0% { transform: translateY(110vh) translateX(0) scaleY(0.7) scaleX(0.8); opacity: 0; }
@@ -1511,7 +1517,7 @@ export default function Navigation() {
               />
             ))}
           </div>
-        </div>
+        </>
       )}
 
       <header style={{
@@ -1531,9 +1537,11 @@ export default function Navigation() {
           ? "rgba(15,5,5,0.78)"
           : theme === "myoboku"
           ? "rgba(5,20,5,0.78)"
+          : theme === "orochimaru"
+          ? "rgba(8,2,18,0.82)"
           : "var(--panel)",
-        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout" || theme === "myoboku") ? "blur(14px)" : undefined,
-        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout" || theme === "myoboku") ? "blur(14px)" : undefined,
+        backdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout" || theme === "myoboku" || theme === "orochimaru") ? "blur(14px)" : undefined,
+        WebkitBackdropFilter: (theme === "leaf" || theme === "aka" || theme === "anbu" || theme === "rain" || theme === "sand" || theme === "cloud" || theme === "hideout" || theme === "myoboku" || theme === "orochimaru") ? "blur(14px)" : undefined,
         borderBottom: "1px solid var(--border)",
         boxShadow: theme === "aka"
           ? "0 1px 16px rgba(180,0,0,0.35)"
@@ -1549,6 +1557,8 @@ export default function Navigation() {
           ? "0 1px 16px rgba(220,38,38,0.2)"
           : theme === "myoboku"
           ? "0 1px 12px rgba(22,101,52,0.3)"
+          : theme === "orochimaru"
+          ? "0 1px 16px rgba(168,85,247,0.25)"
           : theme === "leaf"
           ? "0 1px 12px rgba(46,125,50,0.12)"
           : "0 1px 4px rgba(0,0,0,0.06)",
@@ -1621,6 +1631,14 @@ export default function Navigation() {
                   src="/images/myoboku-logo.png"
                   alt="묘목산 마크"
                   style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(22,163,74,0.7))" }}
+                />
+              </div>
+            ) : theme === "orochimaru" ? (
+              <div className="mb-1 flex justify-center" aria-hidden="true">
+                <img
+                  src="/images/orochi-logo.png"
+                  alt="오로치마루 마크"
+                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(168,85,247,0.7))" }}
                 />
               </div>
             ) : (
@@ -1712,6 +1730,8 @@ export default function Navigation() {
                   <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : cur.id === "myoboku" ? (
                   <img src="/images/myoboku-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                ) : cur.id === "orochimaru" ? (
+                  <img src="/images/orochi-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                 ) : (
                   <span>{cur.icon}</span>
                 )}
@@ -1754,6 +1774,8 @@ export default function Navigation() {
                           <img src="/images/hideout-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : t.id === "myoboku" ? (
                           <img src="/images/myoboku-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+                        ) : t.id === "orochimaru" ? (
+                          <img src="/images/orochi-logo.png" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
                         ) : (
                           <span style={{ fontSize: 16 }}>{t.icon}</span>
                         )}
