@@ -337,7 +337,7 @@ export default function Navigation() {
                 position: "absolute", inset: 0,
                 width: "100%", height: "100%",
                 objectFit: "cover", objectPosition: "center top",
-                opacity: 0.28,
+                opacity: 0.5,
               }}
             />
             {/* 하단으로 갈수록 페이드 — UI 가독성 확보 */}
