@@ -319,6 +319,7 @@ export default function Navigation() {
           <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: -1 }}>
             <img
               src="/images/leaf-bg.webp"
+              srcSet="/images/leaf-bg.webp 1x, /images/leaf-bg-4k.webp 2x"
               alt=""
               style={{
                 position: "absolute", inset: 0,
@@ -347,7 +348,7 @@ export default function Navigation() {
         <>
           {/* 배경 이미지 레이어 */}
           <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
-            <img src="/images/rain-bg.png" alt="" style={{
+            <img src="/images/rain-bg.png" srcSet="/images/rain-bg.png 1x, /images/rain-bg-4k.webp 2x" alt="" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top", opacity: 0.5,
             }} />
@@ -375,6 +376,7 @@ export default function Navigation() {
           <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
             <img
               src="/images/aka-bg.webp"
+              srcSet="/images/aka-bg.webp 1x, /images/aka-bg-4k.webp 2x"
               alt=""
               style={{
                 position: "absolute", inset: 0,
@@ -396,7 +398,7 @@ export default function Navigation() {
       {theme === "sand" && (
         <>
           <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
-            <img src="/images/sand-bg.png" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.5 }} />
+            <img src="/images/sand-bg.png" srcSet="/images/sand-bg.png 1x, /images/sand-bg-4k.webp 2x" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.5 }} />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(60,35,10,0.1) 0%, rgba(60,35,10,0.25) 50%, rgba(60,35,10,0.6) 100%)" }} />
           </div>
           <div className="sand-wind-layer" aria-hidden style={{ zIndex: 2 }}>
@@ -613,7 +615,7 @@ export default function Navigation() {
 
           {/* 배경 이미지 레이어 */}
           <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
-            <img src="/images/cloud-bg.png" alt="" style={{
+            <img src="/images/cloud-bg.png" srcSet="/images/cloud-bg.png 1x, /images/cloud-bg-4k.webp 2x" alt="" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top", opacity: 0.5,
             }} />
@@ -856,7 +858,7 @@ export default function Navigation() {
       {theme === "myoboku" && (
         <>
           <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
-            <img src="/images/myoboku-bg.png" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.5 }} />
+            <img src="/images/myoboku-bg.png" srcSet="/images/myoboku-bg.png 1x, /images/myoboku-bg-4k.webp 2x" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.5 }} />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(10,30,10,0.1) 0%, rgba(10,30,10,0.25) 50%, rgba(10,30,10,0.6) 100%)" }} />
           </div>
           <div className="myoboku-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.35, color: "var(--accent)", display: "none" }}>
@@ -1177,7 +1179,7 @@ export default function Navigation() {
       {theme === "anbu" && (
         <>
           <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
-            <img src="/images/anbu-bg.png" alt="" style={{
+            <img src="/images/anbu-bg.png" srcSet="/images/anbu-bg.png 1x, /images/anbu-bg-4k.webp 2x" alt="" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top", opacity: 0.5,
             }} />
@@ -1194,7 +1196,7 @@ export default function Navigation() {
         <>
           {/* 배경 이미지 레이어 */}
           <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
-            <img src="/images/hideout-bg.png" alt="" style={{
+            <img src="/images/hideout-bg.png" srcSet="/images/hideout-bg.png 1x, /images/hideout-bg-4k.webp 2x" alt="" style={{
               position: "absolute", inset: 0, width: "100%", height: "100%",
               objectFit: "cover", objectPosition: "center top", opacity: 0.5,
             }} />
@@ -1352,7 +1354,7 @@ export default function Navigation() {
       {theme === "orochimaru" && (
         <>
           <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden style={{ zIndex: 1 }}>
-            <img src="/images/orochi-bg.png" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.5 }} />
+            <img src="/images/orochi-bg.png" srcSet="/images/orochi-bg.png 1x, /images/orochi-bg-4k.webp 2x" alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", opacity: 0.5 }} />
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(5,0,15,0.15) 0%, rgba(5,0,15,0.3) 50%, rgba(5,0,15,0.65) 100%)" }} />
           </div>
           <div className="orochi-bg pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden style={{ opacity: 0.65, color: "var(--accent)", display: "none" }}>
