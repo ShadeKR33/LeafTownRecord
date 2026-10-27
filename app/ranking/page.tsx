@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
@@ -1594,7 +1595,7 @@ export default function RankingPage() {
       })()}
 
       {/* 대표업적 모달 */}
-      {badgeModal && (
+      {badgeModal && createPortal(
         <BadgeModal
           person={badgeModal}
           repBadgeId={getRepBadgeId(badgeModal.mainNickname)}
@@ -1603,7 +1604,8 @@ export default function RankingPage() {
           allLimitedTitles={limitedTitles}
           equippedTitleId={getEquippedLimitedTitle(badgeModal.mainNickname)}
           onEquip={(titleId) => handleEquipLimitedTitle(badgeModal.mainNickname, titleId)}
-        />
+        />,
+        document.body
       )}
     </div>
   );
