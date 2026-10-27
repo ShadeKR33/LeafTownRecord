@@ -1963,6 +1963,15 @@ function JourneyTab() {
   const ANNOUNCE_DATE = new Date("2026-10-21T00:00:00");
   const now = new Date();
 
+  const [milestones, setMilestones] = useState<typeof JOURNEY_MILESTONES>(() => {
+    try {
+      const saved = localStorage.getItem("journey-milestones");
+      return saved ? JSON.parse(saved) : JOURNEY_MILESTONES;
+    } catch { return JOURNEY_MILESTONES; }
+  });
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ date: "", icon: "📌", title: "", desc: "", color: "#c8a951", tag: "", done: false });
+
   const daysTotal = Math.round((WORLDS_DATE.getTime() - ANNOUNCE_DATE.getTime()) / 86400000);
   const daysPassed = Math.max(0, Math.round((now.getTime() - ANNOUNCE_DATE.getTime()) / 86400000));
   const daysLeft = Math.max(0, Math.round((WORLDS_DATE.getTime() - now.getTime()) / 86400000));
@@ -2022,12 +2031,12 @@ function JourneyTab() {
         </p>
 
         <div className="relative">
-          {/* 세로 라인 */}
-          <div className="absolute left-[19px] top-0 bottom-0 w-0.5"
+          {/* 세로 라인 — top-[23px]: dot center (mt-1=4px + half of 38px dot) */}
+          <div className="absolute left-[19px] top-[23px] bottom-0 w-0.5"
             style={{ background: "linear-gradient(to bottom, var(--accent), transparent)" }} />
 
           <div className="space-y-0">
-            {JOURNEY_MILESTONES.map((m, i) => (
+            {milestones.map((m, i) => (
               <div key={i} className="relative flex gap-4 pb-8">
                 {/* 타임라인 도트 */}
                 <div className="relative z-10 flex-shrink-0 mt-1"
@@ -2076,6 +2085,86 @@ function JourneyTab() {
               </div>
             ))}
           </div>
+
+          {/* 항목 추가 버튼 */}
+          {!showForm ? (
+            <button
+              onClick={() => setShowForm(true)}
+              className="mt-4 ml-14 flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+              style={{ color: "var(--accent)", background: "var(--hover)", border: "1px dashed var(--accent)" }}>
+              + 항목 추가
+            </button>
+          ) : (
+            <div className="mt-4 ml-14 rounded-xl p-4 space-y-3"
+              style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+              <p className="text-xs font-bold" style={{ color: "var(--accent)" }}>새 타임라인 항목</p>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  placeholder="날짜 (예: 2026-11-01 또는 미정)"
+                  value={form.date}
+                  onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
+                  className="col-span-2 rounded-lg px-3 py-2 text-xs"
+                  style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }} />
+                <input
+                  placeholder="아이콘 (이모지)"
+                  value={form.icon}
+                  onChange={e => setForm(f => ({ ...f, icon: e.target.value }))}
+                  className="rounded-lg px-3 py-2 text-xs"
+                  style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }} />
+                <input
+                  placeholder="태그 (예: 발표)"
+                  value={form.tag}
+                  onChange={e => setForm(f => ({ ...f, tag: e.target.value }))}
+                  className="rounded-lg px-3 py-2 text-xs"
+                  style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }} />
+                <input
+                  placeholder="제목"
+                  value={form.title}
+                  onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                  className="col-span-2 rounded-lg px-3 py-2 text-xs"
+                  style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }} />
+                <textarea
+                  placeholder="설명"
+                  value={form.desc}
+                  onChange={e => setForm(f => ({ ...f, desc: e.target.value }))}
+                  rows={2}
+                  className="col-span-2 rounded-lg px-3 py-2 text-xs resize-none"
+                  style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }} />
+                <div className="flex items-center gap-2">
+                  <label className="text-xs" style={{ color: "var(--text-dim)" }}>색상</label>
+                  <input type="color" value={form.color}
+                    onChange={e => setForm(f => ({ ...f, color: e.target.value }))}
+                    className="w-8 h-8 rounded cursor-pointer" />
+                </div>
+                <label className="flex items-center gap-2 text-xs" style={{ color: "var(--text-dim)" }}>
+                  <input type="checkbox" checked={form.done}
+                    onChange={e => setForm(f => ({ ...f, done: e.target.checked }))} />
+                  완료된 항목
+                </label>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (!form.title.trim()) return;
+                    const next = [...milestones, { ...form }];
+                    setMilestones(next);
+                    try { localStorage.setItem("journey-milestones", JSON.stringify(next)); } catch {}
+                    setForm({ date: "", icon: "📌", title: "", desc: "", color: "#c8a951", tag: "", done: false });
+                    setShowForm(false);
+                  }}
+                  className="text-xs font-bold px-4 py-1.5 rounded-lg"
+                  style={{ background: "var(--accent)", color: "#fff" }}>
+                  추가
+                </button>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="text-xs font-bold px-4 py-1.5 rounded-lg"
+                  style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                  취소
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
