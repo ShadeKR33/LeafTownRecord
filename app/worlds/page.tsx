@@ -2203,18 +2203,22 @@ export default function WorldsPage() {
       </div>
 
       {/* 탭 */}
-      <div className="flex mb-6 border-b" style={{ borderColor: "var(--border)" }}>
+      <div className="flex mb-4 sm:mb-6 border-b" style={{ borderColor: "var(--border)" }}>
         {TABS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold whitespace-nowrap transition-all relative"
+            className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-all relative"
             style={{
               color: tab === t.key ? "var(--accent-light)" : "var(--text-muted)",
               borderBottom: tab === t.key ? "2px solid var(--accent)" : "2px solid transparent",
             }}>
-            <span>{t.icon}</span>
-            <span>{t.label}</span>
+            <span className="text-base sm:text-sm">{t.icon}</span>
+            <span className="hidden sm:inline">{t.label}</span>
           </button>
         ))}
+      </div>
+      {/* 모바일: 현재 탭 이름 표시 */}
+      <div className="sm:hidden text-center text-xs font-bold mb-4" style={{ color: "var(--accent)" }}>
+        {TABS.find(t => t.key === tab)?.icon} {TABS.find(t => t.key === tab)?.label}
       </div>
 
       {/* 탭 컨텐츠 */}

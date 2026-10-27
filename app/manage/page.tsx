@@ -52,8 +52,8 @@ export default function ManagePage() {
         ]}
       />
       {/* 탭 헤더 */}
-      <div className="flex gap-0 mb-8 rounded-xl overflow-hidden"
-        style={{ background:"var(--panel)", border:"1px solid var(--border)", display:"inline-flex" }}>
+      <div className="flex w-full sm:w-auto sm:inline-flex gap-0 mb-8 rounded-xl overflow-hidden"
+        style={{ background:"var(--panel)", border:"1px solid var(--border)" }}>
         {([
           { id:"members" as Tab, label:"👥 멤버 관리" },
           { id:"season"  as Tab, label:"🏆 시즌 관리" },
@@ -61,7 +61,7 @@ export default function ManagePage() {
           { id:"group"   as Tab, label:"🏕️ 그룹 관리" },
         ]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className="px-6 py-3 text-sm font-bold transition-all duration-150"
+            className="flex-1 sm:flex-none px-3 sm:px-6 py-3 text-xs sm:text-sm font-bold transition-all duration-150"
             style={{
               background: tab === t.id ? "var(--accent)" : "transparent",
               color: tab === t.id ? "#fff" : "var(--text-muted)",
