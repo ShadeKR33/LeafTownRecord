@@ -137,6 +137,7 @@ export default function Navigation() {
   const [theme, setTheme] = useState<ThemeId>("leaf");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -1570,86 +1571,52 @@ export default function Navigation() {
 
         <div className="max-w-6xl mx-auto px-4" style={{ position: "relative" }}>
           {/* 타이틀 */}
-          <div className="pt-5 pb-2 text-center relative">
-            {theme === "leaf" ? (
-              <div className="mb-1 flex justify-center" aria-hidden="true">
-                <img
-                  src="/images/konoha-logo-new.png"
-                  alt="코노하 마크"
-                  style={{ width: 60, height: 60, objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(46,125,50,0.4))" }}
-                />
-              </div>
-            ) : theme === "aka" ? (
-              <div className="mb-1 flex justify-center" aria-hidden="true">
-                <img
-                  src="/images/aka-cloud-logo.png"
-                  alt="아카츠키 마크"
-                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(230,57,70,0.7))" }}
-                />
-              </div>
-            ) : theme === "anbu" ? (
-              <div className="mb-1 flex justify-center" aria-hidden="true">
-                <img
-                  src="/images/anbu-logo.png"
-                  alt="암부 마크"
-                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(6,182,212,0.6))" }}
-                />
-              </div>
-            ) : theme === "rain" ? (
-              <div className="mb-1 flex justify-center" aria-hidden="true">
-                <img
-                  src="/images/rain-logo.png"
-                  alt="비마을 마크"
-                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(139,92,246,0.7))" }}
-                />
-              </div>
-            ) : theme === "sand" ? (
-              <div className="mb-1 flex justify-center" aria-hidden="true">
-                <img
-                  src="/images/sand-logo.png"
-                  alt="모래마을 마크"
-                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(178,124,48,0.7))" }}
-                />
-              </div>
-            ) : theme === "cloud" ? (
-              <div className="mb-1 flex justify-center" aria-hidden="true">
-                <img
-                  src="/images/cloud-logo.png"
-                  alt="구름마을 마크"
-                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(125,211,252,0.7))" }}
-                />
-              </div>
-            ) : theme === "hideout" ? (
-              <div className="mb-1 flex justify-center" aria-hidden="true">
-                <img
-                  src="/images/hideout-logo.png"
-                  alt="우치하 마크"
-                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(220,38,38,0.7))" }}
-                />
-              </div>
-            ) : theme === "myoboku" ? (
-              <div className="mb-1 flex justify-center" aria-hidden="true">
-                <img
-                  src="/images/myoboku-logo.png"
-                  alt="묘목산 마크"
-                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(22,163,74,0.7))" }}
-                />
-              </div>
-            ) : theme === "orochimaru" ? (
-              <div className="mb-1 flex justify-center" aria-hidden="true">
-                <img
-                  src="/images/orochi-logo.png"
-                  alt="오로치마루 마크"
-                  style={{ width: 64, height: 64, objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(168,85,247,0.7))" }}
-                />
-              </div>
-            ) : (
-              <div className="text-2xl mb-1">{cur.icon}</div>
-            )}
-            <h1 className="text-xl font-black tracking-wide" style={{ color: cur.accentColor }}>
+          <div className="pt-3 sm:pt-5 pb-2 text-center relative">
+            <div className="flex justify-center mb-0.5 sm:mb-1" aria-hidden="true">
+              {theme === "leaf" ? (
+                <img src="/images/konoha-logo-new.png" alt="코노하 마크"
+                  className="w-10 h-10 sm:w-[60px] sm:h-[60px]"
+                  style={{ objectFit: "contain", filter: "drop-shadow(0 2px 6px rgba(46,125,50,0.4))" }} />
+              ) : theme === "aka" ? (
+                <img src="/images/aka-cloud-logo.png" alt="아카츠키 마크"
+                  className="w-10 h-10 sm:w-16 sm:h-16"
+                  style={{ objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(230,57,70,0.7))" }} />
+              ) : theme === "anbu" ? (
+                <img src="/images/anbu-logo.png" alt="암부 마크"
+                  className="w-10 h-10 sm:w-16 sm:h-16"
+                  style={{ objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(6,182,212,0.6))" }} />
+              ) : theme === "rain" ? (
+                <img src="/images/rain-logo.png" alt="비마을 마크"
+                  className="w-10 h-10 sm:w-16 sm:h-16"
+                  style={{ objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(139,92,246,0.7))" }} />
+              ) : theme === "sand" ? (
+                <img src="/images/sand-logo.png" alt="모래마을 마크"
+                  className="w-10 h-10 sm:w-16 sm:h-16"
+                  style={{ objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(178,124,48,0.7))" }} />
+              ) : theme === "cloud" ? (
+                <img src="/images/cloud-logo.png" alt="구름마을 마크"
+                  className="w-10 h-10 sm:w-16 sm:h-16"
+                  style={{ objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(125,211,252,0.7))" }} />
+              ) : theme === "hideout" ? (
+                <img src="/images/hideout-logo.png" alt="우치하 마크"
+                  className="w-10 h-10 sm:w-16 sm:h-16"
+                  style={{ objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(220,38,38,0.7))" }} />
+              ) : theme === "myoboku" ? (
+                <img src="/images/myoboku-logo.png" alt="묘목산 마크"
+                  className="w-10 h-10 sm:w-16 sm:h-16"
+                  style={{ objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(22,163,74,0.7))" }} />
+              ) : theme === "orochimaru" ? (
+                <img src="/images/orochi-logo.png" alt="오로치마루 마크"
+                  className="w-10 h-10 sm:w-16 sm:h-16"
+                  style={{ objectFit: "contain", filter: "drop-shadow(0 2px 12px rgba(168,85,247,0.7))" }} />
+              ) : (
+                <span className="text-2xl">{cur.icon}</span>
+              )}
+            </div>
+            <h1 className="text-base sm:text-xl font-black tracking-wide" style={{ color: cur.accentColor }}>
               {cur.title}
             </h1>
-            <div className="flex items-center justify-center gap-3 mt-1">
+            <div className="hidden sm:flex items-center justify-center gap-3 mt-1">
               <div style={{ height: "1px", width: "60px", background: `linear-gradient(90deg, transparent, var(--border-green))` }} />
               <span className="text-sm" style={{ color: "var(--text-dim)" }}>{cur.subtitle}</span>
               <div style={{ height: "1px", width: "60px", background: `linear-gradient(90deg, var(--border-green), transparent)` }} />
@@ -1737,7 +1704,7 @@ export default function Navigation() {
                 ) : (
                   <span>{cur.icon}</span>
                 )}
-                <span>{cur.name}</span>
+                <span className="hidden sm:inline">{cur.name}</span>
                 <span style={{ fontSize: 8, opacity: 0.7 }}>{dropdownOpen ? "▲" : "▼"}</span>
               </button>
 
@@ -1791,8 +1758,21 @@ export default function Navigation() {
             </div>
           </div>
 
+          {/* 모바일 메뉴 버튼 */}
+          <div className="flex sm:hidden justify-center pb-2 pt-1">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold"
+              style={{ background: "var(--hover)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/>
+              </svg>
+              <span>메뉴</span>
+            </button>
+          </div>
+
           {/* 네비게이션 */}
-          <nav className="flex justify-center gap-0 pb-0">
+          <nav className="hidden sm:flex justify-center gap-0 pb-0">
             {navItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
               return (
@@ -1818,6 +1798,39 @@ export default function Navigation() {
           }} />
         </div>
       </header>
+
+      {/* 모바일 네비게이션 드로어 */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[150] sm:hidden">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute left-0 top-0 bottom-0 w-64 flex flex-col shadow-2xl"
+            style={{ background: "var(--panel)", borderRight: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between px-4 py-4 border-b" style={{ borderColor: "var(--border)" }}>
+              <span className="font-black text-sm" style={{ color: "var(--accent)" }}>메뉴</span>
+              <button onClick={() => setMobileMenuOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-lg"
+                style={{ background: "var(--hover)", color: "var(--text-muted)" }}>✕</button>
+            </div>
+            {navItems.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              return (
+                <Link key={item.href} href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-5 py-4 text-sm font-semibold border-b transition-all"
+                  style={{
+                    color: isActive ? "var(--accent)" : "var(--text-muted)",
+                    background: isActive ? "var(--hover)" : "transparent",
+                    borderColor: "var(--border)",
+                    borderLeft: isActive ? `3px solid var(--accent)` : "3px solid transparent",
+                  }}>
+                  <span className="text-lg">{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* 🎉 비술 테마 잠금 해제 축하 모달 */}
       {unlockModalData && (

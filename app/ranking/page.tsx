@@ -1320,7 +1320,91 @@ export default function RankingPage() {
         </div>
       )}
 
-      <div className="rounded-lg border overflow-x-auto" style={{ borderColor: "var(--border)" }}>
+      {/* 모바일 카드 뷰 (sm 미만) */}
+      <div className="block sm:hidden space-y-2 mb-4">
+        {loading ? (
+          <div className="py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>기록을 불러오는 중입니다...</div>
+        ) : persons.length === 0 ? (
+          <div className="py-8 text-center text-sm" style={{ color: "var(--text-muted)" }}>게임 기록이 없습니다. 먼저 캡쳐 분석을 통해 경기를 등록해주세요!</div>
+        ) : (
+          persons.map((p, i) => {
+            const displayBadge = getDisplayBadge(p);
+            const equippedId = getEquippedLimitedTitle(p.mainNickname);
+            const equippedRecord = equippedId
+              ? limitedTitles.find(t => t.id === equippedId && t.holder === p.mainNickname)
+              : null;
+            const equippedDef = equippedRecord ? getLimitedTitleDef(equippedRecord.id) : null;
+            return (
+              <div key={p.mainNickname}
+                className="rounded-xl border px-4 py-3 cursor-pointer active:opacity-80 transition-all"
+                style={{
+                  background: (() => {
+                    if (ranks[i] === 1) return activeTheme === "aka" ? "rgba(180,0,0,0.28)" : "rgba(212,173,50,0.22)";
+                    if (ranks[i] === 2) return activeTheme === "aka" ? "rgba(120,0,0,0.20)" : "rgba(180,180,190,0.22)";
+                    if (ranks[i] === 3) return activeTheme === "aka" ? "rgba(80,0,0,0.18)" : "rgba(180,110,30,0.14)";
+                    return "var(--panel)";
+                  })(),
+                  borderColor: "var(--border)",
+                  borderLeft: ranks[i] === 1
+                    ? `4px solid ${activeTheme === "aka" ? "#E63946" : "#d4a010"}`
+                    : ranks[i] === 2
+                    ? `4px solid ${activeTheme === "aka" ? "#7a1020" : "#94a3b8"}`
+                    : ranks[i] === 3
+                    ? `4px solid ${activeTheme === "aka" ? "#500010" : "#c2640c"}`
+                    : "3px solid transparent",
+                }}
+                onClick={() => {
+                  if (p.hasEntry) router.push(`/ranking/person/${encodeURIComponent(p.mainNickname)}`);
+                  else router.push(`/ranking/${encodeURIComponent(p.nicknames[0])}`);
+                }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="font-bold text-sm w-8 shrink-0 text-center"
+                    style={{ color: ranks[i] <= 3 ? "var(--accent)" : "var(--text-muted)" }}>
+                    {rankIcon(ranks[i])}
+                  </span>
+                  <span className="font-bold text-sm flex-1 min-w-0 truncate"
+                    style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : ranks[i] === 3 ? "#c2410c" : "var(--text)" }}>
+                    {p.displayName}
+                  </span>
+                  <StreakBadge streak={p.currentStreak} />
+                  <button className="ml-1 shrink-0 p-1" onClick={e => { e.stopPropagation(); setBadgeModal(p); }}>
+                    {equippedDef ? (
+                      <div style={{ width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
+                        background: `linear-gradient(var(--panel), var(--panel)) padding-box, linear-gradient(135deg, ${equippedDef.color}, ${equippedDef.accentColor}) border-box`,
+                        border: "1.5px solid transparent", borderRadius: "50%" }}>
+                        <LimitedTitleIcon def={equippedDef} size={16} isDark={isDark} />
+                      </div>
+                    ) : displayBadge ? (
+                      <span style={{ fontSize: 18 }}>{displayBadge.icon}</span>
+                    ) : (
+                      <span className="text-xs" style={{ color: "var(--text-dim)" }}>🏅</span>
+                    )}
+                  </button>
+                </div>
+                {getTrophies(p.mainNickname).length > 0 && (
+                  <div className="mb-1.5 pl-10">
+                    <TrophyList trophies={getTrophies(p.mainNickname)} />
+                  </div>
+                )}
+                <div className="flex items-center gap-4 pl-10 text-xs">
+                  <span>
+                    <span style={{ color: "var(--win)" }}>{p.wins}승</span>
+                    <span style={{ color: "var(--text-muted)" }}> / </span>
+                    <span style={{ color: "var(--loss)" }}>{p.losses}패</span>
+                  </span>
+                  <span className="font-semibold" style={{ color: "var(--accent)" }}>{formatWinRate(p.wins, p.totalGames)}</span>
+                  <span className="font-bold" style={{ color: p.score >= 0 ? "var(--win)" : "var(--loss)" }}>
+                    {p.score >= 0 ? "+" : ""}{p.score}점
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* 데스크톱 테이블 뷰 (sm 이상) */}
+      <div className="hidden sm:block rounded-lg border overflow-x-auto" style={{ borderColor: "var(--border)" }}>
         <table className="w-full text-sm" style={{ minWidth: "640px" }}>
           <thead>
             <tr style={{ background: "var(--panel)", borderBottom: "1px solid var(--border)" }}>
