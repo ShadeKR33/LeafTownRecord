@@ -1970,7 +1970,41 @@ function JourneyTab() {
     } catch { return JOURNEY_MILESTONES; }
   });
   const [showForm, setShowForm] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [form, setForm] = useState({ date: "", icon: "📌", title: "", desc: "", color: "#c8a951", tag: "", done: false });
+
+  const BLANK_FORM = { date: "", icon: "📌", title: "", desc: "", color: "#c8a951", tag: "", done: false };
+
+  function openAdd() {
+    setEditingIndex(null);
+    setForm(BLANK_FORM);
+    setShowForm(true);
+  }
+
+  function openEdit(i: number) {
+    setEditingIndex(i);
+    const m = milestones[i];
+    setForm({ date: m.date, icon: m.icon, title: m.title, desc: m.desc, color: m.color, tag: m.tag ?? "", done: m.done });
+    setShowForm(true);
+  }
+
+  function saveForm() {
+    if (!form.title.trim()) return;
+    const next = editingIndex === null
+      ? [...milestones, { ...form }]
+      : milestones.map((m, i) => i === editingIndex ? { ...form } : m);
+    setMilestones(next);
+    try { localStorage.setItem("journey-milestones", JSON.stringify(next)); } catch {}
+    setForm(BLANK_FORM);
+    setEditingIndex(null);
+    setShowForm(false);
+  }
+
+  function deleteItem(i: number) {
+    const next = milestones.filter((_, idx) => idx !== i);
+    setMilestones(next);
+    try { localStorage.setItem("journey-milestones", JSON.stringify(next)); } catch {}
+  }
 
   const daysTotal = Math.round((WORLDS_DATE.getTime() - ANNOUNCE_DATE.getTime()) / 86400000);
   const daysPassed = Math.max(0, Math.round((now.getTime() - ANNOUNCE_DATE.getTime()) / 86400000));
@@ -2063,12 +2097,24 @@ function JourneyTab() {
                     <span className="font-black text-sm" style={{ color: m.done ? m.color : "var(--text)" }}>
                       {m.title}
                     </span>
-                    {m.tag && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
-                        style={{ background: m.color + "22", color: m.color, border: `1px solid ${m.color}44` }}>
-                        {m.tag}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {m.tag && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: m.color + "22", color: m.color, border: `1px solid ${m.color}44` }}>
+                          {m.tag}
+                        </span>
+                      )}
+                      <button onClick={() => openEdit(i)}
+                        className="text-[10px] px-1.5 py-0.5 rounded opacity-40 hover:opacity-100 transition-opacity"
+                        style={{ color: "var(--text-muted)", background: "var(--hover)" }}>
+                        ✏️
+                      </button>
+                      <button onClick={() => deleteItem(i)}
+                        className="text-[10px] px-1.5 py-0.5 rounded opacity-40 hover:opacity-100 transition-opacity"
+                        style={{ color: "#ef5350", background: "#ef535011" }}>
+                        ✕
+                      </button>
+                    </div>
                   </div>
                   <div className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>
                     🗓️ {m.date}
@@ -2089,7 +2135,7 @@ function JourneyTab() {
           {/* 항목 추가 버튼 */}
           {!showForm ? (
             <button
-              onClick={() => setShowForm(true)}
+              onClick={openAdd}
               className="mt-4 ml-14 flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
               style={{ color: "var(--accent)", background: "var(--hover)", border: "1px dashed var(--accent)" }}>
               + 항목 추가
@@ -2097,7 +2143,9 @@ function JourneyTab() {
           ) : (
             <div className="mt-4 ml-14 rounded-xl p-4 space-y-3"
               style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-bold" style={{ color: "var(--accent)" }}>새 타임라인 항목</p>
+              <p className="text-xs font-bold" style={{ color: "var(--accent)" }}>
+                {editingIndex === null ? "새 타임라인 항목" : "항목 수정"}
+              </p>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   placeholder="날짜 (예: 2026-11-01 또는 미정)"
@@ -2144,20 +2192,13 @@ function JourneyTab() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => {
-                    if (!form.title.trim()) return;
-                    const next = [...milestones, { ...form }];
-                    setMilestones(next);
-                    try { localStorage.setItem("journey-milestones", JSON.stringify(next)); } catch {}
-                    setForm({ date: "", icon: "📌", title: "", desc: "", color: "#c8a951", tag: "", done: false });
-                    setShowForm(false);
-                  }}
+                  onClick={saveForm}
                   className="text-xs font-bold px-4 py-1.5 rounded-lg"
                   style={{ background: "var(--accent)", color: "#fff" }}>
-                  추가
+                  {editingIndex === null ? "추가" : "저장"}
                 </button>
                 <button
-                  onClick={() => setShowForm(false)}
+                  onClick={() => { setShowForm(false); setEditingIndex(null); setForm(BLANK_FORM); }}
                   className="text-xs font-bold px-4 py-1.5 rounded-lg"
                   style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
                   취소
