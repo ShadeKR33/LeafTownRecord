@@ -11,6 +11,9 @@ const POSITIONS = ["탑", "정글", "미드", "원딜", "서포터"];
 const ROLE_COLORS: Record<string, string> = {
   탑: "#e06060", 정글: "#50a050", 미드: "#5090d0", 원딜: "#c0a030", 서포터: "#9060c0",
 };
+const CATEGORY_COLORS: Record<string, string> = {
+  내전: "var(--accent)", 스크림: "#42a5f5", 밸런스판: "#9c27b0", 월즈: "#c8a951",
+};
 
 const emptyTeamRow = (position: string): PlayerGameData => ({
   nickname: "", position, champion: "",
@@ -184,6 +187,19 @@ export default function CalendarPage() {
     save(records.filter((r) => r.id !== id));
   };
 
+  const prevMonth = () => {
+    const [y, m] = selectedMonth.split("-").map(Number);
+    const d = new Date(y, m - 2, 1);
+    setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    setSelectedDate(null);
+  };
+  const nextMonth = () => {
+    const [y, m] = selectedMonth.split("-").map(Number);
+    const d = new Date(y, m, 1);
+    setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    setSelectedDate(null);
+  };
+
   // ─── 날짜별 그룹 ─────────────────────────────────────────────────────
   const monthRecords = records.filter((r) => r.date.startsWith(selectedMonth));
   const dateGroups = monthRecords.reduce<Record<string, GameRecord[]>>((acc, r) => {
@@ -210,7 +226,7 @@ export default function CalendarPage() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-10">
       <GuideBanner
         pageKey="calendar"
         icon="📅"
@@ -222,13 +238,10 @@ export default function CalendarPage() {
           "게임 항목을 클릭하면 세부 내용을 수정하거나 삭제할 수 있어요.",
         ]}
       />
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold" style={{ color: "var(--accent)" }}>📅 내전 달력</h2>
-      </div>
 
       {/* ─── 시리즈 수정 폼 ─── */}
       {showSeriesForm && (
-        <div className="mb-6 p-5 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--accent)" }}>
+        <div className="mb-6 p-5 rounded-2xl border" style={{ background: "var(--panel)", borderColor: "var(--accent)" }}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-bold" style={{ color: "var(--accent)" }}>시리즈 수정</h3>
             <span className="text-xs px-2 py-1 rounded" style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>
@@ -314,7 +327,7 @@ export default function CalendarPage() {
 
       {/* ─── 경기 기록 등록 폼 ─── */}
       {showForm && (
-        <div className="mb-6 p-5 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--accent)" }}>
+        <div className="mb-6 p-5 rounded-2xl border" style={{ background: "var(--panel)", borderColor: "var(--accent)" }}>
           <h3 className="text-sm font-bold mb-4" style={{ color: "var(--accent)" }}>
             {editId ? "판별 수정" : "새 경기 기록"}
           </h3>
@@ -487,51 +500,59 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* ─── 월 선택 드롭다운 ─── */}
-      {(() => {
-        const monthGameCounts = displayMonths.reduce<Record<string, number>>((acc, m) => {
-          acc[m] = new Set(records.filter(r => r.date.startsWith(m)).map(r => r.date)).size;
-          return acc;
-        }, {});
-        const label = selectedMonth.replace("-", "년 ") + "월";
-        return (
-          <div className="relative mb-5" style={{ maxWidth: 240 }}>
-            <button onClick={() => setMonthPickerOpen(v => !v)}
-              className="flex items-center justify-between w-full px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-              style={{ background: "var(--panel)", border: "1px solid var(--border)", color: "var(--accent)", cursor: "pointer" }}>
-              <span>📅 {label}</span>
-              <span style={{ color: "var(--text-dim)", fontSize: 11 }}>{monthPickerOpen ? "▲" : "▼"}</span>
-            </button>
-            {monthPickerOpen && (
-              <div className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden shadow-xl"
-                style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
-                {displayMonths.map(m => {
-                  const count = monthGameCounts[m] ?? 0;
-                  const isActive = selectedMonth === m;
-                  return (
-                    <button key={m}
-                      onClick={() => { setSelectedMonth(m); setSelectedDate(null); setMonthPickerOpen(false); }}
-                      className="flex items-center justify-between w-full px-4 py-2.5 text-sm transition-all hover:brightness-95"
-                      style={{
-                        background: isActive ? "var(--accent)" + "22" : "transparent",
-                        color: isActive ? "var(--accent)" : "var(--text-muted)",
-                        fontWeight: isActive ? 700 : 400,
-                        borderBottom: "1px solid var(--border)",
-                        cursor: "pointer",
-                      }}>
-                      <span>{m.replace("-", "년 ")}월</span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: count > 0 ? "var(--accent)" + "22" : "var(--hover)", color: count > 0 ? "var(--accent)" : "var(--text-dim)" }}>
-                        {count}경기
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+      {/* ─── 월 네비게이션 ─── */}
+      <div className="flex items-center justify-between mb-5 gap-3">
+        <div className="flex items-center gap-1.5">
+          <button onClick={prevMonth}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-black transition-all"
+            style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>‹</button>
+          <div className="px-4 py-2 rounded-xl text-center" style={{ background: "var(--panel)", border: "1px solid var(--border)", minWidth: 128 }}>
+            <div className="text-sm font-black" style={{ color: "var(--accent)" }}>{year}년 {month}월</div>
+            <div className="text-[10px]" style={{ color: "var(--text-dim)" }}>
+              {monthRecords.length > 0 ? `${monthRecords.length}경기` : "기록 없음"}
+            </div>
           </div>
-        );
-      })()}
+          <button onClick={nextMonth}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-black transition-all"
+            style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>›</button>
+        </div>
+        <div className="relative">
+          <button onClick={() => setMonthPickerOpen(v => !v)}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+            style={{ background: "var(--hover)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
+            <span>전체 달력</span>
+            <span style={{ fontSize: 10, color: "var(--text-dim)" }}>{monthPickerOpen ? "▲" : "▼"}</span>
+          </button>
+          {monthPickerOpen && (
+            <div className="absolute right-0 z-50 mt-1.5 rounded-2xl overflow-hidden shadow-2xl"
+              style={{ background: "var(--panel)", border: "1px solid var(--border)", minWidth: 180, maxHeight: 280, overflowY: "auto" }}>
+              {displayMonths.map(m => {
+                const count = new Set(records.filter(r => r.date.startsWith(m)).map(r => r.date)).size;
+                const isActive = selectedMonth === m;
+                return (
+                  <button key={m}
+                    onClick={() => { setSelectedMonth(m); setSelectedDate(null); setMonthPickerOpen(false); }}
+                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm transition-all"
+                    style={{
+                      background: isActive ? "var(--accent)" + "22" : "transparent",
+                      color: isActive ? "var(--accent)" : "var(--text-muted)",
+                      fontWeight: isActive ? 700 : 400,
+                      borderBottom: "1px solid var(--border)",
+                    }}>
+                    <span>{m.replace("-", "년 ")}월</span>
+                    {count > 0 && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        style={{ background: "var(--accent)" + "22", color: "var(--accent)" }}>
+                        {count}일
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
 
       {loading ? (
         <div className="py-20 text-center" style={{ color: "var(--text-muted)" }}>
@@ -541,43 +562,61 @@ export default function CalendarPage() {
       ) : (
         <>
           {/* ─── 달력 그리드 ─── */}
-          <div className="mb-6 rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)", background: "var(--panel)" }}>
+          <div className="mb-6 rounded-2xl overflow-hidden border" style={{ borderColor: "var(--border)", background: "var(--panel)" }}>
             {/* 요일 헤더 */}
-            <div className="grid grid-cols-7 border-b" style={{ borderColor: "var(--border)" }}>
+            <div className="grid grid-cols-7" style={{ borderBottom: "1px solid var(--border)" }}>
               {["일", "월", "화", "수", "목", "금", "토"].map((d, i) => (
-                <div key={d} className="py-2 text-center text-xs font-semibold"
-                  style={{ color: i === 0 ? "var(--loss)" : i === 6 ? "#5090d0" : "var(--text-muted)" }}>{d}</div>
+                <div key={d} className="py-3 text-center text-xs font-bold tracking-wider"
+                  style={{ color: i === 0 ? "var(--loss)" : i === 6 ? "#5090d0" : "var(--text-dim)" }}>{d}</div>
               ))}
             </div>
             {/* 날짜 셀 */}
             <div className="grid grid-cols-7">
               {calendarCells.map((day, i) => {
-                if (!day) return <div key={i} className="h-16 border-r border-b" style={{ borderColor: "var(--hover)" }} />;
+                if (!day) return (
+                  <div key={i} className="border-r border-b" style={{ borderColor: "var(--hover)", minHeight: 76 }} />
+                );
                 const dateStr = `${selectedMonth}-${String(day).padStart(2, "0")}`;
                 const dayRecs = dateGroups[dateStr] || [];
                 const hasRecord = dayRecs.length > 0;
                 const isSelected = selectedDate === dateStr;
                 const isToday = dateStr === new Date().toISOString().slice(0, 10);
+                const isSun = i % 7 === 0;
+                const isSat = i % 7 === 6;
+                const cats = [...new Set(dayRecs.map(r => r.category || "내전"))];
                 return (
                   <div key={i}
-                    className="h-16 border-r border-b p-1 cursor-pointer transition-all"
-                    style={{ borderColor: "var(--hover)", background: isSelected ? "var(--hover)" : "transparent" }}
+                    className="border-r border-b p-1.5 cursor-pointer transition-all"
+                    style={{
+                      borderColor: "var(--hover)",
+                      minHeight: 76,
+                      background: isSelected ? "var(--accent)" + "18" : "transparent",
+                    }}
                     onClick={() => setSelectedDate(isSelected ? null : dateStr)}>
-                    <div className="text-xs mb-1 flex items-center justify-center w-5 h-5 rounded-full"
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full mb-1"
                       style={{
-                        color: isToday ? "var(--panel-alt)" : i % 7 === 0 ? "var(--loss)" : i % 7 === 6 ? "#5090d0" : "var(--text-muted)",
-                        fontWeight: isToday ? 700 : 400,
+                        color: isToday ? "#fff" : isSun ? "var(--loss)" : isSat ? "#5090d0" : "var(--text-muted)",
+                        fontWeight: isToday || isSelected ? 800 : 400,
+                        fontSize: 11,
                         background: isToday ? "var(--accent)" : "transparent",
                       }}>
                       {day}
                     </div>
                     {hasRecord && (
-                      <div className="flex flex-wrap gap-0.5">
-                        {dayRecs.slice(0, 3).map((r) => (
-                          <span key={r.id} className="w-2 h-2 rounded-full"
-                            style={{ background: r.winTeam === 1 ? "var(--win)" : "var(--loss)" }} />
-                        ))}
-                        {dayRecs.length > 3 && <span className="text-xs" style={{ color: "var(--text-muted)" }}>+{dayRecs.length - 3}</span>}
+                      <div className="flex flex-col gap-0.5">
+                        {cats.slice(0, 2).map(cat => {
+                          const catRecs = dayRecs.filter(r => (r.category || "내전") === cat);
+                          const w = catRecs.filter(r => r.winTeam === 1).length;
+                          const l = catRecs.filter(r => r.winTeam === 2).length;
+                          const cc = CATEGORY_COLORS[cat] || "var(--accent)";
+                          return (
+                            <div key={cat} className="flex items-center gap-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: cc }} />
+                              <span className="text-[9px] leading-none" style={{ color: "var(--text-dim)" }}>{w}승{l}패</span>
+                            </div>
+                          );
+                        })}
+                        {cats.length > 2 && <span className="text-[8px]" style={{ color: "var(--text-dim)" }}>+{cats.length - 2}</span>}
                       </div>
                     )}
                   </div>
@@ -588,23 +627,30 @@ export default function CalendarPage() {
 
           {/* ─── 선택한 날의 상세 기록 ─── */}
           {selectedDate && (
-            <div>
+            <div className="mb-6">
               <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-                <h3 className="font-bold text-base" style={{ color: "var(--accent)" }}>
-                  {selectedDate} 경기 기록 ({dayRecords.length}경기)
-                </h3>
+                <div>
+                  <h3 className="font-black text-lg leading-tight" style={{ color: "var(--accent)" }}>
+                    {(() => {
+                      const d = new Date(selectedDate + "T00:00:00");
+                      const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+                      return `${d.getMonth() + 1}월 ${d.getDate()}일 (${weekdays[d.getDay()]})`;
+                    })()}
+                  </h3>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>{dayRecords.length}경기 기록</p>
+                </div>
                 <div className="flex items-center gap-2">
                   {!isViewer && (
                     <button
                       onClick={() => startEditSeries(selectedDate!, dayRecords)}
-                      className="px-3 py-1 rounded text-xs font-semibold"
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold"
                       style={{ background: "var(--hover)", color: "var(--accent)", border: "1px solid var(--accent)" }}>
                       시리즈 수정
                     </button>
                   )}
                   <button
                     onClick={() => setSelectedDate(null)}
-                    className="px-3 py-1 rounded text-xs font-semibold"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold"
                     style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
                     ✕ 닫기
                   </button>
@@ -612,7 +658,7 @@ export default function CalendarPage() {
               </div>
 
               {dayRecords.length === 0 ? (
-                <div className="py-10 text-center rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>
+                <div className="py-10 text-center rounded-2xl border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>
                   이 날의 경기 기록이 없습니다
                 </div>
               ) : (
@@ -623,59 +669,70 @@ export default function CalendarPage() {
                   const t1w = dayRecords.filter(r => r.winTeam === 1).length;
                   const t2w = dayRecords.filter(r => r.winTeam === 2).length;
                   const winner = t1w > t2w ? 1 : t2w > t1w ? 2 : null;
+                  const title = dayRecords[0]?.title;
+                  const category = dayRecords[0]?.category || "내전";
+                  const catColor = CATEGORY_COLORS[category] || "var(--accent)";
                   return (
-                    <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg flex-wrap" style={{ background: "var(--hover)", border: "1px solid var(--border)" }}>
-                      <span className="text-xs font-semibold" style={{ color: "var(--text-dim)" }}>점수 변동</span>
-                      {isBalance ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(109,40,217,0.15)", color: "#7c3aed", border: "1px solid #7c3aed55" }}>
-                          밸런스판 · 전원 +2
-                        </span>
-                      ) : winner ? (
-                        <>
-                          <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(34,197,94,0.12)", color: "var(--win)", border: "1px solid var(--border-green)" }}>
-                            팀{winner} +3
+                    <div className="flex items-center gap-3 mb-4 px-4 py-3 rounded-2xl flex-wrap" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+                      <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: catColor + "22", color: catColor, border: `1px solid ${catColor}44` }}>
+                        {category}
+                      </span>
+                      {title && <span className="text-sm font-bold" style={{ color: "var(--text)" }}>{title}</span>}
+                      <div className="flex items-center gap-2 ml-auto flex-wrap">
+                        {isBalance ? (
+                          <span className="text-xs px-2.5 py-1 rounded-full font-bold" style={{ background: "rgba(109,40,217,0.15)", color: "#7c3aed", border: "1px solid #7c3aed55" }}>
+                            밸런스판 · 전원 +2
                           </span>
-                          <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--loss)", border: "1px solid #ef444444" }}>
-                            팀{winner === 1 ? 2 : 1} -1
-                          </span>
-                          <span className="text-xs" style={{ color: "var(--text-dim)" }}>({t1w}:{t2w})</span>
-                        </>
-                      ) : (
-                        <span className="text-xs" style={{ color: "var(--text-dim)" }}>진행 중 ({t1w}:{t2w})</span>
-                      )}
+                        ) : winner ? (
+                          <>
+                            <span className="text-xs px-2.5 py-1 rounded-full font-bold" style={{ background: "rgba(34,197,94,0.12)", color: "var(--win)", border: "1px solid var(--border-green)" }}>
+                              팀{winner} +3
+                            </span>
+                            <span className="text-xs px-2.5 py-1 rounded-full font-bold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--loss)", border: "1px solid #ef444444" }}>
+                              팀{winner === 1 ? 2 : 1} -1
+                            </span>
+                          </>
+                        ) : null}
+                        <span className="text-sm font-black tabular-nums" style={{ color: "var(--text-muted)" }}>{t1w} : {t2w}</span>
+                      </div>
                     </div>
                   );
                 })()}
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {dayRecords
                     .sort((a, b) => a.gameNumber - b.gameNumber)
                     .map((r) => (
-                      <div key={r.id} className="p-4 rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
+                      <div key={r.id} className="rounded-2xl border overflow-hidden" style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
                         {/* 경기 헤더 */}
-                        <div className="flex items-center justify-between mb-3 pb-2" style={{ borderBottom: "1px solid var(--hover)" }}>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs px-2 py-1 rounded font-semibold"
-                              style={{ background: "var(--hover)", color: "var(--accent)", border: "1px solid var(--border)" }}>
-                              {r.gameFormat} · {r.gameNumber}경기{formatDuration(r.gameDuration) ? ` · ⏱ ${formatDuration(r.gameDuration)}` : ""}
+                        <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: "1px solid var(--border)", background: "var(--hover)" }}>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full"
+                              style={{
+                                background: r.winTeam === 1 ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.1)",
+                                color: r.winTeam === 1 ? "var(--win)" : "var(--loss)",
+                                border: `1px solid ${r.winTeam === 1 ? "var(--border-green)" : "#ef444433"}`,
+                              }}>
+                              {r.gameNumber}경기
+                            </span>
+                            <span className="text-xs" style={{ color: "var(--text-dim)" }}>
+                              {r.gameFormat}{formatDuration(r.gameDuration) ? ` · ⏱ ${formatDuration(r.gameDuration)}` : ""}
                             </span>
                           </div>
                           {!isViewer && (
-                            <div className="flex gap-2">
-                              <button onClick={() => startEdit(r)} className="px-2 py-1 rounded text-xs" style={{ background: "var(--hover)", color: "var(--accent)", border: "1px solid var(--border)" }}>수정</button>
-                              <button onClick={() => deleteRecord(r.id)} className="px-2 py-1 rounded text-xs" style={{ background: "var(--hover)", color: "var(--loss)", border: "1px solid var(--border)" }}>삭제</button>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => startEdit(r)} className="px-2.5 py-1 rounded-lg text-xs font-semibold" style={{ background: "var(--panel)", color: "var(--accent)", border: "1px solid var(--border)" }}>수정</button>
+                              <button onClick={() => deleteRecord(r.id)} className="px-2.5 py-1 rounded-lg text-xs font-semibold" style={{ background: "var(--panel)", color: "var(--loss)", border: "1px solid var(--border)" }}>삭제</button>
                             </div>
                           )}
                         </div>
-
-                        {/* 경기 기록 상세 정보 (승패/KDA/DMG%/DT%/KP%, 딜량 비교, 밴픽) */}
-                        <MatchStatsChart record={r} />
-
-                        {/* 경기 요약 */}
-                        {r.summary && (
-                          <div className="mt-3 pt-3 text-xs" style={{ borderTop: "1px solid var(--hover)", color: "var(--text-muted)" }}>
-                            💬 {r.summary}
-                          </div>
-                        )}
+                        <div className="p-4">
+                          <MatchStatsChart record={r} />
+                          {r.summary && (
+                            <div className="mt-3 px-3 py-2 rounded-xl text-xs" style={{ background: "var(--hover)", color: "var(--text-muted)" }}>
+                              💬 {r.summary}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                 </div>
@@ -687,60 +744,72 @@ export default function CalendarPage() {
           {/* 날짜 선택 안 됐을 때 이번 달 전체 목록 */}
           {!selectedDate && monthRecords.length > 0 && (
             <div>
-              <h3 className="font-semibold text-sm mb-3" style={{ color: "var(--text-muted)" }}>이번 달 전체 경기</h3>
+              <p className="text-xs font-bold tracking-widest mb-4" style={{ color: "var(--text-dim)" }}>
+                {year}년 {month}월 전체 경기
+              </p>
               <div className="space-y-2">
                 {Object.entries(dateGroups)
                   .sort(([a], [b]) => b.localeCompare(a))
-                  .map(([date, recs]) => (
-                    <button key={date} onClick={() => setSelectedDate(date)}
-                      className="w-full text-left px-4 py-3 rounded-lg border transition-all hover:brightness-125"
-                      style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold" style={{ color: "var(--text)" }}>
-                          {recs[0]?.title ? <>{recs[0].title} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({date})</span></> : date}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs" style={{ color: "var(--win)" }}>
-                            {recs.filter((r) => r.winTeam === 1).length + recs.filter((r) => r.winTeam === 2).length}경기
-                          </span>
-                          <div className="flex gap-1">
-                            {recs.map((r) => (
-                              <span key={r.id} className="w-2.5 h-2.5 rounded-full"
-                                style={{ background: r.winTeam === 1 ? "var(--win)" : "var(--loss)" }} />
-                            ))}
+                  .map(([date, recs]) => {
+                    const t1w = recs.filter(r => r.winTeam === 1).length;
+                    const t2w = recs.filter(r => r.winTeam === 2).length;
+                    const winner = t1w > t2w ? 1 : t2w > t1w ? 2 : null;
+                    const isBalance = recs.some(r => r.category === "밸런스판");
+                    const category = recs[0]?.category || "내전";
+                    const catColor = CATEGORY_COLORS[category] || "var(--accent)";
+                    const d = new Date(date + "T00:00:00");
+                    const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+                    return (
+                      <button key={date} onClick={() => setSelectedDate(date)}
+                        className="w-full text-left px-4 py-3.5 rounded-2xl border transition-all"
+                        style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex-shrink-0 text-center w-9">
+                              <div className="text-xl font-black leading-none" style={{ color: "var(--accent)" }}>{d.getDate()}</div>
+                              <div className="text-[10px] mt-0.5" style={{ color: "var(--text-dim)" }}>{weekdays[d.getDay()]}</div>
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-sm truncate" style={{ color: "var(--text)" }}>
+                                {recs[0]?.title || `${d.getMonth() + 1}월 ${d.getDate()}일 경기`}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: catColor + "22", color: catColor }}>
+                                  {category}
+                                </span>
+                                <span className="text-[11px]" style={{ color: "var(--text-dim)" }}>
+                                  {recs[0]?.gameFormat} · {recs.length}경기
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2.5 flex-shrink-0">
+                            <div className="flex gap-1 items-center">
+                              {recs.map((r, ri) => (
+                                <span key={ri} className="w-2 h-2 rounded-full"
+                                  style={{ background: r.winTeam === 1 ? "var(--win)" : "var(--loss)" }} />
+                              ))}
+                            </div>
+                            {isBalance ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(109,40,217,0.15)", color: "#7c3aed" }}>+2</span>
+                            ) : (
+                              <span className="text-sm font-black tabular-nums" style={{ color: winner ? (winner === 1 ? "var(--win)" : "var(--loss)") : "var(--text-dim)" }}>
+                                {t1w}:{t2w}
+                              </span>
+                            )}
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                          {recs[0]?.gameFormat} · 팀1: {recs[0]?.team1.filter((p) => p.nickname).map((p) => p.nickname).join(", ")}
-                        </span>
-                        {(() => {
-                          const isBalance = recs.some(r => r.category === "밸런스판");
-                          const t1w = recs.filter(r => r.winTeam === 1).length;
-                          const t2w = recs.filter(r => r.winTeam === 2).length;
-                          const winner = t1w > t2w ? 1 : t2w > t1w ? 2 : null;
-                          if (isBalance) return (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(109,40,217,0.15)", color: "#7c3aed", border: "1px solid #7c3aed55" }}>밸런스 +2</span>
-                          );
-                          if (winner) return (
-                            <>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(34,197,94,0.12)", color: "var(--win)", border: "1px solid var(--border-green)" }}>팀{winner} +3</span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style={{ background: "rgba(239,68,68,0.1)", color: "var(--loss)", border: "1px solid #ef444444" }}>팀{winner === 1 ? 2 : 1} -1</span>
-                            </>
-                          );
-                          return null;
-                        })()}
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           )}
 
           {!selectedDate && monthRecords.length === 0 && (
-            <div className="py-16 text-center rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>
-              이 달에 기록된 경기가 없습니다
+            <div className="py-20 text-center rounded-2xl border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>
+              <div className="text-4xl mb-3 opacity-20">📅</div>
+              <p className="text-sm">이 달에 기록된 경기가 없습니다</p>
             </div>
           )}
         </>
