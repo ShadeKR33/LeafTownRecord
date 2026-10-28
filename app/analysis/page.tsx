@@ -1431,14 +1431,14 @@ export default function AnalysisPage() {
                   <h3 className="font-bold text-base" style={{ color: "var(--accent)" }}>{draft.gameNumber}세트 분석 결과</h3>
                   {/* 팀 A 진영 위치 배지 */}
                   {canonicalTeam1Nicks.size > 0 && dIdx === 0 && (
-                    <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: "rgba(50,100,220,0.15)", color: "#6699ff" }}>
+                    <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background: "rgba(50,100,220,0.15)", color: "#2563eb" }}>
                       📌 기준 세트 — 블루 진영 = 팀 A
                     </span>
                   )}
                   {canonicalTeam1Nicks.size > 0 && dIdx > 0 && (
                     <span className="text-xs px-2 py-0.5 rounded font-semibold" style={{
                       background: teamAOnRed ? "rgba(220,50,50,0.15)" : "rgba(50,100,220,0.15)",
-                      color: teamAOnRed ? "#ff7777" : "#6699ff"
+                      color: teamAOnRed ? "#dc2626" : "#2563eb"
                     }}>
                       🔄 팀 A → {teamAOnRed ? "레드" : "블루"} 진영 감지 · 저장 시 자동 조정
                     </span>
@@ -1457,7 +1457,7 @@ export default function AnalysisPage() {
                   </button>
 
                   {/* 승패 강제 스위칭 컨트롤러 */}
-                  <div className="flex bg-[#111] p-1 rounded border" style={{ borderColor: "var(--border)" }}>
+                  <div className="flex p-1 rounded border" style={{ background: "var(--panel-alt)", borderColor: "var(--border)" }}>
                     <button
                        onClick={() => updateDraftTeamWin(dIdx, 1)}
                        className="px-3 py-1 text-sm font-bold rounded transition-all"
