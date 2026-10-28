@@ -325,7 +325,7 @@ export default function CalendarPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               <div>
                 <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>경기 제목 <span style={{ color: "var(--text-dim)" }}>(선택)</span></label>
-                <input type="text" className="w-full px-3 py-2 rounded text-sm"
+                <input type="text" className="w-full px-3 py-2 rounded-xl text-sm"
                   style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
                   placeholder="예: 팀 바뀌기 전 마지막 스크림"
                   value={form.title ?? ""}
@@ -337,7 +337,7 @@ export default function CalendarPage() {
                   {(["내전", "스크림", "밸런스판", "월즈"] as const).map((cat) => (
                     <button key={cat} type="button"
                       onClick={() => setForm({ ...form, category: cat })}
-                      className="px-3 py-2 rounded text-xs font-semibold flex-1"
+                      className="px-3 py-2 rounded-xl text-xs font-semibold flex-1"
                       style={{ background: form.category === cat ? "var(--accent)" : "var(--panel-alt)", color: form.category === cat ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${form.category === cat ? "var(--accent)" : "var(--border)"}` }}>
                       {cat}
                     </button>
@@ -347,7 +347,7 @@ export default function CalendarPage() {
             </div>
           )}
           {editId && (
-            <div className="mb-4 px-3 py-2 rounded text-xs" style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>
+            <div className="mb-4 px-3 py-2 rounded-xl text-xs" style={{ background: "var(--hover)", color: "var(--text-dim)", border: "1px solid var(--border)" }}>
               제목·카테고리·날짜·시리즈 형식은 <strong style={{ color: "var(--text-muted)" }}>시리즈 수정</strong>에서 변경하세요
             </div>
           )}
@@ -357,7 +357,7 @@ export default function CalendarPage() {
             {!editId && (
             <div>
               <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>날짜</label>
-              <input type="date" className="w-full px-3 py-2 rounded text-sm"
+              <input type="date" className="w-full px-3 py-2 rounded-xl text-sm"
                 style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
                 value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
             </div>
@@ -368,7 +368,7 @@ export default function CalendarPage() {
               <div className="flex gap-2">
                 {(["3판2선", "5판3선"] as const).map((fmt) => (
                   <button key={fmt} onClick={() => setForm({ ...form, gameFormat: fmt, gameNumber: 1 })}
-                    className="px-3 py-2 rounded text-xs font-semibold flex-1"
+                    className="px-3 py-2 rounded-xl text-xs font-semibold flex-1"
                     style={{ background: form.gameFormat === fmt ? "var(--accent)" : "var(--panel-alt)", color: form.gameFormat === fmt ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${form.gameFormat === fmt ? "var(--accent)" : "var(--border)"}` }}>
                     {fmt}
                   </button>
@@ -381,7 +381,7 @@ export default function CalendarPage() {
               <div className="flex gap-1">
                 {Array.from({ length: form.gameFormat === "3판2선" ? 3 : 5 }, (_, i) => i + 1).map((n) => (
                   <button key={n} onClick={() => setForm({ ...form, gameNumber: n })}
-                    className="w-9 h-9 rounded text-sm font-bold"
+                    className="w-9 h-9 rounded-xl text-sm font-bold"
                     style={{ background: form.gameNumber === n ? "var(--accent)" : "var(--panel-alt)", color: form.gameNumber === n ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${form.gameNumber === n ? "var(--accent)" : "var(--border)"}` }}>
                     {n}
                   </button>
@@ -393,7 +393,7 @@ export default function CalendarPage() {
               <div className="flex gap-2">
                 {([1, 2] as const).map((t) => (
                   <button key={t} onClick={() => setForm({ ...form, winTeam: t })}
-                    className="px-4 py-2 rounded text-sm font-bold flex-1"
+                    className="px-4 py-2 rounded-xl text-sm font-bold flex-1"
                     style={{ background: form.winTeam === t ? "var(--win)" : "var(--panel-alt)", color: form.winTeam === t ? "var(--panel-alt)" : "var(--text-muted)", border: `1px solid ${form.winTeam === t ? "var(--win)" : "var(--border)"}` }}>
                     팀{t}
                   </button>
@@ -408,7 +408,7 @@ export default function CalendarPage() {
             <div className="flex items-center gap-2">
               <input
                 type="text"
-                className="w-28 px-3 py-2 rounded text-sm"
+                className="w-28 px-3 py-2 rounded-xl text-sm"
                 style={{ background: "var(--panel-alt)", border: `1px solid ${durationStr && parseMmSs(durationStr) === undefined ? "var(--loss)" : "var(--border)"}`, color: "var(--text)" }}
                 value={durationStr}
                 onChange={(e) => setDurationStr(e.target.value)}
@@ -429,10 +429,14 @@ export default function CalendarPage() {
               const teamKey = teamNum === 1 ? "team1" : "team2";
               const isWinner = form.winTeam === teamNum;
               return (
-                <div key={teamNum} className="p-3 rounded-lg border"
-                  style={{ borderColor: isWinner ? "var(--border-green)" : "var(--border)", background: "var(--panel-alt)" }}>
-                  <div className="text-xs font-bold mb-3" style={{ color: isWinner ? "var(--win)" : "var(--loss)" }}>
-                    팀 {teamNum} {isWinner ? "🏆 승리" : ""}
+                <div key={teamNum} className="p-4 rounded-2xl"
+                  style={{ borderLeft: `3px solid ${isWinner ? "var(--win)" : "var(--loss)"}`, background: "var(--panel-alt)", border: `1px solid ${isWinner ? "var(--border-green)" : "var(--border)"}` }}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs font-black px-2.5 py-1 rounded-full"
+                      style={{ background: isWinner ? "var(--win)" + "20" : "var(--loss)" + "15", color: isWinner ? "var(--win)" : "var(--loss)", border: `1px solid ${isWinner ? "var(--win)" : "var(--loss)"}30` }}>
+                      팀 {teamNum}
+                    </span>
+                    {isWinner && <span className="text-xs font-bold" style={{ color: "var(--win)" }}>🏆 승리</span>}
                   </div>
                   <div className="space-y-2">
                     {form[teamKey].map((player, idx) => (
@@ -443,14 +447,14 @@ export default function CalendarPage() {
                         </span>
                         <input
                           list={`nicknames-list`}
-                          className="px-2 py-1.5 rounded text-xs"
-                          style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
+                          className="px-2 py-1.5 rounded-xl text-xs"
+                          style={{ background: "var(--panel)", border: "1px solid var(--border)", color: "var(--text)" }}
                           value={player.nickname}
                           onChange={(e) => updateTeamPlayer(teamNum, idx, "nickname", e.target.value)}
                           placeholder="닉네임" />
                         <input
-                          className="px-2 py-1.5 rounded text-xs"
-                          style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--accent)" }}
+                          className="px-2 py-1.5 rounded-xl text-xs"
+                          style={{ background: "var(--panel)", border: "1px solid var(--border)", color: "var(--accent)" }}
                           value={player.champion}
                           onChange={(e) => updateTeamPlayer(teamNum, idx, "champion", e.target.value)}
                           placeholder="챔피언" />
@@ -470,7 +474,7 @@ export default function CalendarPage() {
           {/* 요약 메모 */}
           <div className="mb-4">
             <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>경기 요약 (선택)</label>
-            <textarea className="w-full px-3 py-2 rounded text-sm resize-none"
+            <textarea className="w-full px-3 py-2 rounded-xl text-sm resize-none"
               style={{ background: "var(--panel-alt)", border: "1px solid var(--border)", color: "var(--text)" }}
               rows={2} value={form.summary}
               onChange={(e) => setForm({ ...form, summary: e.target.value })}
@@ -478,10 +482,10 @@ export default function CalendarPage() {
           </div>
 
           <div className="flex gap-2">
-            <button onClick={handleSubmit} className="px-5 py-2 rounded text-sm font-semibold" style={{ background: "var(--accent)", color: "var(--panel-alt)" }}>
+            <button onClick={handleSubmit} className="px-5 py-2.5 rounded-xl text-sm font-bold" style={{ background: "var(--accent)", color: "var(--panel-alt)" }}>
               {editId ? "저장" : "등록"}
             </button>
-            <button onClick={() => { setShowForm(false); setEditId(null); setDurationStr(""); }} className="px-5 py-2 rounded text-sm" style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+            <button onClick={() => { setShowForm(false); setEditId(null); setDurationStr(""); }} className="px-5 py-2.5 rounded-xl text-sm" style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
               취소
             </button>
           </div>

@@ -52,8 +52,8 @@ export default function ManagePage() {
         ]}
       />
       {/* 탭 헤더 */}
-      <div className="flex w-full sm:w-auto sm:inline-flex gap-0 mb-8 rounded-xl overflow-hidden"
-        style={{ background:"var(--panel)", border:"1px solid var(--border)" }}>
+      <div className="flex w-full sm:w-auto sm:inline-flex gap-1 mb-8 p-1 rounded-2xl"
+        style={{ background:"var(--panel-alt)", border:"1px solid var(--border)" }}>
         {([
           { id:"members" as Tab, label:"👥 멤버 관리" },
           { id:"season"  as Tab, label:"🏆 시즌 관리" },
@@ -61,10 +61,11 @@ export default function ManagePage() {
           { id:"group"   as Tab, label:"🏕️ 그룹 관리" },
         ]).map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className="flex-1 sm:flex-none px-3 sm:px-6 py-3 text-xs sm:text-sm font-bold transition-all duration-150"
+            className="flex-1 sm:flex-none px-3 sm:px-5 py-2.5 text-xs sm:text-sm font-bold transition-all duration-150 rounded-xl"
             style={{
-              background: tab === t.id ? "var(--accent)" : "transparent",
-              color: tab === t.id ? "#fff" : "var(--text-muted)",
+              background: tab === t.id ? "var(--accent)" + "20" : "transparent",
+              color: tab === t.id ? "var(--accent)" : "var(--text-muted)",
+              border: tab === t.id ? "1px solid var(--accent)" + "40" : "1px solid transparent",
             }}>
             {t.label}
           </button>
@@ -146,11 +147,11 @@ function MembersTab() {
             <div className="space-y-3 mb-5">
               <div>
                 <label className="text-xs mb-1 block" style={{ color:"var(--text-muted)" }}>현재 닉네임</label>
-                <div className="px-3 py-2 rounded text-sm font-semibold" style={{ background:"var(--hover)", color:"var(--text-dim)", border:"1px solid var(--border)" }}>{renameModal.oldNickname}</div>
+                <div className="px-3 py-2 rounded-xl text-sm font-semibold" style={{ background:"var(--hover)", color:"var(--text-dim)", border:"1px solid var(--border)" }}>{renameModal.oldNickname}</div>
               </div>
               <div>
                 <label className="text-xs mb-1 block" style={{ color:"var(--text-muted)" }}>새 닉네임</label>
-                <input autoFocus className="w-full px-3 py-2 rounded text-sm outline-none"
+                <input autoFocus className="w-full px-3 py-2 rounded-xl text-sm outline-none"
                   style={{ background:"var(--panel-alt)", border:"1px solid var(--accent)", color:"var(--text)" }}
                   placeholder="변경할 닉네임 입력" value={renameModal.newNickname}
                   onChange={e => setRenameModal({...renameModal, newNickname:e.target.value})}
@@ -180,7 +181,7 @@ function MembersTab() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold" style={{ color:"var(--accent)" }}>👥 닉네임 명단</h2>
         <button onClick={() => { setShowForm(!showForm); setEditId(null); setForm(emptyForm()); }}
-          className="px-4 py-2 rounded text-sm font-semibold" style={{ background:"var(--accent)", color:"var(--panel-alt)" }}>
+          className="px-4 py-2 rounded-xl text-sm font-semibold" style={{ background:"var(--accent)", color:"var(--panel-alt)" }}>
           + 멤버 추가
         </button>
       </div>
@@ -193,23 +194,23 @@ function MembersTab() {
       ) : (
         <>
           {showForm && (
-            <div className="mb-6 p-5 rounded-lg border" style={{ background:"var(--panel)", borderColor:"var(--border)" }}>
-              <h3 className="text-sm font-semibold mb-4" style={{ color:"var(--accent)" }}>{editId ? "멤버 수정" : "새 멤버 추가"}</h3>
+            <div className="mb-6 p-5 rounded-2xl border" style={{ background:"var(--panel)", borderColor:"var(--border)" }}>
+              <h3 className="text-sm font-bold mb-4" style={{ color:"var(--accent)" }}>{editId ? "멤버 수정" : "새 멤버 추가"}</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
                 <div>
                   <label className="text-xs mb-1 block" style={{ color:"var(--text-muted)" }}>인게임 닉네임 (주계정)</label>
-                  <input className="w-full px-3 py-2 rounded text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
+                  <input className="w-full px-3 py-2 rounded-xl text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
                     value={form.nickname} onChange={e => setForm({...form,nickname:e.target.value})} placeholder="주계정 닉네임" />
                 </div>
                 <div>
                   <label className="text-xs mb-1 block" style={{ color:"var(--text-muted)" }}>실명/별명</label>
-                  <input className="w-full px-3 py-2 rounded text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
+                  <input className="w-full px-3 py-2 rounded-xl text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
                     value={form.realName} onChange={e => setForm({...form,realName:e.target.value})} placeholder="실명 또는 별명" />
                 </div>
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <label className="text-xs mb-1 block" style={{ color:"var(--text-muted)" }}>티어</label>
-                    <select className="w-full px-3 py-2 rounded text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
+                    <select className="w-full px-3 py-2 rounded-xl text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
                       value={form.tier} onChange={e => setForm({...form,tier:e.target.value})}>
                       {TIERS.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
@@ -217,7 +218,7 @@ function MembersTab() {
                   {!["마스터","그랜드마스터","챌린저"].includes(form.tier) ? (
                     <div className="w-20">
                       <label className="text-xs mb-1 block" style={{ color:"var(--text-muted)" }}>단계</label>
-                      <select className="w-full px-3 py-2 rounded text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
+                      <select className="w-full px-3 py-2 rounded-xl text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
                         value={form.tierDiv||"4"} onChange={e => setForm({...form,tierDiv:e.target.value})}>
                         {["1","2","3","4"].map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
@@ -225,7 +226,7 @@ function MembersTab() {
                   ) : (
                     <div className="w-24">
                       <label className="text-xs mb-1 block" style={{ color:"var(--text-muted)" }}>점수(LP)</label>
-                      <input type="number" className="w-full px-3 py-2 rounded text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
+                      <input type="number" className="w-full px-3 py-2 rounded-xl text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
                         value={form.lp||""} onChange={e => setForm({...form,lp:e.target.value})} placeholder="예: 500" />
                     </div>
                   )}
@@ -247,11 +248,11 @@ function MembersTab() {
                     )}
                     {form.altNicknames.map((alt, idx) => (
                       <div key={idx} className="flex gap-2">
-                        <input className="flex-1 px-3 py-2 rounded text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
+                        <input className="flex-1 px-3 py-2 rounded-xl text-sm" style={{ background:"var(--panel-alt)", border:"1px solid var(--border)", color:"var(--text)" }}
                           value={alt} onChange={e => setForm(prev => { const a=[...prev.altNicknames]; a[idx]=e.target.value; return {...prev,altNicknames:a}; })}
                           placeholder={`부계정 또는 구 닉네임 ${idx+1}`} />
                         <button type="button" onClick={() => setForm(prev => ({ ...prev, altNicknames:prev.altNicknames.filter((_,i)=>i!==idx) }))}
-                          className="px-2.5 py-1.5 rounded text-xs"
+                          className="px-2.5 py-1.5 rounded-xl text-xs"
                           style={{ background:"var(--hover)", color:"var(--loss)", border:"1px solid var(--border)" }}>
                           ✕
                         </button>
@@ -263,7 +264,7 @@ function MembersTab() {
                   <label className="text-xs mb-2 block" style={{ color:"var(--text-muted)" }}>주력 포지션 (복수 선택 가능)</label>
                   <div className="flex flex-wrap gap-2">
                     {ALL_ROLES.map(role => (
-                      <button key={role} type="button" onClick={() => toggleRole(role)} className="px-3 py-1.5 rounded text-xs font-semibold transition-all"
+                      <button key={role} type="button" onClick={() => toggleRole(role)} className="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
                         style={{ background:form.roles.includes(role)?(ROLE_COLORS[role]+"33"):"var(--panel-alt)", color:form.roles.includes(role)?ROLE_COLORS[role]:"var(--text-muted)", border:`1px solid ${form.roles.includes(role)?ROLE_COLORS[role]:"var(--border)"}` }}>
                         {role}
                       </button>
@@ -272,27 +273,27 @@ function MembersTab() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={handleSubmit} className="px-5 py-2 rounded text-sm font-semibold" style={{ background:"var(--accent)", color:"var(--panel-alt)" }}>
+                <button onClick={handleSubmit} className="px-5 py-2 rounded-xl text-sm font-semibold" style={{ background:"var(--accent)", color:"var(--panel-alt)" }}>
                   {editId ? "저장" : "추가"}
                 </button>
-                <button onClick={() => { setShowForm(false); setEditId(null); }} className="px-5 py-2 rounded text-sm" style={{ background:"var(--hover)", color:"var(--text-muted)", border:"1px solid var(--border)" }}>취소</button>
+                <button onClick={() => { setShowForm(false); setEditId(null); }} className="px-5 py-2 rounded-xl text-sm" style={{ background:"var(--hover)", color:"var(--text-muted)", border:"1px solid var(--border)" }}>취소</button>
               </div>
             </div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {players.length === 0 ? (
-              <div className="col-span-3 py-16 text-center rounded-lg border" style={{ background:"var(--panel)", borderColor:"var(--border)", color:"var(--text-muted)" }}>
+              <div className="col-span-3 py-16 text-center rounded-2xl border" style={{ background:"var(--panel)", borderColor:"var(--border)", color:"var(--text-muted)" }}>
                 아직 등록된 멤버가 없습니다.
               </div>
             ) : players.map(p => (
-              <div key={p.id} className="p-4 rounded-lg border" style={{ background:"var(--panel)", borderColor:"var(--border)" }}>
+              <div key={p.id} className="p-4 rounded-2xl border" style={{ background:"var(--panel)", borderColor:"var(--border)" }}>
                 <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <div className="font-bold text-base" style={{ color:"var(--text)" }}>{p.nickname}</div>
+                  <div className="min-w-0 flex-1 mr-2">
+                    <div className="font-bold text-base truncate" style={{ color:"var(--text)" }}>{p.nickname}</div>
                     {p.realName && <div className="text-xs mt-0.5" style={{ color:"var(--text-muted)" }}>{p.realName}</div>}
                   </div>
-                  <span className="text-xs px-2 py-1 rounded font-bold whitespace-nowrap"
+                  <span className="text-xs px-2 py-1 rounded-xl font-bold whitespace-nowrap flex-shrink-0"
                     style={{ background:(TIER_COLORS[p.tier]||"var(--accent)")+"22", color:TIER_COLORS[p.tier]||"var(--accent)", border:`1px solid ${(TIER_COLORS[p.tier]||"var(--accent)")}44` }}>
                     {p.tier}{!["마스터","그랜드마스터","챌린저"].includes(p.tier)?(p.tierDiv?` ${p.tierDiv}`:""):(p.lp?` ${p.lp}LP`:"")}
                   </span>
@@ -300,21 +301,21 @@ function MembersTab() {
                 {(p.altNicknames||[]).filter(Boolean).length > 0 && (
                   <div className="mb-2 flex flex-wrap gap-1.5">
                     {(p.altNicknames||[]).filter(Boolean).map((alt,idx) => (
-                      <span key={idx} className="text-xs px-2 py-0.5 rounded" style={{ background:"var(--hover)", color:"var(--text-muted)", border:"1px solid var(--border)" }}>부{idx+1} {alt}</span>
+                      <span key={idx} className="text-xs px-2 py-0.5 rounded-full" style={{ background:"var(--hover)", color:"var(--text-muted)", border:"1px solid var(--border)" }}>부{idx+1} {alt}</span>
                     ))}
                   </div>
                 )}
                 {(p.roles||[]).length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {(p.roles||[]).map(role => (
-                      <span key={role} className="text-xs px-2 py-0.5 rounded font-semibold" style={{ background:(ROLE_COLORS[role]||"var(--accent)")+"22", color:ROLE_COLORS[role]||"var(--accent)" }}>{role}</span>
+                      <span key={role} className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background:(ROLE_COLORS[role]||"var(--accent)")+"22", color:ROLE_COLORS[role]||"var(--accent)" }}>{role}</span>
                     ))}
                   </div>
                 )}
                 <div className="flex gap-2 mt-3 pt-3" style={{ borderTop:"1px solid var(--hover)" }}>
-                  <button onClick={() => startEdit(p)} className="px-3 py-1 rounded text-xs flex-1" style={{ background:"var(--hover)", color:"var(--accent)", border:"1px solid var(--border)" }}>수정</button>
-                  <button onClick={() => setRenameModal({ playerId:p.id, oldNickname:p.nickname, newNickname:"" })} className="px-3 py-1 rounded text-xs flex-1" style={{ background:"var(--hover)", color:"#f9a825", border:"1px solid var(--border)" }}>닉네임 변경</button>
-                  <button onClick={() => save(players.filter(pl => pl.id!==p.id))} className="px-3 py-1 rounded text-xs" style={{ background:"var(--hover)", color:"var(--loss)", border:"1px solid var(--border)" }}>삭제</button>
+                  <button onClick={() => startEdit(p)} className="px-3 py-1.5 rounded-xl text-xs flex-1" style={{ background:"var(--hover)", color:"var(--accent)", border:"1px solid var(--border)" }}>수정</button>
+                  <button onClick={() => setRenameModal({ playerId:p.id, oldNickname:p.nickname, newNickname:"" })} className="px-3 py-1.5 rounded-xl text-xs flex-1" style={{ background:"var(--hover)", color:"#f9a825", border:"1px solid var(--border)" }}>닉네임 변경</button>
+                  <button onClick={() => save(players.filter(pl => pl.id!==p.id))} className="px-3 py-1.5 rounded-xl text-xs" style={{ background:"rgba(239,68,68,0.08)", color:"var(--loss)", border:"1px solid rgba(239,68,68,0.2)" }}>삭제</button>
                 </div>
               </div>
             ))}
@@ -923,7 +924,7 @@ function SeasonTab() {
   return (
     <div className="space-y-6">
       {msg && (
-        <div className="px-4 py-2 rounded-lg text-sm font-semibold"
+        <div className="px-4 py-2 rounded-xl text-sm font-semibold"
           style={{ background: "var(--panel)", border: "1px solid var(--accent)", color: "var(--accent)" }}>
           {msg}
         </div>
@@ -931,10 +932,10 @@ function SeasonTab() {
 
       {/* ── 새 시즌 만들기 ── */}
       {isAdmin && (
-        <div className="rounded-xl p-5" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+        <div className="rounded-2xl p-5" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
           {!showForm ? (
             <button onClick={() => setShowForm(true)}
-              className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:brightness-90"
+              className="px-4 py-2 rounded-xl text-sm font-bold transition-all hover:brightness-90"
               style={{ background: "var(--accent)", color: "#fff" }}>
               + 새 시즌 시작
             </button>
@@ -945,13 +946,13 @@ function SeasonTab() {
                 <label className="block text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>시즌 이름</label>
                 <input value={formLabel} onChange={e => setFormLabel(e.target.value)}
                   placeholder="예: 시즌 1, 여름 리그, 2026 오프시즌…"
-                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  className="w-full px-3 py-2 rounded-xl text-sm"
                   style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}/>
               </div>
               <div>
                 <label className="block text-xs font-bold mb-1" style={{ color: "var(--text-muted)" }}>시작일</label>
                 <input type="date" value={formStart} onChange={e => setFormStart(e.target.value)}
-                  className="px-3 py-2 rounded-lg text-sm"
+                  className="px-3 py-2 rounded-xl text-sm"
                   style={{ background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}/>
               </div>
               <p className="text-xs" style={{ color: "var(--text-dim)" }}>
@@ -959,12 +960,12 @@ function SeasonTab() {
               </p>
               <div className="flex gap-2">
                 <button onClick={handleCreate} disabled={saving}
-                  className="px-4 py-2 rounded-lg text-sm font-bold hover:brightness-90"
+                  className="px-4 py-2 rounded-xl text-sm font-bold hover:brightness-90"
                   style={{ background: "var(--accent)", color: "#fff", opacity: saving ? 0.6 : 1 }}>
                   {saving ? "저장 중…" : "시즌 시작"}
                 </button>
                 <button onClick={() => { setShowForm(false); setFormLabel(""); }}
-                  className="px-4 py-2 rounded-lg text-sm font-bold"
+                  className="px-4 py-2 rounded-xl text-sm font-bold"
                   style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
                   취소
                 </button>
@@ -986,7 +987,7 @@ function SeasonTab() {
           {seasons.map(season => {
             const ss = statusStyle(season);
             return (
-              <div key={season.id} className="rounded-xl p-5"
+              <div key={season.id} className="rounded-2xl p-5"
                 style={{ background: "var(--panel)", border: `1px solid ${season.closed ? "var(--border)" : "var(--accent)"}` }}>
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div>
@@ -1006,20 +1007,20 @@ function SeasonTab() {
                     <div className="flex gap-2 flex-wrap">
                       {!season.closed && (
                         <button onClick={() => openAwardModal(season)} disabled={saving}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold hover:brightness-90"
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold hover:brightness-90"
                           style={{ background: "#fbbf24", color: "#78350f" }}>
                           🏆 시즌 종료 & 트로피 수여
                         </button>
                       )}
                       {season.closed && (
                         <button onClick={() => openAwardModal(season)} disabled={saving}
-                          className="px-3 py-1.5 rounded-lg text-xs font-bold hover:brightness-90"
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold hover:brightness-90"
                           style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
                           ✏️ 트로피 수정
                         </button>
                       )}
                       <button onClick={() => handleDelete(season.id)} disabled={saving}
-                        className="px-3 py-1.5 rounded-lg text-xs font-bold hover:brightness-90"
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold hover:brightness-90"
                         style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.3)" }}>
                         삭제
                       </button>
@@ -1227,7 +1228,7 @@ function TrophyTab() {
     <select
       value={value}
       onChange={e => onChange(e.target.value)}
-      className="flex-1 px-3 py-2 rounded-lg text-sm font-semibold"
+      className="flex-1 px-3 py-2 rounded-xl text-sm font-semibold"
       style={{ background: "var(--panel)", border: "1px solid var(--border)", color: value ? "var(--text)" : "var(--text-muted)" }}
     >
       <option value="">{placeholder}</option>
@@ -1242,7 +1243,7 @@ function TrophyTab() {
   return (
     <div className="space-y-6">
       {msg && (
-        <div className="px-4 py-2 rounded-lg text-sm font-semibold"
+        <div className="px-4 py-2 rounded-xl text-sm font-semibold"
           style={{ background: "var(--panel)", border: "1px solid var(--accent)", color: "var(--accent)" }}>
           {msg}
         </div>
@@ -1250,10 +1251,10 @@ function TrophyTab() {
 
       {/* ── 새 트로피 수여 ── */}
       {isAdmin && (
-        <div className="rounded-xl p-5" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
+        <div className="rounded-2xl p-5" style={{ background: "var(--panel)", border: "1px solid var(--border)" }}>
           {!showForm ? (
             <button onClick={() => { setShowForm(true); setMsg(""); }}
-              className="px-4 py-2 rounded-lg text-sm font-bold transition-all hover:brightness-90"
+              className="px-4 py-2 rounded-xl text-sm font-bold transition-all hover:brightness-90"
               style={{ background: "var(--accent)", color: "#fff" }}>
               + 트로피 수여
             </button>
@@ -1265,7 +1266,7 @@ function TrophyTab() {
               <div className="flex gap-2">
                 {(["worlds", "season"] as const).map(t => (
                   <button key={t} onClick={() => setForm(f => ({ ...f, type: t }))}
-                    className="px-4 py-2 rounded-lg text-sm font-bold transition-all"
+                    className="px-4 py-2 rounded-xl text-sm font-bold transition-all"
                     style={{
                       background: form.type === t ? (t === "worlds" ? "rgba(0,229,255,0.18)" : "rgba(251,191,36,0.18)") : "var(--hover)",
                       border: `1.5px solid ${form.type === t ? (t === "worlds" ? "#00b4d8" : "#fbbf24") : "var(--border)"}`,
@@ -1285,7 +1286,7 @@ function TrophyTab() {
                   value={form.label}
                   onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
                   placeholder={form.type === "worlds" ? "예: 2026 월즈" : "예: 2026년 1시즌"}
-                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  className="w-full px-3 py-2 rounded-xl text-sm"
                   style={{ background: "var(--panel)", border: "1px solid var(--border)", color: "var(--text)" }}
                 />
               </div>
@@ -1387,7 +1388,7 @@ function TrophyTab() {
             const sorted = [...ev.holders].sort((a, b) => a.rank - b.rank);
 
             return (
-              <div key={ev.key} className="rounded-xl p-4"
+              <div key={ev.key} className="rounded-2xl p-4"
                 style={{ background: bgColor, border: `1.5px solid ${borderColor}` }}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">

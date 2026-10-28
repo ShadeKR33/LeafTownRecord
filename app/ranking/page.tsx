@@ -1177,7 +1177,7 @@ export default function RankingPage() {
 
       {/* 📰 테마 반응형 한줄 뉴스 속보 배너 */}
       {newsItems.length > 0 && (
-        <div className="mb-6 rounded-xl border overflow-hidden flex items-center h-11 text-sm shadow-sm"
+        <div className="mb-6 rounded-2xl border overflow-hidden flex items-center h-11 text-sm shadow-sm"
           style={{ background: "var(--panel)", borderColor: "var(--border)" }}>
           {/* 뉴스 발간처 타이틀 */}
           <div className="h-full px-4 flex items-center gap-1.5 font-black shrink-0 border-r"
@@ -1336,7 +1336,7 @@ export default function RankingPage() {
             const equippedDef = equippedRecord ? getLimitedTitleDef(equippedRecord.id) : null;
             return (
               <div key={p.mainNickname}
-                className="rounded-xl border px-4 py-3 cursor-pointer active:opacity-80 transition-all"
+                className="rounded-2xl border px-4 py-3 cursor-pointer active:opacity-80 transition-all"
                 style={{
                   background: (() => {
                     if (ranks[i] === 1) return activeTheme === "aka" ? "rgba(180,0,0,0.28)" : "rgba(212,173,50,0.22)";
@@ -1404,7 +1404,7 @@ export default function RankingPage() {
       </div>
 
       {/* 데스크톱 테이블 뷰 (sm 이상) */}
-      <div className="hidden sm:block rounded-lg border overflow-x-auto" style={{ borderColor: "var(--border)" }}>
+      <div className="hidden sm:block rounded-2xl border overflow-x-auto" style={{ borderColor: "var(--border)" }}>
         <table className="w-full text-sm" style={{ minWidth: "640px" }}>
           <thead>
             <tr style={{ background: "var(--panel)", borderBottom: "1px solid var(--border)" }}>
