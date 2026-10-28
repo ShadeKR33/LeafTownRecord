@@ -216,6 +216,8 @@ export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadge
     ? `${trophy.seasonLabel} 우승`
     : `${trophy.seasonLabel} ${trophy.rank}위`;
   const [hovered, setHovered] = useState(false);
+  const [clicked, setClicked] = useState(false);
+  const showTooltip = hovered || clicked;
 
   const iconSize = iconOnly ? 20 : size;
 
@@ -224,7 +226,8 @@ export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadge
       className="inline-flex items-center"
       style={{ position: "relative" }}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseLeave={() => { setHovered(false); setClicked(false); }}
+      onClick={(e) => { e.stopPropagation(); setClicked(c => !c); }}
     >
       <span
         className="inline-flex items-center gap-0.5 cursor-default select-none"
@@ -254,7 +257,7 @@ export function TrophyBadge({ trophy, size = 13, iconOnly = false }: TrophyBadge
         )}
       </span>
 
-      {hovered && (
+      {showTooltip && (
         <span
           className="pointer-events-none z-[9999]"
           style={{

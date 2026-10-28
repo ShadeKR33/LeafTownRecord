@@ -1362,10 +1362,15 @@ export default function RankingPage() {
                     style={{ color: ranks[i] <= 3 ? "var(--accent)" : "var(--text-muted)" }}>
                     {rankIcon(ranks[i])}
                   </span>
-                  <span className="font-bold text-sm flex-1 min-w-0 truncate"
-                    style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : ranks[i] === 3 ? "#c2410c" : "var(--text)" }}>
-                    {p.displayName}
-                  </span>
+                  <div className="flex items-center gap-1 flex-1 min-w-0">
+                    <span className="font-bold text-sm truncate"
+                      style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : ranks[i] === 3 ? "#c2410c" : "var(--text)" }}>
+                      {p.displayName}
+                    </span>
+                    {getTrophies(p.mainNickname).length > 0 && (
+                      <TrophyList trophies={getTrophies(p.mainNickname)} />
+                    )}
+                  </div>
                   <StreakBadge streak={p.currentStreak} />
                   <button className="ml-1 shrink-0 p-1" onClick={e => { e.stopPropagation(); setBadgeModal(p); }}>
                     {equippedDef ? (
@@ -1381,11 +1386,6 @@ export default function RankingPage() {
                     )}
                   </button>
                 </div>
-                {getTrophies(p.mainNickname).length > 0 && (
-                  <div className="mb-1.5 pl-10">
-                    <TrophyList trophies={getTrophies(p.mainNickname)} />
-                  </div>
-                )}
                 <div className="flex items-center gap-4 pl-10 text-xs">
                   <span>
                     <span style={{ color: "var(--win)" }}>{p.wins}승</span>
