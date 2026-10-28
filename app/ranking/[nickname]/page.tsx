@@ -199,7 +199,7 @@ export default function PlayerDetailPage() {
             {stats.currentStreak > 0 ? (
               <div className="font-bold" style={{ color: "var(--loss)" }}>🔥 {stats.currentStreak}연승중</div>
             ) : stats.currentStreak < 0 ? (
-              <div className="font-bold" style={{ color: "#1565c0" }}>💧 {Math.abs(stats.currentStreak)}연패중</div>
+              <div className="font-bold" style={{ color: "#60a5fa" }}>💧 {Math.abs(stats.currentStreak)}연패중</div>
             ) : (
               <div style={{ color: "var(--text-muted)" }}>-</div>
             )}
@@ -210,7 +210,7 @@ export default function PlayerDetailPage() {
           </div>
           <div>
             <div className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>최고 연패</div>
-            <div className="font-bold text-lg" style={{ color: "#1565c0" }}>{stats.maxLoseStreak}연패</div>
+            <div className="font-bold text-lg" style={{ color: "#60a5fa" }}>{stats.maxLoseStreak}연패</div>
           </div>
         </div>
       </div>
@@ -890,13 +890,13 @@ export default function PlayerDetailPage() {
             )}
             {stats.currentStreak > 0 && (
               <span className="text-sm px-3 py-1 rounded-full font-bold"
-                style={{ background: "#ffebee", color: "var(--loss)", border: "1px solid #ffcdd2" }}>
+                style={{ background: "rgba(239,68,68,0.15)", color: "var(--loss)", border: "1px solid rgba(239,68,68,0.35)" }}>
                 🔥 {stats.currentStreak}연승중
               </span>
             )}
             {stats.currentStreak < 0 && (
               <span className="text-sm px-3 py-1 rounded-full font-bold"
-                style={{ background: "#e3f2fd", color: "#1565c0", border: "1px solid #bbdefb" }}>
+                style={{ background: "rgba(59,130,246,0.15)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.35)" }}>
                 💧 {Math.abs(stats.currentStreak)}연패중
               </span>
             )}

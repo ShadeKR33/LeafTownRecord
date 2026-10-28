@@ -1712,7 +1712,7 @@ function GuideTab() {
         <p className="text-sm font-semibold" style={{ color: "#c8a951" }}>
           — 단 하나의 왕좌, 열두 명의 닌자 —
         </p>
-        <div className="flex justify-center gap-4 mt-4 text-xs" style={{ color: "#6a8060" }}>
+        <div className="flex justify-center gap-4 mt-4 text-xs" style={{ color: "#9ab890" }}>
           <span>개최지 · 여수시</span>
           <span>·</span>
           <span>기간 · 12월 28일 ~ 30일</span>
@@ -1753,7 +1753,7 @@ function GuideTab() {
                 <span className="font-black tabular-nums" style={{ fontSize: 12, color: "#c8a951", minWidth: 24 }}>{num}</span>
                 <span className="text-sm font-semibold" style={{ color: "#c8d8c0" }}>{title}</span>
               </div>
-              <span style={{ color: "#2a5c2a", fontSize: 12 }}>›</span>
+              <span style={{ color: "#5a9c5a", fontSize: 12 }}>›</span>
             </a>
           ))}
         </div>
