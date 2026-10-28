@@ -12,8 +12,8 @@ const TABS: { key: Tab; icon: string; label: string }[] = [
   { key: "draft",   icon: "⚔️", label: "드래프트" },
   { key: "players", icon: "🃏", label: "선수단"   },
   { key: "scrim",   icon: "📊", label: "스크림"   },
-  { key: "guide",   icon: "📖", label: "가이드"   },
   { key: "journey", icon: "🗺️", label: "여정"    },
+  { key: "guide",   icon: "📖", label: "가이드"   },
 ];
 
 // ─── D-Day 탭 ────────────────────────────────────────────────────────────────
