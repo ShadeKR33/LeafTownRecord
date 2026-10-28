@@ -13,12 +13,12 @@ const ROLE_COLORS: Record<Position, string> = {
   탑: "#e06060", 정글: "#50a050", 미드: "#5090d0", 원딜: "#c0a030", 서포터: "#9060c0",
 };
 
-const TIER_CONFIG: Record<Tier, { label: string; color: string; bg: string; desc: string }> = {
-  1: { label: "1티어", color: "#ef4444", bg: "#fef2f2", desc: "압도적 강세" },
-  2: { label: "2티어", color: "#f97316", bg: "#fff7ed", desc: "강력한 픽" },
-  3: { label: "3티어", color: "#eab308", bg: "#fefce8", desc: "준수한 픽" },
-  4: { label: "4티어", color: "#6366f1", bg: "#eef2ff", desc: "약세 픽" },
-  5: { label: "5티어", color: "#94a3b8", bg: "#f8fafc", desc: "하위 픽" },
+const TIER_CONFIG: Record<Tier, { label: string; color: string; desc: string }> = {
+  1: { label: "1티어", color: "#ef4444", desc: "압도적 강세" },
+  2: { label: "2티어", color: "#f97316", desc: "강력한 픽" },
+  3: { label: "3티어", color: "#eab308", desc: "준수한 픽" },
+  4: { label: "4티어", color: "#6366f1", desc: "약세 픽" },
+  5: { label: "5티어", color: "#94a3b8", desc: "하위 픽" },
 };
 
 export interface ChampTierStat {
@@ -278,17 +278,18 @@ export default function ChampionPage() {
           "기록이 쌓일수록 티어 정확도가 높아지니 꾸준히 캡쳐 분석으로 기록을 등록해주세요.",
         ]}
       />
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+
+      {/* ─── 헤더 ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <div>
-          <h2 className="text-xl font-bold" style={{ color: "var(--accent)" }}>🏆 챔피언 티어 리스트</h2>
-          <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-            포지션 내 상대 순위 기반 자동 배분 — 1픽 이상 집계
-            {totalGames > 0 && <span className="ml-2">({totalGames}경기 기준)</span>}
+          <h2 className="text-xl font-black" style={{ color: "var(--text)" }}>🏆 챔피언 티어 리스트</h2>
+          <p className="text-xs mt-1" style={{ color: "var(--text-dim)" }}>
+            포지션 내 상대 순위 기반 자동 배분 · 1픽 이상 집계
+            {totalGames > 0 && <span className="ml-1.5 px-2 py-0.5 rounded-full" style={{ background: "var(--hover)", color: "var(--text-muted)" }}>{totalGames}경기 기준</span>}
           </p>
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* 티어 빠른 이동 버튼 */}
-          <div className="flex items-center gap-1 bg-[var(--panel-alt)] p-1 rounded-xl border" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 p-1 rounded-2xl" style={{ background: "var(--panel-alt)", border: "1px solid var(--border)" }}>
             {([1, 2, 3, 4, 5] as Tier[]).map(t => {
               const hasChamps = tierGroups.some(g => g.tier === t);
               const config = TIER_CONFIG[t];
@@ -296,16 +297,14 @@ export default function ChampionPage() {
                 <button
                   key={t}
                   disabled={!hasChamps}
-                  onClick={() => {
-                    document.getElementById(`tier-section-${t}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  }}
-                  className="w-7 h-7 rounded-lg text-xs font-black transition-all flex items-center justify-center"
+                  onClick={() => document.getElementById(`tier-section-${t}`)?.scrollIntoView({ behavior: "smooth", block: "center" })}
+                  className="w-8 h-8 rounded-xl text-xs font-black transition-all flex items-center justify-center"
                   style={{
-                    background: hasChamps ? config.bg : "transparent",
+                    background: hasChamps ? config.color + "20" : "transparent",
                     color: hasChamps ? config.color : "var(--text-dim)",
-                    opacity: hasChamps ? 1 : 0.35,
+                    opacity: hasChamps ? 1 : 0.3,
                     cursor: hasChamps ? "pointer" : "not-allowed",
-                    border: hasChamps ? `1px solid ${config.color}33` : "1px solid transparent",
+                    border: hasChamps ? `1px solid ${config.color}35` : "1px solid transparent",
                   }}
                   title={hasChamps ? `${t}티어로 이동` : "해당 티어 챔피언 없음"}
                 >
@@ -314,152 +313,183 @@ export default function ChampionPage() {
               );
             })}
           </div>
-          <span className="text-xs px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5"
-            style={{ background: "#50a05022", color: "#50a050", border: "1px solid #50a05044" }}>
+          <span className="text-xs px-3 py-2 rounded-2xl font-semibold flex items-center gap-1.5"
+            style={{ background: "#50a05015", color: "#50a050", border: "1px solid #50a05035" }}>
             🍃 꿀챔피언
           </span>
         </div>
       </div>
 
-      <div className="flex gap-1 mb-6 border-b" style={{ borderColor: "var(--border)" }}>
+      {/* ─── 포지션 탭 ─── */}
+      <div className="flex gap-1 mb-7 p-1 rounded-2xl" style={{ background: "var(--panel-alt)", border: "1px solid var(--border)" }}>
         {POSITIONS.map(pos => (
           <button key={pos} onClick={() => handleSetPos(pos)}
-            className="px-5 py-2.5 text-sm font-bold transition-all"
+            className="flex-1 py-2.5 text-sm font-bold transition-all rounded-xl"
             style={{
+              background: activePos === pos ? ROLE_COLORS[pos] + "20" : "transparent",
               color: activePos === pos ? ROLE_COLORS[pos] : "var(--text-muted)",
-              borderBottom: activePos === pos ? `2px solid ${ROLE_COLORS[pos]}` : "2px solid transparent",
+              border: activePos === pos ? `1px solid ${ROLE_COLORS[pos]}40` : "1px solid transparent",
             }}>
             {pos}
             {tierData[pos].length > 0 && (
-              <span className="ml-1.5 text-xs font-normal" style={{ color: "var(--text-dim)" }}>{tierData[pos].length}</span>
+              <span className="ml-1.5 text-[10px] font-normal opacity-70">{tierData[pos].length}</span>
             )}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="py-20 text-center" style={{ color: "var(--text-muted)" }}>
-          <div className="text-3xl mb-4 animate-bounce">⏳</div>
-          <p>챔피언 데이터를 분석 중입니다...</p>
+        <div className="py-24 text-center" style={{ color: "var(--text-muted)" }}>
+          <div className="text-4xl mb-4 animate-bounce">⏳</div>
+          <p className="text-sm">챔피언 데이터를 분석 중입니다...</p>
         </div>
       ) : currentData.length === 0 ? (
-        <div className="py-20 text-center rounded-lg border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>
+        <div className="py-24 text-center rounded-2xl border" style={{ background: "var(--panel)", borderColor: "var(--border)", color: "var(--text-muted)" }}>
           <div className="text-4xl mb-3">📊</div>
-          <p>{activePos} 포지션 기록이 없습니다.</p>
+          <p className="text-sm">{activePos} 포지션 기록이 없습니다.</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-10">
           {tierGroups.map(({ tier, config, champs }) => (
             <div key={tier} id={`tier-section-${tier}`}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="px-4 py-1.5 rounded-lg font-black text-sm"
-                  style={{ background: config.bg, color: config.color, border: `2px solid ${config.color}66` }}>
-                  {config.label}
+              {/* 티어 헤더 */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl"
+                  style={{ background: config.color + "18", border: `1px solid ${config.color}35` }}>
+                  <span className="text-2xl font-black leading-none" style={{ color: config.color }}>{tier}</span>
+                  <div>
+                    <div className="text-xs font-black leading-tight" style={{ color: config.color }}>{config.label}</div>
+                    <div className="text-[10px] leading-tight" style={{ color: config.color + "bb" }}>{config.desc}</div>
+                  </div>
                 </div>
-                <div className="flex-1 h-px" style={{ background: `${config.color}33` }} />
-                <span className="text-xs" style={{ color: "var(--text-dim)" }}>{champs.length}개</span>
+                <div className="flex-1 h-px" style={{ background: `linear-gradient(to right, ${config.color}40, transparent)` }} />
+                <span className="text-xs px-2.5 py-1 rounded-full font-semibold"
+                  style={{ background: config.color + "15", color: config.color }}>{champs.length}개</span>
               </div>
+
+              {/* 챔피언 카드 그리드 */}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {champs.map(c => (
                   <div key={c.champion}
                     onClick={() => router.push(`/champion/${encodeURIComponent(c.champion)}?pos=${encodeURIComponent(activePos)}`)}
-                    className="p-3 rounded-xl border transition-all hover:scale-[1.03] cursor-pointer hover:shadow-lg"
+                    className="group p-3.5 rounded-2xl border transition-all hover:scale-[1.02] cursor-pointer hover:shadow-xl"
                     style={{
                       background: "var(--panel)",
-                      borderColor: c.isHoney ? "#50a050" : `${config.color}44`,
+                      borderColor: c.isHoney ? "#50a05050" : config.color + "35",
                       borderLeft: `3px solid ${c.isHoney ? "#50a050" : config.color}`,
                     }}>
-                    <div className="flex items-start justify-between gap-1 mb-2">
-                      <div className="flex items-center gap-1.5">
-                        <ChampionPortrait name={c.champion} size={28} />
-                        <div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-bold text-sm leading-tight" style={{ color: posColor }}>{c.champion}</span>
-                            {c.isHoney && <span title="꿀챔피언" style={{ fontSize: 12 }}>🍃</span>}
-                          </div>
+                    {/* 카드 헤더: 초상화 + 이름 + 뱃지 */}
+                    <div className="flex items-center gap-2.5 mb-3">
+                      <div className="rounded-xl overflow-hidden flex-shrink-0" style={{ boxShadow: `0 2px 8px ${config.color}25` }}>
+                        <ChampionPortrait name={c.champion} size={38} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <span className="font-black text-sm truncate leading-tight" style={{ color: posColor }}>{c.champion}</span>
+                          {c.isHoney && <span title="꿀챔피언" className="flex-shrink-0" style={{ fontSize: 11 }}>🍃</span>}
+                        </div>
+                        <div className="flex gap-1 flex-wrap mt-1">
+                          {c.forcedUp && (
+                            <span title="밴율이 높고 승률도 좋은 픽이에요"
+                              className="px-1.5 py-0.5 rounded-full font-bold leading-tight"
+                              style={{ background: "#ef444415", color: "#ef4444", fontSize: 9 }}>경계</span>
+                          )}
+                          {c.penalized && (
+                            <span className="px-1.5 py-0.5 rounded-full font-bold leading-tight"
+                              style={{ background: "#0284c715", color: "#0284c7", fontSize: 9 }}>표본↓</span>
+                          )}
+                          {c.distinctPlayers === 1 && (
+                            <span title="이 챔피언을 플레이한 사람이 1명뿐이에요"
+                              className="px-1.5 py-0.5 rounded-full font-bold leading-tight"
+                              style={{ background: "#9333ea15", color: "#9333ea", fontSize: 9 }}>1인픽</span>
+                          )}
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                        {c.forcedUp && <span title="밴율이 높고 승률도 좋은 픽이에요 — 그 친구의 시그니처여서든 챔피언 자체가 강해서든, &quot;상대하기 어려워서 배제한다&quot;는 점에서 우리 내전에선 동일하게 경계 대상으로 봅니다" className="px-1 rounded font-bold" style={{ background: "#fef2f2", color: "#ef4444", fontSize: 9 }}>경계대상</span>}
-                        {c.penalized && <span className="px-1 rounded font-bold" style={{ background: "#f0f9ff", color: "#0284c7", fontSize: 9 }}>표본↓</span>}
-                        {c.distinctPlayers === 1 && <span title="이 챔피언을 플레이한 사람이 1명뿐이라 개인 기량의 영향이 클 수 있어요" className="px-1 rounded font-bold" style={{ background: "#faf5ff", color: "#9333ea", fontSize: 9 }}>1인픽</span>}
-                      </div>
                     </div>
-                    <div className="space-y-1 text-xs">
-                      <div className="flex justify-between">
-                        <span style={{ color: "var(--text-dim)" }}>승률</span>
-                        <span className="font-bold" style={{ color: c.winRate >= 0.60 ? "var(--win)" : c.winRate >= 0.50 ? "var(--text)" : "var(--loss)" }}>
+
+                    {/* 스탯 블록 */}
+                    <div className="grid grid-cols-3 gap-1 mb-2.5">
+                      <div className="rounded-xl py-1.5 text-center" style={{ background: "var(--panel-alt)" }}>
+                        <div className="text-[9px] mb-0.5" style={{ color: "var(--text-dim)" }}>승률</div>
+                        <div className="text-xs font-black" style={{ color: c.winRate >= 0.60 ? "var(--win)" : c.winRate >= 0.50 ? "var(--text)" : "var(--loss)" }}>
                           {pct(c.winRate)}
-                        </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center group/pick cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded px-1 -mx-1"
+                      <div className="rounded-xl py-1.5 text-center transition-colors cursor-pointer hover:opacity-80"
+                        style={{ background: "var(--panel-alt)" }}
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedChampForModal({ champion: c.champion, position: c.position });
                         }}
                         title="클릭 시 플레이 소환사 보기">
-                        <span className="group-hover/pick:underline" style={{ color: "var(--text-dim)" }}>픽률</span>
-                        <span className="font-bold group-hover/pick:text-[var(--accent)]" style={{ color: "var(--text-muted)" }}>{pct(c.pickRate)}</span>
+                        <div className="text-[9px] mb-0.5" style={{ color: "var(--text-dim)" }}>픽률</div>
+                        <div className="text-xs font-bold group-hover:text-[var(--accent)]" style={{ color: "var(--text-muted)" }}>{pct(c.pickRate)}</div>
                       </div>
-                      <div className="flex justify-between" title="높을수록 &quot;상대하기 어려워서 미리 배제하는&quot; 픽이라는 뜻이에요">
-                        <span style={{ color: "var(--text-dim)" }}>밴율</span>
-                        <span style={{ color: c.banRate >= 0.25 ? "#ef4444" : "var(--text-muted)" }}>{pct(c.banRate)}</span>
+                      <div className="rounded-xl py-1.5 text-center"
+                        style={{ background: "var(--panel-alt)" }}
+                        title="높을수록 상대하기 어려운 픽이에요">
+                        <div className="text-[9px] mb-0.5" style={{ color: "var(--text-dim)" }}>밴율</div>
+                        <div className="text-xs font-bold" style={{ color: c.banRate >= 0.25 ? "#ef4444" : "var(--text-muted)" }}>{pct(c.banRate)}</div>
                       </div>
                     </div>
-                    <div className="mt-2">
-                      <div className="h-1 rounded-full overflow-hidden" style={{ background: "var(--hover)" }}>
-                        <div className="h-full rounded-full" style={{ width: `${Math.min(100, c.score)}%`, background: c.isHoney ? "#50a050" : config.color, opacity: 0.8 }} />
-                      </div>
-                      <div className="text-right mt-0.5" style={{ fontSize: 9, color: "var(--text-dim)" }}>점수 {c.score}</div>
+
+                    {/* 점수 바 */}
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: "var(--hover)" }}>
+                      <div className="h-full rounded-full transition-all"
+                        style={{ width: `${Math.min(100, c.score)}%`, background: c.isHoney ? "#50a050" : config.color }} />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
           ))}
-
         </div>
       )}
 
-      {/* 플레이 소환사 현황 모달 */}
+      {/* ─── 플레이 소환사 모달 ─── */}
       {selectedChampForModal && (() => {
         const players = getPlayersWhoPlayed(selectedChampForModal.champion, selectedChampForModal.position);
         return (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
             onClick={() => setSelectedChampForModal(null)}>
-            <div className="rounded-2xl border p-6 max-w-lg w-full relative shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+            <div className="rounded-2xl border max-w-lg w-full relative shadow-2xl overflow-hidden"
               style={{ background: "var(--panel)", borderColor: "var(--border)" }}
               onClick={e => e.stopPropagation()}>
-              
-              <button className="absolute top-4 right-4 text-2xl hover:opacity-75 focus:outline-none"
-                style={{ color: "var(--text-dim)" }}
-                onClick={() => setSelectedChampForModal(null)}>
-                ×
-              </button>
 
-              <div className="flex items-center gap-3 mb-4">
-                <ChampionPortrait name={selectedChampForModal.champion} size={40} />
-                <div>
-                  <h3 className="text-lg font-bold" style={{ color: "var(--text)" }}>
-                    {selectedChampForModal.champion} 플레이어 현황
+              {/* 모달 헤더 */}
+              <div className="flex items-center gap-3 px-6 py-5 border-b" style={{ borderColor: "var(--border)" }}>
+                <div className="rounded-xl overflow-hidden flex-shrink-0" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.2)" }}>
+                  <ChampionPortrait name={selectedChampForModal.champion} size={44} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-base font-black truncate" style={{ color: "var(--text)" }}>
+                    {selectedChampForModal.champion}
                   </h3>
-                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                    포지션: <span className="font-bold" style={{ color: ROLE_COLORS[selectedChampForModal.position] }}>{selectedChampForModal.position}</span>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-dim)" }}>
+                    플레이어 현황 ·{" "}
+                    <span className="font-bold" style={{ color: ROLE_COLORS[selectedChampForModal.position] }}>
+                      {selectedChampForModal.position}
+                    </span>
                   </p>
                 </div>
+                <button className="w-8 h-8 rounded-xl flex items-center justify-center text-lg font-bold transition-all hover:opacity-75"
+                  style={{ background: "var(--hover)", color: "var(--text-dim)" }}
+                  onClick={() => setSelectedChampForModal(null)}>
+                  ×
+                </button>
               </div>
 
-              <div className="overflow-auto max-h-[350px] pr-1">
+              <div className="overflow-auto max-h-[360px]">
                 {players.length === 0 ? (
-                  <p className="text-center py-8 text-sm" style={{ color: "var(--text-dim)" }}>플레이 기록이 없습니다.</p>
+                  <p className="text-center py-10 text-sm" style={{ color: "var(--text-dim)" }}>플레이 기록이 없습니다.</p>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b" style={{ borderColor: "var(--border)" }}>
-                        <th className="py-2 text-left text-xs" style={{ color: "var(--text-muted)" }}>소환사</th>
-                        <th className="py-2 text-center text-xs" style={{ color: "var(--text-muted)" }}>판수</th>
-                        <th className="py-2 text-center text-xs" style={{ color: "var(--text-muted)" }}>승률</th>
-                        <th className="py-2 text-center text-xs" style={{ color: "var(--text-muted)" }}>평균 KDA</th>
+                      <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                        <th className="py-3 px-6 text-left text-xs font-semibold" style={{ color: "var(--text-dim)" }}>소환사</th>
+                        <th className="py-3 px-3 text-center text-xs font-semibold" style={{ color: "var(--text-dim)" }}>판수</th>
+                        <th className="py-3 px-3 text-center text-xs font-semibold" style={{ color: "var(--text-dim)" }}>승률</th>
+                        <th className="py-3 px-6 text-center text-xs font-semibold" style={{ color: "var(--text-dim)" }}>평균 KDA</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -469,34 +499,33 @@ export default function ChampionPage() {
                         const avgD = p.hasKda ? (p.deaths / p.games).toFixed(1) : "-";
                         const avgA = p.hasKda ? (p.assists / p.games).toFixed(1) : "-";
                         const ratio = p.hasKda && p.deaths > 0 ? ((p.kills + p.assists) / p.deaths).toFixed(2) : p.hasKda ? "Perfect" : "-";
-
                         return (
-                          <tr key={p.nickname} className="border-b hover:bg-[var(--hover)] transition-colors cursor-pointer"
-                            style={{ borderColor: "var(--border)" }}
+                          <tr key={p.nickname}
+                            className="transition-colors cursor-pointer"
+                            style={{ borderBottom: "1px solid var(--border)" }}
+                            onMouseEnter={e => (e.currentTarget.style.background = "var(--hover)")}
+                            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                             onClick={() => {
                               setSelectedChampForModal(null);
                               if (p.hasAlts) router.push(`/ranking/person/${encodeURIComponent(p.nickname)}`);
                               else router.push(`/ranking/${encodeURIComponent(p.nickname)}`);
                             }}>
-                            <td className="py-3 font-semibold" style={{ color: "var(--accent)" }}>
-                              {p.displayName}
+                            <td className="py-3 px-6 font-bold" style={{ color: "var(--accent)" }}>{p.displayName}</td>
+                            <td className="py-3 px-3 text-center text-xs" style={{ color: "var(--text-muted)" }}>{p.games}판</td>
+                            <td className="py-3 px-3 text-center">
+                              <div className="font-black text-xs" style={{ color: wr >= 0.60 ? "var(--win)" : wr >= 0.50 ? "var(--text)" : "var(--loss)" }}>
+                                {Math.round(wr * 100)}%
+                              </div>
+                              <div style={{ color: "var(--text-dim)", fontSize: 10 }}>{p.wins}승 {p.losses}패</div>
                             </td>
-                            <td className="py-3 text-center" style={{ color: "var(--text)" }}>
-                              {p.games}판
-                            </td>
-                            <td className="py-3 text-center font-bold"
-                              style={{ color: wr >= 0.60 ? "var(--win)" : wr >= 0.50 ? "var(--text)" : "var(--loss)" }}>
-                              {Math.round(wr * 100)}%
-                              <div className="text-[10px] font-normal" style={{ color: "var(--text-dim)" }}>{p.wins}승 {p.losses}패</div>
-                            </td>
-                            <td className="py-3 text-center text-xs">
+                            <td className="py-3 px-6 text-center">
                               {p.hasKda ? (
-                                <div>
-                                  <div className="font-bold" style={{ color: ratio === "Perfect" || parseFloat(ratio) >= 4 ? "var(--win)" : parseFloat(ratio) >= 2 ? "var(--text)" : "var(--loss)" }}>
+                                <>
+                                  <div className="font-bold text-xs" style={{ color: ratio === "Perfect" || parseFloat(ratio) >= 4 ? "var(--win)" : parseFloat(ratio) >= 2 ? "var(--text)" : "var(--loss)" }}>
                                     {ratio === "Perfect" ? "Perfect" : `${ratio}:1`}
                                   </div>
                                   <div style={{ color: "var(--text-dim)", fontSize: 10 }}>{avgK}/{avgD}/{avgA}</div>
-                                </div>
+                                </>
                               ) : (
                                 <span style={{ color: "var(--text-dim)" }}>-</span>
                               )}
