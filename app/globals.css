@@ -442,11 +442,11 @@ html.myoboku-mode ::-webkit-scrollbar-thumb:hover { background: #15803d; }
 
 /* ── 암살전술 특수부대 모드 ─────────────────────────────────────── */
 html.anbu-mode {
-  --bg:           #1e2430; /* 명확한 슬레이트 회색 바탕 */
-  --panel:        #262d3a; /* 슬레이트 회색 패널 */
-  --panel-alt:    #1f2530;
-  --hover:        #333b4c;
-  --border:       #3f4a5f;
+  --bg:           #2e3748; /* 슬레이트 회색 바탕 (밝기 향상) */
+  --panel:        #38435a; /* 슬레이트 회색 패널 (밝기 향상) */
+  --panel-alt:    #303d52;
+  --hover:        #424f68;
+  --border:       #536078;
   --border-green: #06b6d4; /* 청록색/화이트 테마 */
   --accent:       #06b6d4; /* 생생한 청록색 */
   --accent-light: #22d3ee;
@@ -461,16 +461,16 @@ html.anbu-mode {
   --loss:         #ef4444;
 }
 html.anbu-mode body {
-  background-color: #1e2430;
+  background-color: #2e3748;
   background-image:
-    radial-gradient(circle at 80% 20%, rgba(6,182,212,0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 20% 80%, rgba(226,232,240,0.08) 0%, transparent 60%);
+    radial-gradient(circle at 80% 20%, rgba(6,182,212,0.18) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 80%, rgba(226,232,240,0.12) 0%, transparent 60%);
   background-size: auto;
 }
 html.anbu-mode main { position: relative; z-index: 2; }
 html.anbu-mode .leaf-float { display: none; }
-html.anbu-mode ::-webkit-scrollbar-track { background: #1e2430; }
-html.anbu-mode ::-webkit-scrollbar-thumb { background: #3f4a5f; }
+html.anbu-mode ::-webkit-scrollbar-track { background: #2e3748; }
+html.anbu-mode ::-webkit-scrollbar-thumb { background: #536078; }
 html.anbu-mode ::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
 
 /* 그림자 연기 효과 (청록색 안개) */
