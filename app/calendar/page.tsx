@@ -500,10 +500,10 @@ export default function CalendarPage() {
           <div className="flex items-center gap-2.5">
             <span>📅</span>
             <span>{year}년 {month}월</span>
-            {monthRecords.length > 0 && (
+            {Object.keys(dateGroups).length > 0 && (
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                 style={{ background: "var(--accent)" + "22", color: "var(--accent)" }}>
-                {monthRecords.length}경기
+                {Object.keys(dateGroups).length}시리즈
               </span>
             )}
           </div>
@@ -529,7 +529,7 @@ export default function CalendarPage() {
                   {count > 0 && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                       style={{ background: isActive ? "var(--accent)" + "33" : "var(--hover)", color: isActive ? "var(--accent)" : "var(--text-dim)" }}>
-                      {count}일
+                      {count}시리즈
                     </span>
                   )}
                 </button>
