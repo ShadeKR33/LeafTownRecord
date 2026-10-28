@@ -1912,7 +1912,7 @@ const JOURNEY_MILESTONES: {
   tag?: string;
 }[] = [
   {
-    date: "2026-10-21",
+    date: "2026-09-26",
     icon: "🏆",
     title: "제2회 월즈 공식 발표",
     desc: "나뭇잎 마을 제2회 월드 챔피언십이 여수에서 개최됨을 공식 선언했다. 12명의 닌자가 도전의 문 앞에 섰다.",
@@ -1960,7 +1960,7 @@ const JOURNEY_MILESTONES: {
 
 function JourneyTab() {
   const WORLDS_DATE = new Date("2026-12-28T00:00:00");
-  const ANNOUNCE_DATE = new Date("2026-10-21T00:00:00");
+  const ANNOUNCE_DATE = new Date("2026-09-26T00:00:00");
   const now = new Date();
 
   const [milestones, setMilestones] = useState<typeof JOURNEY_MILESTONES>(() => {
@@ -2006,6 +2006,9 @@ function JourneyTab() {
     try { localStorage.setItem("journey-milestones", JSON.stringify(next)); } catch {}
   }
 
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   const daysTotal = Math.round((WORLDS_DATE.getTime() - ANNOUNCE_DATE.getTime()) / 86400000);
   const daysPassed = Math.max(0, Math.round((now.getTime() - ANNOUNCE_DATE.getTime()) / 86400000));
   const daysLeft = Math.max(0, Math.round((WORLDS_DATE.getTime() - now.getTime()) / 86400000));
@@ -2027,7 +2030,7 @@ function JourneyTab() {
         {/* 진행률 바 */}
         <div className="mb-3">
           <div className="flex justify-between text-xs mb-1.5" style={{ color: "#6a8060" }}>
-            <span>발표일 · 10월 21일</span>
+            <span>발표일 · 9월 26일</span>
             <span>월즈 · 12월 28일</span>
           </div>
           <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "#0d2a0d" }}>
@@ -2071,10 +2074,32 @@ function JourneyTab() {
 
           <div className="space-y-0">
             {milestones.map((m, i) => (
-              <div key={i} className="relative flex gap-4 pb-8">
+              <div
+                key={i}
+                draggable
+                onDragStart={() => { setDragIndex(i); setDragOverIndex(i); }}
+                onDragEnter={() => setDragOverIndex(i)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={() => {
+                  if (dragIndex === null || dragIndex === i) { setDragIndex(null); setDragOverIndex(null); return; }
+                  const next = [...milestones];
+                  const [moved] = next.splice(dragIndex, 1);
+                  next.splice(i, 0, moved);
+                  setMilestones(next);
+                  try { localStorage.setItem("journey-milestones", JSON.stringify(next)); } catch {}
+                  setDragIndex(null); setDragOverIndex(null);
+                }}
+                onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                className="relative flex gap-4 pb-8 transition-opacity"
+                style={{ opacity: dragIndex === i ? 0.4 : 1, cursor: "grab" }}>
                 {/* 타임라인 도트 */}
                 <div className="relative z-10 flex-shrink-0 mt-1"
                   style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {/* 드래그 위치 표시선 */}
+                  {dragOverIndex === i && dragIndex !== null && dragIndex !== i && (
+                    <div className="absolute -top-1 left-0 right-0 h-0.5 rounded-full z-20"
+                      style={{ background: "var(--accent)", width: "300px" }} />
+                  )}
                   <div className="rounded-full flex items-center justify-center text-lg"
                     style={{
                       width: 38,
@@ -2090,8 +2115,8 @@ function JourneyTab() {
                 {/* 카드 */}
                 <div className="flex-1 rounded-xl p-4 transition-all"
                   style={{
-                    background: m.done ? m.color + "0d" : "var(--panel)",
-                    border: `1px solid ${m.done ? m.color + "44" : "var(--border)"}`,
+                    background: "var(--panel)",
+                    border: `1px solid ${m.done ? m.color + "66" : "var(--border)"}`,
                   }}>
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="font-black text-sm" style={{ color: m.done ? m.color : "var(--text)" }}>
@@ -2104,14 +2129,14 @@ function JourneyTab() {
                           {m.tag}
                         </span>
                       )}
-                      <button onClick={() => openEdit(i)}
+                      <button onClick={() => openEdit(i)} onMouseDown={e => e.stopPropagation()}
                         className="text-[10px] px-1.5 py-0.5 rounded opacity-40 hover:opacity-100 transition-opacity"
-                        style={{ color: "var(--text-muted)", background: "var(--hover)" }}>
+                        style={{ color: "var(--text-muted)", background: "var(--hover)", cursor: "pointer" }}>
                         ✏️
                       </button>
-                      <button onClick={() => deleteItem(i)}
+                      <button onClick={() => deleteItem(i)} onMouseDown={e => e.stopPropagation()}
                         className="text-[10px] px-1.5 py-0.5 rounded opacity-40 hover:opacity-100 transition-opacity"
-                        style={{ color: "#ef5350", background: "#ef535011" }}>
+                        style={{ color: "#ef5350", background: "#ef535011", cursor: "pointer" }}>
                         ✕
                       </button>
                     </div>
@@ -2119,7 +2144,7 @@ function JourneyTab() {
                   <div className="text-xs mb-2" style={{ color: "var(--text-dim)" }}>
                     🗓️ {m.date}
                   </div>
-                  <p className="text-xs leading-relaxed" style={{ color: m.done ? "var(--text-muted)" : "var(--text-dim)" }}>
+                  <p className="text-xs leading-relaxed" style={{ color: "var(--text-dim)", whiteSpace: "pre-wrap" }}>
                     {m.desc}
                   </p>
                   {m.done && (
