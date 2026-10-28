@@ -57,13 +57,13 @@ function PlayerStatRow({ player, dmgPercent, dtPercent, kp, visionPercent, csPer
     <div className="flex items-center gap-3 px-2 py-2 rounded flex-wrap" style={{ background: isWinner ? "rgba(82,168,255,0.08)" : "var(--panel-alt)" }}>
       <ChampionPortrait name={player.champion} size={44} />
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold truncate flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
-          {player.champion || "-"}
+        <div className="text-sm font-bold flex items-center gap-1.5 min-w-0" style={{ color: "var(--accent)" }}>
+          <span className="truncate min-w-0">{player.champion || "-"}</span>
           {award === "mvp" && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "#e0a030", color: "#1a1208" }}>👑 MVP</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: "#e0a030", color: "#1a1208" }}>👑 MVP</span>
           )}
           {award === "ace" && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "#7a5cc0", color: "#fff" }}>⚔️ ACE</span>
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: "#7a5cc0", color: "#fff" }}>⚔️ ACE</span>
           )}
         </div>
         <div className="text-xs truncate" style={{ color: "var(--text-muted)" }}>{player.nickname}</div>

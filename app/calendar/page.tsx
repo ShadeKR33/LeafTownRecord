@@ -187,18 +187,6 @@ export default function CalendarPage() {
     save(records.filter((r) => r.id !== id));
   };
 
-  const prevMonth = () => {
-    const [y, m] = selectedMonth.split("-").map(Number);
-    const d = new Date(y, m - 2, 1);
-    setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-    setSelectedDate(null);
-  };
-  const nextMonth = () => {
-    const [y, m] = selectedMonth.split("-").map(Number);
-    const d = new Date(y, m, 1);
-    setSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
-    setSelectedDate(null);
-  };
 
   // ─── 날짜별 그룹 ─────────────────────────────────────────────────────
   const monthRecords = records.filter((r) => r.date.startsWith(selectedMonth));
@@ -500,58 +488,51 @@ export default function CalendarPage() {
         </div>
       )}
 
-      {/* ─── 월 네비게이션 ─── */}
-      <div className="flex items-center justify-between mb-5 gap-3">
-        <div className="flex items-center gap-1.5">
-          <button onClick={prevMonth}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-black transition-all"
-            style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>‹</button>
-          <div className="px-4 py-2 rounded-xl text-center" style={{ background: "var(--panel)", border: "1px solid var(--border)", minWidth: 128 }}>
-            <div className="text-sm font-black" style={{ color: "var(--accent)" }}>{year}년 {month}월</div>
-            <div className="text-[10px]" style={{ color: "var(--text-dim)" }}>
-              {monthRecords.length > 0 ? `${monthRecords.length}경기` : "기록 없음"}
-            </div>
+      {/* ─── 월 선택 드롭다운 ─── */}
+      <div className="relative mb-5" style={{ maxWidth: 260 }}>
+        <button onClick={() => setMonthPickerOpen(v => !v)}
+          className="flex items-center justify-between w-full px-5 py-3 rounded-2xl text-sm font-black transition-all"
+          style={{ background: "var(--panel)", border: "1px solid var(--border)", color: "var(--accent)" }}>
+          <div className="flex items-center gap-2.5">
+            <span>📅</span>
+            <span>{year}년 {month}월</span>
+            {monthRecords.length > 0 && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style={{ background: "var(--accent)" + "22", color: "var(--accent)" }}>
+                {monthRecords.length}경기
+              </span>
+            )}
           </div>
-          <button onClick={nextMonth}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-black transition-all"
-            style={{ background: "var(--hover)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>›</button>
-        </div>
-        <div className="relative">
-          <button onClick={() => setMonthPickerOpen(v => !v)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-            style={{ background: "var(--hover)", border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-            <span>전체 달력</span>
-            <span style={{ fontSize: 10, color: "var(--text-dim)" }}>{monthPickerOpen ? "▲" : "▼"}</span>
-          </button>
-          {monthPickerOpen && (
-            <div className="absolute right-0 z-50 mt-1.5 rounded-2xl overflow-hidden shadow-2xl"
-              style={{ background: "var(--panel)", border: "1px solid var(--border)", minWidth: 180, maxHeight: 280, overflowY: "auto" }}>
-              {displayMonths.map(m => {
-                const count = new Set(records.filter(r => r.date.startsWith(m)).map(r => r.date)).size;
-                const isActive = selectedMonth === m;
-                return (
-                  <button key={m}
-                    onClick={() => { setSelectedMonth(m); setSelectedDate(null); setMonthPickerOpen(false); }}
-                    className="flex items-center justify-between w-full px-4 py-2.5 text-sm transition-all"
-                    style={{
-                      background: isActive ? "var(--accent)" + "22" : "transparent",
-                      color: isActive ? "var(--accent)" : "var(--text-muted)",
-                      fontWeight: isActive ? 700 : 400,
-                      borderBottom: "1px solid var(--border)",
-                    }}>
-                    <span>{m.replace("-", "년 ")}월</span>
-                    {count > 0 && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: "var(--accent)" + "22", color: "var(--accent)" }}>
-                        {count}일
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+          <span className="text-xs font-normal" style={{ color: "var(--text-dim)" }}>{monthPickerOpen ? "▲" : "▼"}</span>
+        </button>
+        {monthPickerOpen && (
+          <div className="absolute z-50 w-full mt-1.5 rounded-2xl overflow-hidden shadow-2xl"
+            style={{ background: "var(--panel)", border: "1px solid var(--border)", maxHeight: 300, overflowY: "auto" }}>
+            {displayMonths.map(m => {
+              const count = new Set(records.filter(r => r.date.startsWith(m)).map(r => r.date)).size;
+              const isActive = selectedMonth === m;
+              return (
+                <button key={m}
+                  onClick={() => { setSelectedMonth(m); setSelectedDate(null); setMonthPickerOpen(false); }}
+                  className="flex items-center justify-between w-full px-5 py-3 text-sm transition-all"
+                  style={{
+                    background: isActive ? "var(--accent)" + "22" : "transparent",
+                    color: isActive ? "var(--accent)" : "var(--text-muted)",
+                    fontWeight: isActive ? 700 : 400,
+                    borderBottom: "1px solid var(--border)",
+                  }}>
+                  <span>{m.replace("-", "년 ")}월</span>
+                  {count > 0 && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: isActive ? "var(--accent)" + "33" : "var(--hover)", color: isActive ? "var(--accent)" : "var(--text-dim)" }}>
+                      {count}일
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {loading ? (
