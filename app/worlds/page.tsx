@@ -1570,7 +1570,7 @@ function PlayersTab() {
                   {(bS?.totalGames ?? 0) > 0 && <div style={{ color: "var(--text-dim)", fontSize: 10 }}>{bS!.wins}승 {bS!.losses}패</div>}
                   {bKDA && <div style={{ color: "var(--text-dim)", fontSize: 10 }}>KDA {bKDA}</div>}
                   {(bS?.currentStreak ?? 0) >= 2 && <div className="font-bold mt-1" style={{ color: "#f59e0b", fontSize: 10 }}>🔥 {bS!.currentStreak}연승</div>}
-                  {(bS?.currentStreak ?? 0) <= -2 && <div className="mt-1" style={{ color: "#6b7280", fontSize: 10 }}>❄️ {Math.abs(bS!.currentStreak)}연패</div>}
+                  {(bS?.currentStreak ?? 0) <= -2 && <div className="mt-1" style={{ color: "#60a5fa", fontSize: 10 }}>❄️ {Math.abs(bS!.currentStreak)}연패</div>}
                 </div>
 
                 {/* 중앙 */}
@@ -1594,7 +1594,7 @@ function PlayersTab() {
                   {(rS?.totalGames ?? 0) > 0 && <div style={{ color: "var(--text-dim)", fontSize: 10 }}>{rS!.wins}승 {rS!.losses}패</div>}
                   {rKDA && <div style={{ color: "var(--text-dim)", fontSize: 10 }}>KDA {rKDA}</div>}
                   {(rS?.currentStreak ?? 0) >= 2 && <div className="font-bold mt-1" style={{ color: "#f59e0b", fontSize: 10 }}>🔥 {rS!.currentStreak}연승</div>}
-                  {(rS?.currentStreak ?? 0) <= -2 && <div className="mt-1" style={{ color: "#6b7280", fontSize: 10 }}>❄️ {Math.abs(rS!.currentStreak)}연패</div>}
+                  {(rS?.currentStreak ?? 0) <= -2 && <div className="mt-1" style={{ color: "#60a5fa", fontSize: 10 }}>❄️ {Math.abs(rS!.currentStreak)}연패</div>}
                 </div>
               </div>
 
@@ -2029,15 +2029,15 @@ function JourneyTab() {
 
         {/* 진행률 바 */}
         <div className="mb-3">
-          <div className="flex justify-between text-xs mb-1.5" style={{ color: "#6a8060" }}>
+          <div className="flex justify-between text-xs mb-1.5" style={{ color: "#9ab890" }}>
             <span>발표일 · 9월 26일</span>
             <span>월즈 · 12월 28일</span>
           </div>
-          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "#0d2a0d" }}>
+          <div className="h-2.5 rounded-full overflow-hidden" style={{ background: "rgba(0,80,0,0.35)" }}>
             <div className="h-full rounded-full transition-all duration-1000"
               style={{ width: `${progress}%`, background: "linear-gradient(90deg, #2a7c2a, #c8a951)" }} />
           </div>
-          <div className="flex justify-between text-xs mt-1.5" style={{ color: "#6a8060" }}>
+          <div className="flex justify-between text-xs mt-1.5" style={{ color: "#9ab890" }}>
             <span>{daysPassed}일 경과</span>
             <span style={{ color: "#c8a951", fontWeight: 700 }}>{progress}%</span>
             <span>{daysLeft}일 남음</span>
@@ -2053,7 +2053,7 @@ function JourneyTab() {
           ].map(s => (
             <div key={s.label} className="rounded-xl p-3 text-center"
               style={{ background: "rgba(0,0,0,0.3)", border: "1px solid #2a5c2a44" }}>
-              <div className="text-xs mb-1" style={{ color: "#6a8060" }}>{s.label}</div>
+              <div className="text-xs mb-1" style={{ color: "#9ab890" }}>{s.label}</div>
               <div className="font-black text-lg" style={{ color: "#c8a951" }}>{s.value}</div>
               <div className="text-[10px]" style={{ color: "#4a6040" }}>{s.sub}</div>
             </div>

@@ -179,12 +179,12 @@ function FinalMvpTrophyIcon({ size = 13, uid }: { size?: number; uid: string }) 
 
 // ── 스타일 정의 ──────────────────────────────────────────────────────────────
 const RANK_STYLE: Record<1 | 2 | 3, { bg: string; border: string; color: string }> = {
-  1: { bg: "rgba(251,191,36,0.18)",  border: "#fbbf24", color: "#92400e" },
-  2: { bg: "rgba(148,163,184,0.18)", border: "#94a3b8", color: "#334155" },
-  3: { bg: "rgba(180,83,9,0.15)",    border: "#c2410c", color: "#7c2d12" },
+  1: { bg: "rgba(251,191,36,0.18)",  border: "#fbbf24", color: "#d97706" },
+  2: { bg: "rgba(148,163,184,0.18)", border: "#94a3b8", color: "#94a3b8" },
+  3: { bg: "rgba(180,83,9,0.15)",    border: "#c2410c", color: "#ea580c" },
 };
-const WORLDS_STYLE = { bg: "rgba(0,229,255,0.13)",   border: "#00e5ff", color: "#006080" };
-const MVP_STYLE    = { bg: "rgba(109,40,217,0.18)",  border: "#7c3aed", color: "#4c1d95" };
+const WORLDS_STYLE = { bg: "rgba(0,229,255,0.13)",   border: "#00e5ff", color: "#0891b2" };
+const MVP_STYLE    = { bg: "rgba(109,40,217,0.18)",  border: "#7c3aed", color: "#7c3aed" };
 
 // ── TrophyIcon 디스패처 ──────────────────────────────────────────────────────
 function TrophyIcon({

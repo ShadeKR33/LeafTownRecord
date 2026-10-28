@@ -1027,7 +1027,7 @@ export default function AnalysisPage() {
                     </div>
                   )}
                 </div>
-                <div className="text-xs pb-0.5" style={{ color: "#527852" }}>
+                <div className="text-xs pb-0.5" style={{ color: "var(--text-dim)" }}>
                   * 실제 진행 세트 수만큼만 올리시면 됩니다
                 </div>
               </div>
@@ -1052,7 +1052,7 @@ export default function AnalysisPage() {
 
               {roflError && (
                 <div className="p-4 rounded-lg border mb-4 whitespace-pre-line"
-                  style={{ background: "#1a0d0d", borderColor: "#5a2020", color: "var(--loss)" }}>
+                  style={{ background: "rgba(180,0,0,0.18)", borderColor: "rgba(180,0,0,0.4)", color: "var(--loss)" }}>
                   ⚠ {roflError}
                 </div>
               )}
@@ -1296,7 +1296,7 @@ export default function AnalysisPage() {
 
       {/* 에러 및 성공 */}
       {error && (
-        <div className="p-4 rounded-lg border mb-4 whitespace-pre-line" style={{ background: "#1a0d0d", borderColor: "#5a2020", color: "var(--loss)" }}>
+        <div className="p-4 rounded-lg border mb-4 whitespace-pre-line" style={{ background: "rgba(180,0,0,0.18)", borderColor: "rgba(180,0,0,0.4)", color: "var(--loss)" }}>
           {error}
         </div>
       )}

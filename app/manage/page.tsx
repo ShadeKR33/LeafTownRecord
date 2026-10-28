@@ -918,8 +918,8 @@ function SeasonTab() {
   const statusStyle = (s: SeasonDef) => s.closed
     ? { bg: "rgba(100,116,139,0.15)", color: "#64748b", border: "#94a3b8" }
     : isOngoing(s)
-    ? { bg: "rgba(34,197,94,0.15)",   color: "#15803d", border: "#4ade80" }
-    : { bg: "rgba(251,191,36,0.15)",  color: "#b45309", border: "#fbbf24" };
+    ? { bg: "rgba(34,197,94,0.15)",   color: "#22c55e", border: "#4ade80" }
+    : { bg: "rgba(251,191,36,0.15)",  color: "#d97706", border: "#fbbf24" };
 
   return (
     <div className="space-y-6">
@@ -1270,7 +1270,7 @@ function TrophyTab() {
                     style={{
                       background: form.type === t ? (t === "worlds" ? "rgba(0,229,255,0.18)" : "rgba(251,191,36,0.18)") : "var(--hover)",
                       border: `1.5px solid ${form.type === t ? (t === "worlds" ? "#00b4d8" : "#fbbf24") : "var(--border)"}`,
-                      color: form.type === t ? (t === "worlds" ? "#005f73" : "#92400e") : "var(--text-muted)",
+                      color: form.type === t ? (t === "worlds" ? "#0891b2" : "#d97706") : "var(--text-muted)",
                     }}>
                     {t === "worlds" ? "🌐 월즈 트로피" : "🏆 시즌 트로피"}
                   </button>
@@ -1399,7 +1399,7 @@ function TrophyTab() {
                     />
                     <span className="font-bold text-sm" style={{ color: "var(--text)" }}>{ev.label}</span>
                     <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
-                      style={{ background: isWorlds ? "rgba(0,229,255,0.15)" : "rgba(251,191,36,0.15)", color: isWorlds ? "#005f73" : "#92400e" }}>
+                      style={{ background: isWorlds ? "rgba(0,229,255,0.15)" : "rgba(251,191,36,0.15)", color: isWorlds ? "#0891b2" : "#d97706" }}>
                       {isWorlds ? "월즈" : "시즌"}
                     </span>
                   </div>

@@ -1364,7 +1364,7 @@ export default function RankingPage() {
                   </span>
                   <div className="flex items-center gap-1 flex-1 min-w-0">
                     <span className="font-bold text-sm truncate"
-                      style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : ranks[i] === 3 ? "#c2410c" : "var(--text)" }}>
+                      style={{ color: ranks[i] === 1 ? "#f59e0b" : ranks[i] === 2 ? "#94a3b8" : ranks[i] === 3 ? "#f97316" : "var(--text)" }}>
                       {p.displayName}
                     </span>
                     {getTrophies(p.mainNickname).length > 0 && (
@@ -1464,7 +1464,7 @@ export default function RankingPage() {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-end gap-2">
                         {ranks[i] <= 3 ? (
-                          <span style={{ color: ranks[i] === 1 ? "#b45309" : ranks[i] === 2 ? "#64748b" : "#c2410c", fontWeight: 800 }}>
+                          <span style={{ color: ranks[i] === 1 ? "#f59e0b" : ranks[i] === 2 ? "#94a3b8" : "#f97316", fontWeight: 800 }}>
                             {p.displayName}
                           </span>
                         ) : (
