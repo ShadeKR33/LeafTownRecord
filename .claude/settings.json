@@ -1,16 +1,17 @@
 {
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd /Users/gimseungju/Library/key_documents/2026_study/LeafTown/Workspace/leaf-town-records && if ! git diff --quiet HEAD 2>/dev/null || [ -n \"$(git ls-files --others --exclude-standard 2>/dev/null)\" ]; then git add -A && git diff --cached --quiet || (git commit -m \"auto: $(date '+%Y-%m-%d %H:%M')\" && git push origin main && printf '{\"systemMessage\": \"✅ GitHub 푸시 완료 → Vercel 자동 배포 시작됨\"}'); fi",
-            "timeout": 60
-          }
+    "hooks": {
+        "Stop": [
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "cd /Users/gimseungju/Library/key_documents/2026_study/LeafTown/Workspace/leaf-town-records && git diff --quiet && git diff --cached --quiet || (git add -A && git commit -m \"auto: $(date '+%Y-%m-%d %H:%M')\" && git push origin main) 2>/dev/null || true",
+                        "statusMessage": "변경사항 push 중...",
+                        "timeout": 60
+                    }
+                ]
+            }
         ]
-      }
-    ]
-  }
+    }
 }
