@@ -239,6 +239,7 @@ export const seasonsKey      = (groupId: string) => `leaftown-seasons:${groupId}
 export const limitedTitlesKey = (groupId: string) => `leaftown-limited-titles:${groupId}`;
 export const napuRatingsKey   = (groupId: string) => `leaftown-napu-ratings:${groupId}`;
 export const easterEggKey     = (groupId: string) => `leaftown-easter-egg:${groupId}`;
+export const journeyKey       = (groupId: string) => `leaftown-journey:${groupId}`;
 
 // ─── 레거시 데이터 이전 ─────────────────────────────────────
 async function migrateLegacyData(groupId: string): Promise<void> {

@@ -1963,12 +1963,36 @@ function JourneyTab() {
   const ANNOUNCE_DATE = new Date("2026-09-26T00:00:00");
   const now = new Date();
 
-  const [milestones, setMilestones] = useState<typeof JOURNEY_MILESTONES>(() => {
-    try {
-      const saved = localStorage.getItem("journey-milestones");
-      return saved ? JSON.parse(saved) : JOURNEY_MILESTONES;
-    } catch { return JOURNEY_MILESTONES; }
-  });
+  const [milestones, setMilestones] = useState<typeof JOURNEY_MILESTONES>(JOURNEY_MILESTONES);
+
+  // 그룹 공용 데이터(서버)에서 불러오기. 서버에 아직 없으면 이 브라우저에 저장돼 있던 기존 데이터를 한 번 업로드
+  useEffect(() => {
+    fetch("/api/journey")
+      .then(r => r.json())
+      .then((data: { milestones: typeof JOURNEY_MILESTONES | null; canEdit?: boolean }) => {
+        if (Array.isArray(data.milestones)) { setMilestones(data.milestones); return; }
+        let local: typeof JOURNEY_MILESTONES | null = null;
+        try {
+          const saved = localStorage.getItem("journey-milestones");
+          local = saved ? JSON.parse(saved) : null;
+        } catch {}
+        if (local) {
+          setMilestones(local);
+          if (data.canEdit) persist(local);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  function persist(next: typeof JOURNEY_MILESTONES) {
+    fetch("/api/journey", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ milestones: next }),
+    })
+      .then(r => { if (!r.ok) alert("여정 저장에 실패했습니다 (권한을 확인해주세요)"); })
+      .catch(() => alert("여정 저장에 실패했습니다"));
+  }
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [form, setForm] = useState({ date: "", icon: "📌", title: "", desc: "", color: "#c8a951", tag: "", done: false });
@@ -1994,7 +2018,7 @@ function JourneyTab() {
       ? [...milestones, { ...form }]
       : milestones.map((m, i) => i === editingIndex ? { ...form } : m);
     setMilestones(next);
-    try { localStorage.setItem("journey-milestones", JSON.stringify(next)); } catch {}
+    persist(next);
     setForm(BLANK_FORM);
     setEditingIndex(null);
     setShowForm(false);
@@ -2003,7 +2027,7 @@ function JourneyTab() {
   function deleteItem(i: number) {
     const next = milestones.filter((_, idx) => idx !== i);
     setMilestones(next);
-    try { localStorage.setItem("journey-milestones", JSON.stringify(next)); } catch {}
+    persist(next);
   }
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
@@ -2086,7 +2110,7 @@ function JourneyTab() {
                   const [moved] = next.splice(dragIndex, 1);
                   next.splice(i, 0, moved);
                   setMilestones(next);
-                  try { localStorage.setItem("journey-milestones", JSON.stringify(next)); } catch {}
+                  persist(next);
                   setDragIndex(null); setDragOverIndex(null);
                 }}
                 onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
