@@ -232,6 +232,14 @@ export async function disbandGroup(groupId: string): Promise<void> {
   ]);
 }
 
+// ─── 공개 그룹 조회 ──────────────────────────────────────────
+// 인증 없이 읽기용: 앱에 존재하는 첫 번째 그룹 ID를 반환
+export async function getAnyGroupId(): Promise<string | null> {
+  const keys = await kv.keys("lf:group:*");
+  if (keys.length === 0) return null;
+  return keys[0].replace("lf:group:", "");
+}
+
 // ─── 데이터 키 (API route용 export) ─────────────────────────
 export const recordsKey      = (groupId: string) => K.records(groupId);
 export const nicknamesKey    = (groupId: string) => K.nicknames(groupId);
